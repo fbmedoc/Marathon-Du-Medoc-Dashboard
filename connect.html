@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<!--
+  Le Louis 26 — Strava connect page.
+
+  SECURITY NOTE
+  This page exchanges the Strava OAuth `code` for a refresh token directly
+  from the browser, which requires the client_secret to be present in the
+  page. That is normally a no-no, BUT for this stag-do project the trade-off
+  is intentional: 13 trusted friends, a Strava app dedicated to this one
+  weekend, and zero appetite to run a Python script 13 times. The credentials
+  are placeholders in the committed file and only injected into the deployed
+  copy by the GitHub Actions workflow, so they don't land in git history.
+  If the secret is ever leaked or abused, rotate it on Strava — done.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connect Your Strava — Le Louis 26</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wine: #4a0e1f;
+    --wine-deep: #2d0812;
+    --wine-light: #6b1a2e;
+    --cream: #f4ead5;
+    --gold: #c9a961;
+    --gold-bright: #e6c87d;
+    --ink: #1a0a0e;
+    --paper: #faf3e0;
+    --moss: #5a6b3f;
+    --rust: #a84e2e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html, body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    line-height: 1.5;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at top, rgba(74,14,31,0.06), transparent 60%),
+      radial-gradient(ellipse at bottom, rgba(201,169,97,0.10), transparent 60%);
+  }
+  body::before{
+    content:'';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: multiply;
+  }
+  .wrap{
+    position: relative;
+    z-index: 2;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    text-align: center;
+  }
+  .crest{
+    width: 64px; height: 64px;
+    border: 1.5px solid var(--wine);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    background: var(--paper);
+  }
+  .crest::before{
+    content:''; position: absolute; inset: 4px;
+    border: 1px solid var(--wine); border-radius: 50%;
+  }
+  .crest svg{ width: 30px; height: 30px; }
+  h1{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 800;
+    font-size: clamp(34px, 8vw, 46px);
+    color: var(--wine);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .sub{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin-top: 12px;
+  }
+  .prologue{
+    font-style: italic;
+    font-size: 17px;
+    color: var(--wine-deep);
+    margin: 28px 0 36px;
+    line-height: 1.55;
+  }
+  .prologue::before, .prologue::after{
+    content: '❦';
+    color: var(--gold);
+    margin: 0 10px;
+    font-size: 18px;
+  }
+
+  .card{
+    background: var(--cream);
+    border: 1px solid var(--wine);
+    padding: 28px 24px;
+    margin-bottom: 20px;
+    text-align: left;
+    position: relative;
+  }
+  .card::before{
+    content:'';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(74,14,31,0.18);
+    pointer-events: none;
+  }
+  .card > *{ position: relative; z-index: 1; }
+  .card h2{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--wine);
+    margin-bottom: 10px;
+  }
+  .card p{ font-size: 16px; }
+  .card p + p{ margin-top: 12px; }
+
+  .step{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+
+  .btn{
+    display: inline-block;
+    width: 100%;
+    padding: 16px 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 500;
+    background: var(--wine);
+    color: var(--cream);
+    border: 1px solid var(--gold);
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 18px;
+  }
+  .btn:hover{ background: var(--wine-deep); }
+  .btn:active{ transform: translateY(1px); }
+  .btn:disabled{ opacity: 0.5; cursor: not-allowed; }
+  .btn .strava{
+    display: inline-block;
+    background: #fc4c02;
+    color: white;
+    padding: 2px 8px;
+    margin-left: 6px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .token-box{
+    margin-top: 14px;
+    padding: 14px;
+    background: var(--paper);
+    border: 1px dashed var(--wine);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    word-break: break-all;
+    color: var(--ink);
+    user-select: all;
+    line-height: 1.4;
+  }
+  .row{
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .row .btn{ margin-top: 0; }
+  .btn.copy{
+    background: var(--gold);
+    color: var(--wine-deep);
+    border-color: var(--gold);
+  }
+  .btn.copy:hover{ background: var(--gold-bright); }
+  .btn.whatsapp{
+    background: #25D366;
+    color: white;
+    border-color: #128c7e;
+  }
+  .btn.whatsapp:hover{ background: #1ebe5d; }
+
+  .ok{
+    color: var(--moss);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-top: 10px;
+    display: none;
+  }
+  .err{
+    color: var(--rust);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(168,78,46,0.08);
+    border-left: 3px solid var(--rust);
+    display: none;
+    text-align: left;
+  }
+
+  .footer{
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--wine);
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+  .footer em{
+    display: block;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--wine);
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .hidden{ display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="crest">
+    <svg viewBox="0 0 40 40" fill="none">
+      <path d="M20 4 L24 14 L20 22 L16 14 Z" fill="#4a0e1f"/>
+      <path d="M20 22 L20 34" stroke="#4a0e1f" stroke-width="1.5"/>
+      <path d="M14 32 L26 32" stroke="#4a0e1f" stroke-width="1.5"/>
+    </svg>
+  </div>
+  <h1>Le Louis 26</h1>
+  <div class="sub">Strava Connection · Médoc MMXXVI</div>
+
+  <p class="prologue">
+    Welcome, runner. Two taps and you're on the dossier. Authorise Strava,
+    copy the token it gives you, send it to Louis on WhatsApp.
+  </p>
+
+  <!-- STEP 1: Send to Strava OAuth -->
+  <div class="card" id="step-1">
+    <div class="step">Step 1</div>
+    <h2>Authorise Strava</h2>
+    <p>
+      You'll be sent to Strava to grant read-only access to your running
+      activities. Nothing else. No posting, no writing, no surprises.
+    </p>
+    <a href="#" id="auth-btn" class="btn">
+      Connect with <span class="strava">STRAVA</span>
+    </a>
+  </div>
+
+  <!-- STEP 2: Exchange code for token (after Strava redirects back) -->
+  <div class="card hidden" id="step-2">
+    <div class="step">Step 2</div>
+    <h2>Get your refresh token</h2>
+    <p>
+      Strava sent you back with an authorisation code. One more tap exchanges
+      it for a long-lived refresh token that the dashboard uses to read your
+      runs each morning.
+    </p>
+    <button id="exchange-btn" class="btn">Get my refresh token</button>
+    <div class="err" id="exchange-err"></div>
+  </div>
+
+  <!-- STEP 3: Display refresh token -->
+  <div class="card hidden" id="step-3">
+    <div class="step">Step 3</div>
+    <h2>Send this to Louis</h2>
+    <p>
+      Copy the token below and send it to Louis on WhatsApp. He'll add it as
+      a GitHub Secret and you'll appear on the leaderboard within 24 hours.
+    </p>
+    <div class="token-box" id="token-display"></div>
+    <div class="row">
+      <button class="btn copy" id="copy-btn">Copy token</button>
+      <a class="btn whatsapp" id="whatsapp-btn" target="_blank" rel="noopener">WhatsApp Louis</a>
+    </div>
+    <div class="ok" id="copy-ok">✓ Copied — now send it on</div>
+  </div>
+
+  <!-- Generic error display -->
+  <div class="err" id="page-err"></div>
+
+  <footer class="footer">
+    <em>« On y va, doucement. »</em>
+    Le Domaine · MMXXVI
+  </footer>
+
+</div>
+
+<script>
+  // ─── Configuration ────────────────────────────────────────────────
+  // These placeholders are replaced by the GitHub Actions workflow at
+  // deploy time. In the committed source they remain as __PLACEHOLDERS__.
+  // See the comment at the top of the file for the security trade-off.
+  const STRAVA_CLIENT_ID     = "__STRAVA_CLIENT_ID__";
+  const STRAVA_CLIENT_SECRET = "__STRAVA_CLIENT_SECRET__";
+  const REDIRECT_URI         = "https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/connect.html";
+  const SCOPE                = "activity:read_all";
+
+  // ─── Helpers ──────────────────────────────────────────────────────
+  const $ = (id) => document.getElementById(id);
+
+  function showStep(n) {
+    $("step-1").classList.toggle("hidden", n !== 1);
+    $("step-2").classList.toggle("hidden", n !== 2);
+    $("step-3").classList.toggle("hidden", n !== 3);
+  }
+
+  function showError(el, msg) {
+    el.textContent = msg;
+    el.style.display = "block";
+  }
+
+  // ─── Step 1: build & launch the Strava authorise URL ──────────────
+  $("auth-btn").addEventListener("click", (e) => {
+    e.preventDefault();
+    if (!STRAVA_CLIENT_ID || STRAVA_CLIENT_ID.startsWith("__")) {
+      showError($("page-err"),
+        "This page hasn't been deployed yet — the client ID is still a placeholder. " +
+        "Visit the live URL on fbmedoc.github.io instead of opening the file locally.");
+      return;
+    }
+    const url = new URL("https://www.strava.com/oauth/authorize");
+    url.searchParams.set("client_id", STRAVA_CLIENT_ID);
+    url.searchParams.set("redirect_uri", REDIRECT_URI);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("approval_prompt", "auto");
+    url.searchParams.set("scope", SCOPE);
+    window.location.href = url.toString();
+  });
+
+  // ─── On load: did Strava send us back with a code? ────────────────
+  const params = new URLSearchParams(window.location.search);
+  const code   = params.get("code");
+  const error  = params.get("error");
+
+  if (error) {
+    showError($("page-err"),
+      "Strava said: " + error + ". You probably tapped 'Cancel'. Refresh and try again.");
+  } else if (code) {
+    showStep(2);
+  } else {
+    showStep(1);
+  }
+
+  // ─── Step 2: exchange the code for a refresh token ────────────────
+  $("exchange-btn").addEventListener("click", async () => {
+    const btn = $("exchange-btn");
+    btn.disabled = true;
+    btn.textContent = "Exchanging…";
+    $("exchange-err").style.display = "none";
+
+    try {
+      const body = new URLSearchParams({
+        client_id: STRAVA_CLIENT_ID,
+        client_secret: STRAVA_CLIENT_SECRET,
+        code: code,
+        grant_type: "authorization_code"
+      });
+      const res = await fetch("https://www.strava.com/oauth/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString()
+      });
+      const data = await res.json();
+      if (!res.ok || !data.refresh_token) {
+        throw new Error(data.message || "No refresh_token in response — try again");
+      }
+      $("token-display").textContent = data.refresh_token;
+
+      // WhatsApp prefill (no phone number — opens chooser on phones)
+      const msg = "Strava refresh token for the Médoc dashboard:\n\n" + data.refresh_token;
+      $("whatsapp-btn").href = "https://wa.me/?text=" + encodeURIComponent(msg);
+
+      showStep(3);
+    } catch (err) {
+      showError($("exchange-err"),
+        "Something went wrong: " + err.message + ". " +
+        "Refresh the page and try Step 1 again.");
+      btn.disabled = false;
+      btn.textContent = "Get my refresh token";
+    }
+  });
+
+  // ─── Step 3: copy to clipboard ────────────────────────────────────
+  $("copy-btn").addEventListener("click", async () => {
+    const token = $("token-display").textContent;
+    try {
+      await navigator.clipboard.writeText(token);
+    } catch {
+      // Fallback for older browsers / file:// contexts
+      const r = document.createRange();
+      r.selectNodeContents($("token-display"));
+      const s = window.getSelection();
+      s.removeAllRanges(); s.addRange(r);
+      document.execCommand("copy");
+    }
+    const ok = $("copy-ok");
+    ok.style.display = "block";
+    setTimeout(() => { ok.style.display = "none"; }, 3000);
+  });
+</script>
+
+</body>
+</html>

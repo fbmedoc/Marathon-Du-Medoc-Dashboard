@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Louis 26 — Médoc Marathon Stag Dossier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wine: #4a0e1f;
+    --wine-deep: #2d0812;
+    --wine-light: #6b1a2e;
+    --bordeaux: #722f37;
+    --cream: #f4ead5;
+    --cream-warm: #ede0c1;
+    --gold: #c9a961;
+    --gold-bright: #e6c87d;
+    --ink: #1a0a0e;
+    --paper: #faf3e0;
+    --moss: #5a6b3f;
+    --rust: #a84e2e;
+    --sage: #8a9a76;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box}
+
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    line-height: 1.5;
+    background-image:
+      radial-gradient(ellipse at top left, rgba(74,14,31,0.04), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(201,169,97,0.06), transparent 50%);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before{
+    content:'';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: multiply;
+  }
+
+  .page{
+    position: relative;
+    z-index: 2;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 40px 80px;
+  }
+
+  /* HEADER */
+  .header{
+    border-bottom: 1px solid var(--wine);
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 32px;
+    align-items: end;
+  }
+
+  .crest{
+    width: 78px;
+    height: 78px;
+    border: 1.5px solid var(--wine);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: var(--paper);
+  }
+  .crest::before{
+    content:'';
+    position: absolute;
+    inset: 5px;
+    border: 1px solid var(--wine);
+    border-radius: 50%;
+  }
+  .crest svg{ width: 38px; height: 38px; }
+
+  .masthead h1{
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    font-size: clamp(38px, 5vw, 62px);
+    line-height: 0.95;
+    color: var(--wine);
+    letter-spacing: -0.02em;
+    font-style: italic;
+  }
+  .masthead .sub{
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin-top: 8px;
+  }
+
+  .countdown{
+    text-align: right;
+    font-family: 'Fraunces', serif;
+  }
+  .countdown .num{
+    font-size: 56px;
+    font-weight: 800;
+    color: var(--wine);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .countdown .lbl{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin-top: 6px;
+  }
+  .countdown .date{
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink);
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+
+  /* NEWS FLASH */
+  .newsflash{
+    display: flex;
+    align-items: stretch;
+    background: var(--wine);
+    color: var(--cream);
+    margin-bottom: 40px;
+    border: 1px solid var(--wine-deep);
+    overflow: hidden;
+    position: relative;
+  }
+  .nf-label{
+    background: var(--gold);
+    color: var(--wine-deep);
+    padding: 12px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .nf-label::after{
+    content:'';
+    position: absolute;
+    right: -10px;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+    z-index: 1;
+  }
+  .nf-track-wrap{
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+  }
+  .nf-track-wrap::before, .nf-track-wrap::after{
+    content:'';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 30px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .nf-track-wrap::before{
+    left: 0;
+    background: linear-gradient(90deg, var(--wine), transparent);
+  }
+  .nf-track-wrap::after{
+    right: 0;
+    background: linear-gradient(-90deg, var(--wine), transparent);
+  }
+  .nf-track{
+    display: inline-block;
+    white-space: nowrap;
+    animation: nf-tick 90s linear infinite;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-style: italic;
+  }
+  .nf-track span{ margin-right: 8px; }
+  .nf-track b{
+    color: var(--gold-bright);
+    font-style: normal;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    margin-right: 6px;
+    font-weight: 500;
+  }
+  @keyframes nf-tick{
+    from{ transform: translateX(0); }
+    to{ transform: translateX(-50%); }
+  }
+
+  /* HERO STAT STRIP */
+  .hero-strip{
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    background: var(--cream);
+    border: 1px solid var(--wine);
+    margin-bottom: 40px;
+    position: relative;
+  }
+  .hero-strip::before{
+    content:'';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(74,14,31,0.2);
+    pointer-events: none;
+  }
+  .hero-cell{
+    padding: 18px 20px;
+    border-right: 1px solid rgba(74,14,31,0.2);
+    position: relative;
+    z-index: 1;
+  }
+  .hero-cell:last-child{ border-right: none; }
+  .hero-cell .lbl{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin-bottom: 4px;
+  }
+  .hero-cell .v{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--wine);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .hero-cell .v .u{
+    font-size: 14px;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--wine-light);
+    margin-left: 3px;
+  }
+  .hero-cell .delta{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+  .delta.up{ color: var(--moss); }
+  .delta.down{ color: var(--rust); }
+  .delta.flat{ color: var(--wine-light); }
+
+  /* SECTION HEADERS */
+  .section{ margin-bottom: 56px; }
+  .section-head{
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 24px;
+    border-bottom: 1px dashed var(--wine);
+    padding-bottom: 12px;
+  }
+  .section-head .roman{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--gold);
+    font-weight: 600;
+  }
+  .section-head h2{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 30px;
+    color: var(--wine);
+    letter-spacing: -0.01em;
+  }
+  .section-head .tag{
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+
+  /* MAIN GRID */
+  .grid-main{
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 32px;
+  }
+
+  /* LEADERBOARD */
+  .leaderboard{
+    background: linear-gradient(180deg, var(--cream) 0%, var(--cream-warm) 100%);
+    border: 1px solid rgba(74,14,31,0.2);
+    padding: 24px;
+    position: relative;
+  }
+  .leaderboard::before{
+    content:'';
+    position: absolute;
+    top: 8px; left: 8px; right: 8px; bottom: 8px;
+    border: 1px solid rgba(74,14,31,0.15);
+    pointer-events: none;
+  }
+
+  /* SQUAD TOTAL BAND */
+  .squad-total{
+    background: linear-gradient(135deg, var(--wine) 0%, var(--wine-deep) 100%);
+    color: var(--cream);
+    padding: 20px 28px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 28px;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .squad-total::before{
+    content:'';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(201,169,97,0.25);
+    pointer-events: none;
+  }
+  .squad-total .label{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--gold-bright);
+    position: relative;
+    z-index: 1;
+  }
+  .squad-total .label .sub{
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--cream);
+    letter-spacing: 0.2em;
+    margin-top: 6px;
+    font-weight: 400;
+    font-style: normal;
+    opacity: 0.7;
+  }
+  .squad-total .stats{
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+  }
+  .squad-total .stat{
+    border-left: 1px solid rgba(201,169,97,0.3);
+    padding-left: 14px;
+  }
+  .squad-total .stat .v{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    line-height: 1;
+  }
+  .squad-total .stat .v .u{
+    font-size: 12px;
+    color: var(--cream);
+    margin-left: 3px;
+    opacity: 0.7;
+    font-weight: 400;
+  }
+  .squad-total .stat .l{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--cream);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 4px;
+    opacity: 0.7;
+  }
+
+  .lb-headers{
+    display: grid;
+    grid-template-columns: 32px 1fr 80px 80px 100px;
+    gap: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--wine);
+    margin-bottom: 4px;
+    position: relative;
+    z-index: 1;
+  }
+  .lb-headers div{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+  .lb-headers .r{ text-align: right; }
+
+  .runner{
+    display: grid;
+    grid-template-columns: 32px 1fr 80px 80px 100px;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 0 10px;
+    border-bottom: 1px solid rgba(74,14,31,0.12);
+    position: relative;
+    z-index: 1;
+  }
+  .runner:last-child{ border-bottom: none; }
+
+  .runner .rank{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--wine);
+    text-align: center;
+  }
+  .runner.top .rank{ color: var(--gold); }
+
+  .runner .info .name{
+    font-family: 'Fraunces', serif;
+    font-size: 21px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .runner .info .meta{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin-top: 3px;
+  }
+
+  .col-stat{
+    text-align: right;
+  }
+  .col-stat .v{
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--wine);
+    font-style: italic;
+  }
+  .col-stat .v .unit{
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.7;
+    margin-left: 1px;
+  }
+  .col-stat .l{
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    color: var(--wine-light);
+    margin-top: 2px;
+  }
+
+  .form-dots{
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+  }
+  .form-dots .d{
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: rgba(74,14,31,0.15);
+    border: 1px solid rgba(74,14,31,0.3);
+  }
+  .form-dots .d.on{ background: var(--moss); border-color: var(--moss); }
+  .form-dots .d.partial{ background: var(--gold); border-color: var(--gold); }
+  .form-dots .d.skip{ background: var(--rust); border-color: var(--rust); }
+
+  .progress-bar{
+    grid-column: 1 / -1;
+    height: 2px;
+    background: rgba(74,14,31,0.1);
+    margin-top: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-bar .fill{
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: linear-gradient(90deg, var(--wine) 0%, var(--bordeaux) 70%, var(--gold) 100%);
+  }
+
+  /* AWARDS */
+  .awards{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .awards-title{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--wine);
+    margin-bottom: 4px;
+    text-align: center;
+  }
+  .awards-title .dot{ margin: 0 6px; color: var(--gold); }
+  .award{
+    background: var(--paper);
+    border: 1px solid var(--wine);
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 14px;
+    align-items: center;
+  }
+  .award .icon{
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--wine);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--cream);
+    font-size: 20px;
+  }
+  .award .title{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--wine);
+  }
+  .award .winner{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--ink);
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+  .award .winner b{ color: var(--rust); font-weight: 500; }
+
+  .award.featured{
+    background: var(--wine);
+    color: var(--cream);
+    border-color: var(--gold);
+  }
+  .award.featured .icon{
+    background: var(--wine-deep);
+    border-color: var(--gold);
+  }
+  .award.featured .title{ color: var(--gold-bright); }
+  .award.featured .winner{ color: var(--cream); }
+  .award.featured .winner b{ color: var(--gold-bright); }
+
+  .award.shame{
+    background: var(--paper);
+    border-left: 3px solid var(--rust);
+  }
+  .award.shame .icon{
+    border-color: var(--rust);
+    background: rgba(168,78,46,0.08);
+  }
+  .award.shame .title{ color: var(--rust); }
+
+  /* TWO-COLUMN MINI BOARDS */
+  .mini-row-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+  .mini-board{
+    background: var(--cream);
+    border: 1px solid rgba(74,14,31,0.25);
+    padding: 20px 22px;
+  }
+  .mini-board h3{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 19px;
+    color: var(--wine);
+    border-bottom: 1px dashed var(--wine);
+    padding-bottom: 10px;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .mini-board h3 .meta{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    font-style: normal;
+    font-weight: 400;
+  }
+  .mini-row{
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(74,14,31,0.1);
+    align-items: baseline;
+  }
+  .mini-row:last-child{ border-bottom: none; }
+  .mini-row .pos{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--wine-light);
+  }
+  .mini-row.top .pos{ color: var(--gold); }
+  .mini-row .name{
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    color: var(--ink);
+  }
+  .mini-row .v{
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--wine);
+  }
+  .mini-row .v.good{ color: var(--moss); }
+  .mini-row .v.bad{ color: var(--rust); }
+
+  .form-mini{
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .form-mini .d{
+    display: inline-block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: rgba(74,14,31,0.15);
+    border: 1px solid rgba(74,14,31,0.3);
+  }
+  .form-mini .d.on{ background: var(--moss); border-color: var(--moss); }
+  .form-mini .d.partial{ background: var(--gold); border-color: var(--gold); }
+  .form-mini .d.skip{ background: var(--rust); border-color: var(--rust); }
+
+  .form-legend .legend-row{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(74,14,31,0.1);
+  }
+  .form-legend .legend-row:last-child{ border-bottom: none; }
+  .form-legend .legend-row .lbl{
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  /* WEEK STRIP */
+  .week-strip{
+    background: var(--cream);
+    border: 1px solid rgba(74,14,31,0.2);
+    padding: 24px;
+  }
+  .week-grid{
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-top: 14px;
+    align-items: end;
+    height: 140px;
+  }
+  .day{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    height: 100%;
+    justify-content: end;
+  }
+  .day .bar{
+    width: 100%;
+    background: linear-gradient(180deg, var(--bordeaux), var(--wine-deep));
+  }
+  .day.rest .bar{
+    background: repeating-linear-gradient(45deg, rgba(74,14,31,0.15), rgba(74,14,31,0.15) 3px, transparent 3px, transparent 6px);
+    border: 1px dashed rgba(74,14,31,0.3);
+    height: 6px !important;
+  }
+  .day .lbl{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+  .day .km{
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--wine);
+  }
+  .week-summary{
+    display: flex;
+    justify-content: space-between;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(74,14,31,0.3);
+  }
+  .week-summary .stat{ text-align: center; flex: 1; }
+  .week-summary .stat .v{
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--wine);
+    font-style: italic;
+  }
+  .week-summary .stat .l{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin-top: 2px;
+  }
+
+  /* TRAINING PLAN */
+  .plan-intro{
+    background: var(--wine);
+    color: var(--cream);
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 24px;
+    align-items: center;
+  }
+  .plan-intro .text h3{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 24px;
+    color: var(--gold-bright);
+    margin-bottom: 6px;
+  }
+  .plan-intro .text p{
+    font-style: italic;
+    font-size: 15px;
+    line-height: 1.5;
+    opacity: 0.9;
+  }
+  .plan-intro .target{
+    text-align: right;
+    border-left: 1px solid var(--gold);
+    padding-left: 24px;
+  }
+  .plan-intro .target .v{
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--gold-bright);
+    line-height: 1;
+  }
+  .plan-intro .target.alt .v{ color: var(--cream); }
+  .plan-intro .target .l{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-top: 6px;
+    opacity: 0.8;
+  }
+
+  .phases{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .phase{
+    border: 1px solid var(--wine);
+    padding: 18px;
+    background: var(--paper);
+    position: relative;
+  }
+  .phase .num{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .phase .name{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--wine);
+    margin-top: 6px;
+  }
+  .phase .when{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin-top: 4px;
+  }
+  .phase .desc{
+    font-size: 14px;
+    color: var(--ink);
+    margin-top: 12px;
+    line-height: 1.45;
+    font-style: italic;
+  }
+  .phase.current{
+    background: var(--cream);
+    border-width: 2px;
+  }
+  .phase.current::after{
+    content: 'NOW';
+    position: absolute;
+    top: -10px;
+    right: 12px;
+    background: var(--rust);
+    color: var(--paper);
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    padding: 3px 8px;
+  }
+
+  .week-detail{
+    background: var(--cream);
+    border: 1px solid var(--wine);
+    padding: 24px;
+  }
+  .week-detail-head{
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--wine);
+  }
+  .week-detail-head h4{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 20px;
+    color: var(--wine);
+  }
+  .week-detail-head .pick{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+  .workouts{
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+  .workout{
+    border: 1px solid rgba(74,14,31,0.3);
+    padding: 12px 10px;
+    text-align: center;
+    background: var(--paper);
+    min-height: 96px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .workout .d{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+  .workout .t{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--wine);
+    line-height: 1.2;
+  }
+  .workout .v{
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--ink);
+  }
+  .workout.long{
+    background: var(--wine);
+    color: var(--cream);
+    border-color: var(--gold);
+  }
+  .workout.long .d{ color: var(--gold-bright); }
+  .workout.long .t{ color: var(--gold-bright); }
+  .workout.long .v{ color: var(--cream); }
+  .workout.rest{
+    background: repeating-linear-gradient(45deg, var(--paper), var(--paper) 4px, var(--cream-warm) 4px, var(--cream-warm) 8px);
+    opacity: 0.7;
+  }
+
+  /* MEDOC FUN */
+  .medoc-strip{
+    background: linear-gradient(135deg, var(--wine) 0%, var(--wine-deep) 100%);
+    color: var(--cream);
+    padding: 32px 36px;
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 32px;
+    overflow: hidden;
+  }
+  .medoc-strip::before{
+    content: '🍷';
+    position: absolute;
+    font-size: 280px;
+    right: -40px;
+    top: -60px;
+    opacity: 0.05;
+    transform: rotate(-15deg);
+  }
+  .medoc-stat{ position: relative; z-index: 1; }
+  .medoc-stat .num{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 56px;
+    font-weight: 800;
+    color: var(--gold-bright);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .medoc-stat .lbl{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-top: 8px;
+    opacity: 0.85;
+  }
+  .medoc-stat .desc{
+    font-style: italic;
+    font-size: 14px;
+    margin-top: 8px;
+    opacity: 0.75;
+    line-height: 1.45;
+  }
+
+  .costume-poll{
+    margin-top: 32px;
+    background: var(--paper);
+    border: 1px solid var(--wine);
+    padding: 24px;
+  }
+  .costume-poll h4{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 20px;
+    color: var(--wine);
+    margin-bottom: 4px;
+  }
+  .costume-poll .sub{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin-bottom: 18px;
+  }
+  .costume-options{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .costume{
+    border: 1px solid rgba(74,14,31,0.3);
+    padding: 16px 12px;
+    text-align: center;
+    background: var(--cream);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .costume:hover{
+    border-color: var(--wine);
+    transform: translateY(-2px);
+  }
+  .costume .emoji{ font-size: 32px; }
+  .costume .name{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--wine);
+    margin-top: 6px;
+  }
+  .costume .votes{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--wine-light);
+    margin-top: 4px;
+  }
+  .costume.leading{
+    background: var(--wine);
+    color: var(--cream);
+    border-color: var(--gold);
+  }
+  .costume.leading .name{ color: var(--gold-bright); }
+  .costume.leading .votes{ color: var(--cream); }
+
+  /* FOOTER */
+  .footer{
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 1px solid var(--wine);
+    display: flex;
+    justify-content: space-between;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+  .footer em{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--wine);
+    font-size: 14px;
+  }
+
+  @media (max-width: 1000px){
+    .hero-strip{ grid-template-columns: repeat(2, 1fr); }
+    .hero-cell{ border-bottom: 1px solid rgba(74,14,31,0.2); }
+    .grid-main{ grid-template-columns: 1fr; }
+    .mini-row-grid{ grid-template-columns: 1fr; }
+    .phases{ grid-template-columns: repeat(2, 1fr); }
+    .workouts{ grid-template-columns: repeat(3, 1fr); }
+    .costume-options{ grid-template-columns: repeat(2, 1fr); }
+    .medoc-strip{ grid-template-columns: 1fr; }
+    .header{ grid-template-columns: 1fr; gap: 16px; text-align: left; }
+    .countdown{ text-align: left; }
+    .lb-headers, .runner{ grid-template-columns: 28px 1fr 90px; }
+    .lb-headers .hide-mob, .runner .hide-mob{ display: none; }
+    .squad-total{ grid-template-columns: 1fr; gap: 16px; }
+    .squad-total .stats{ grid-template-columns: repeat(2, 1fr); }
+    .plan-intro{ grid-template-columns: 1fr; }
+    .plan-intro .target{ border-left: none; padding-left: 0; text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="crest">
+      <svg viewBox="0 0 40 40" fill="none">
+        <path d="M20 4 L24 14 L20 22 L16 14 Z" fill="#4a0e1f"/>
+        <path d="M20 22 L20 34" stroke="#4a0e1f" stroke-width="1.5"/>
+        <path d="M14 32 L26 32" stroke="#4a0e1f" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="masthead">
+      <h1>Le Louis 26</h1>
+      <div class="sub">No. I &nbsp;·&nbsp; A Stag Dossier for Louis Illig &nbsp;·&nbsp; Médoc MMXXVI</div>
+    </div>
+    <div class="countdown">
+      <div class="num">116</div>
+      <div class="lbl">Days Until Glory</div>
+      <div class="date">5 September 2026</div>
+    </div>
+  </header>
+
+  <!-- NEWS FLASH -->
+  <div class="newsflash">
+    <div class="nf-label">News Flash</div>
+    <div class="nf-track-wrap">
+      <div class="nf-track">
+          <span><b>POLL:</b> Top Gun Pilots leading the costume vote — leading · </span>
+          <span><b>POLL:</b> Top Gun Pilots leading the costume vote — leading · </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO STAT STRIP -->
+  <div class="hero-strip">
+    <div class="hero-cell">
+      <div class="lbl">Group Total</div>
+      <div class="v">0<span class="u">km</span></div>
+        <div class="delta flat">— no prior week</div>
+    </div>
+    <div class="hero-cell">
+      <div class="lbl">Group Elevation</div>
+      <div class="v">0<span class="u">m</span></div>
+      <div class="delta up">▲ vertical metres climbed</div>
+    </div>
+    <div class="hero-cell">
+      <div class="lbl">Combined Pace</div>
+      <div class="v">—<span class="u">/km</span></div>
+      <div class="delta flat">distance-weighted</div>
+    </div>
+    <div class="hero-cell">
+      <div class="lbl">Predicted Finish</div>
+      <div class="v">—<span class="u">:00</span></div>
+      <div class="delta down">—</div>
+    </div>
+    <div class="hero-cell">
+      <div class="lbl">Sessions This Wk</div>
+      <div class="v">0</div>
+      <div class="delta flat">— so far</div>
+    </div>
+  </div>
+
+  <!-- SECTION I — STANDINGS + AWARDS -->
+  <section class="section">
+    <div class="section-head">
+      <span class="roman">I.</span>
+      <h2>The Standings</h2>
+      <span class="tag">Phase I · Foundation</span>
+    </div>
+
+    <!-- SQUAD TOTAL -->
+    <div class="squad-total">
+      <div class="label">
+        Squad Total
+        <span class="sub">Last 7 days</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="v">0<span class="u">km</span></div><div class="l">Distance</div></div>
+        <div class="stat"><div class="v">0</div><div class="l">Sessions</div></div>
+        <div class="stat"><div class="v">—</div><div class="l">Avg pace /km</div></div>
+        <div class="stat"><div class="v">—</div><div class="l">Group prediction</div></div>
+        <div class="stat">
+          <div class="v">
+              —
+          </div>
+          <div class="l">vs last week</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-main">
+      <!-- LEADERBOARD -->
+      <div class="leaderboard">
+        <div class="lb-headers">
+          <div></div>
+          <div>Runner</div>
+          <div class="r hide-mob">This Wk</div>
+          <div class="r hide-mob">Longest</div>
+          <div class="r">Predicted</div>
+        </div>
+
+        <div class="runner top">
+          <div class="rank">I</div>
+          <div class="info">
+            <div class="name">Louis Illig
+                <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;color:var(--gold);margin-left:8px;text-transform:uppercase;">★ The Groom</span>
+            </div>
+            <div class="meta">not connected — visit /connect.html</div>
+          </div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat">
+            <div class="v">—</div>
+            <div class="l">—</div>
+          </div>
+          <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="runner">
+          <div class="rank">II</div>
+          <div class="info">
+            <div class="name">Freddy B.
+            </div>
+            <div class="meta">not connected — visit /connect.html</div>
+          </div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat">
+            <div class="v">—</div>
+            <div class="l">—</div>
+          </div>
+          <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="runner">
+          <div class="rank">III</div>
+          <div class="info">
+            <div class="name">Matt M.
+            </div>
+            <div class="meta">not connected — visit /connect.html</div>
+          </div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat">
+            <div class="v">—</div>
+            <div class="l">—</div>
+          </div>
+          <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="runner">
+          <div class="rank">IV</div>
+          <div class="info">
+            <div class="name">Will J.
+            </div>
+            <div class="meta">not connected — visit /connect.html</div>
+          </div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat">
+            <div class="v">—</div>
+            <div class="l">—</div>
+          </div>
+          <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="runner">
+          <div class="rank">V</div>
+          <div class="info">
+            <div class="name">[Brother 1]
+                <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;color:var(--rust);margin-left:8px;text-transform:uppercase;">Sibling Rivalry</span>
+            </div>
+            <div class="meta">not connected — visit /connect.html</div>
+          </div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat">
+            <div class="v">—</div>
+            <div class="l">—</div>
+          </div>
+          <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="runner">
+          <div class="rank">VI</div>
+          <div class="info">
+            <div class="name">[Brother 2]
+                <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;color:var(--rust);margin-left:8px;text-transform:uppercase;">Sibling Rivalry</span>
+            </div>
+            <div class="meta">not connected — visit /connect.html</div>
+          </div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat">
+            <div class="v">—</div>
+            <div class="l">—</div>
+          </div>
+          <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="runner">
+          <div class="rank">VII</div>
+          <div class="info">
+            <div class="name">[Friend 10]
+            </div>
+            <div class="meta">not connected — visit /connect.html</div>
+          </div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat">
+            <div class="v">—</div>
+            <div class="l">—</div>
+          </div>
+          <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="runner">
+          <div class="rank">VIII</div>
+          <div class="info">
+            <div class="name">[Friend 11]
+            </div>
+            <div class="meta">not connected — visit /connect.html</div>
+          </div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat">
+            <div class="v">—</div>
+            <div class="l">—</div>
+          </div>
+          <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="runner">
+          <div class="rank">IX</div>
+          <div class="info">
+            <div class="name">[Friend 12]
+            </div>
+            <div class="meta">not connected — visit /connect.html</div>
+          </div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat">
+            <div class="v">—</div>
+            <div class="l">—</div>
+          </div>
+          <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="runner">
+          <div class="rank">X</div>
+          <div class="info">
+            <div class="name">[Friend 13]
+            </div>
+            <div class="meta">not connected — visit /connect.html</div>
+          </div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat">
+            <div class="v">—</div>
+            <div class="l">—</div>
+          </div>
+          <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="runner">
+          <div class="rank">XI</div>
+          <div class="info">
+            <div class="name">[Friend 7]
+            </div>
+            <div class="meta">not connected — visit /connect.html</div>
+          </div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat">
+            <div class="v">—</div>
+            <div class="l">—</div>
+          </div>
+          <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="runner">
+          <div class="rank">XII</div>
+          <div class="info">
+            <div class="name">[Friend 8]
+            </div>
+            <div class="meta">not connected — visit /connect.html</div>
+          </div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat">
+            <div class="v">—</div>
+            <div class="l">—</div>
+          </div>
+          <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+        <div class="runner">
+          <div class="rank">XIII</div>
+          <div class="info">
+            <div class="name">[Friend 9]
+            </div>
+            <div class="meta">not connected — visit /connect.html</div>
+          </div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat hide-mob"><div class="v">—</div></div>
+          <div class="col-stat">
+            <div class="v">—</div>
+            <div class="l">—</div>
+          </div>
+          <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- AWARDS -->
+      <div class="awards">
+        <div class="awards-title">
+          <span>Hall of Fame</span>
+          <span class="dot">·</span>
+          <span>Hall of Shame</span>
+        </div>
+          <div class="award featured">
+            <div class="icon">🤵</div>
+            <div>
+              <div class="title">Le Groom</div>
+              <div class="winner">Top of the table — <b>Louis</b>, leading by example. As he should.</div>
+            </div>
+          </div>
+          <div class="award">
+            <div class="icon">👯</div>
+            <div>
+              <div class="title">The Sibling Rivalry</div>
+              <div class="winner">Waiting on a brother to log a run.</div>
+            </div>
+          </div>
+          <div class="award">
+            <div class="icon">👑</div>
+            <div>
+              <div class="title">Top Dog (non-Illig)</div>
+              <div class="winner">Up for grabs.</div>
+            </div>
+          </div>
+          <div class="award">
+            <div class="icon">📈</div>
+            <div>
+              <div class="title">Biggest Glow-Up</div>
+              <div class="winner">Nobody's improving yet — keep showing up.</div>
+            </div>
+          </div>
+          <div class="award">
+            <div class="icon">🔥</div>
+            <div>
+              <div class="title">La Flamme</div>
+              <div class="winner">No active streaks. Embarrassing.</div>
+            </div>
+          </div>
+          <div class="award">
+            <div class="icon">🌅</div>
+            <div>
+              <div class="title">L'Aurore</div>
+              <div class="winner">Everyone's allergic to mornings this week.</div>
+            </div>
+          </div>
+          <div class="award shame">
+            <div class="icon">👻</div>
+            <div>
+              <div class="title">The Ghost</div>
+              <div class="winner">Everyone ran today. Miracle.</div>
+            </div>
+          </div>
+          <div class="award shame">
+            <div class="icon">🍷</div>
+            <div>
+              <div class="title">The Hangover Hero</div>
+              <div class="winner">No suspicious Sundays. Yet.</div>
+            </div>
+          </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION II — DEEPER STATS -->
+  <section class="section">
+    <div class="section-head">
+      <span class="roman">II.</span>
+      <h2>The Detail</h2>
+      <span class="tag">A few private leagues</span>
+    </div>
+
+    <div class="mini-row-grid">
+      <div class="mini-board">
+        <h3>Longest Single Run <span class="meta">All-time PB · top 5</span></h3>
+          <div class="mini-row"><span class="pos">—</span><span class="name">No long runs yet</span><span class="v">—</span></div>
+      </div>
+
+      <div class="mini-board">
+        <h3>Pace Improvement <span class="meta">Last 30 days · top 5 · /km</span></h3>
+          <div class="mini-row"><span class="pos">—</span><span class="name">Need 60 days of data</span><span class="v">—</span></div>
+      </div>
+
+      <div class="mini-board">
+        <h3>Elevation Gained <span class="meta">Last 60 days · top 5 · m</span></h3>
+          <div class="mini-row"><span class="pos">—</span><span class="name">No elevation data</span><span class="v">—</span></div>
+      </div>
+
+      <div class="mini-board">
+        <h3>Avg Heart Rate <span class="meta">Lower = more aerobic · top 5</span></h3>
+          <div class="mini-row"><span class="pos">—</span><span class="name">No HR data yet</span><span class="v">—</span></div>
+      </div>
+
+      <div class="mini-board">
+        <h3>Form <span class="meta">Last 5 sessions · top runners</span></h3>
+          <div class="mini-row"><span class="pos">—</span><span class="name">Waiting on runs</span><span class="v">—</span></div>
+      </div>
+
+      <div class="mini-board form-legend">
+        <h3>How to Read <span class="meta">Form indicator</span></h3>
+        <div class="legend-row"><span class="form-mini"><i class="d on"></i></span><span class="lbl">Ran the planned session</span></div>
+        <div class="legend-row"><span class="form-mini"><i class="d partial"></i></span><span class="lbl">Partial — turned up but cut short</span></div>
+        <div class="legend-row"><span class="form-mini"><i class="d skip"></i></span><span class="lbl">Skipped — better luck next week</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION III — THIS WEEK -->
+  <section class="section">
+    <div class="section-head">
+      <span class="roman">III.</span>
+      <h2>The Week, In Verse</h2>
+      <span class="tag">Group Totals</span>
+    </div>
+
+    <div class="week-strip">
+      <div class="week-grid">
+          <div class="day rest">
+            <div class="km">—</div>
+            <div class="bar"></div>
+            <div class="lbl">Mon</div>
+          </div>
+          <div class="day rest">
+            <div class="km">—</div>
+            <div class="bar"></div>
+            <div class="lbl">Tue</div>
+          </div>
+          <div class="day rest">
+            <div class="km">—</div>
+            <div class="bar"></div>
+            <div class="lbl">Wed</div>
+          </div>
+          <div class="day rest">
+            <div class="km">—</div>
+            <div class="bar"></div>
+            <div class="lbl">Thu</div>
+          </div>
+          <div class="day rest">
+            <div class="km">—</div>
+            <div class="bar"></div>
+            <div class="lbl">Fri</div>
+          </div>
+          <div class="day rest">
+            <div class="km">—</div>
+            <div class="bar"></div>
+            <div class="lbl">Sat</div>
+          </div>
+          <div class="day rest">
+            <div class="km">—</div>
+            <div class="bar"></div>
+            <div class="lbl">Sun</div>
+          </div>
+      </div>
+      <div class="week-summary">
+        <div class="stat"><div class="v">0<span style="font-size:14px">km</span></div><div class="l">Group total</div></div>
+        <div class="stat"><div class="v">0<span style="font-size:14px">km</span></div><div class="l">Avg per runner</div></div>
+        <div class="stat"><div class="v">—</div><div class="l">Combined pace</div></div>
+        <div class="stat"><div class="v">0</div><div class="l">Sessions</div></div>
+        <div class="stat"><div class="v">—</div><div class="l">vs last week</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION IV — TRAINING PLAN -->
+  <section class="section">
+    <div class="section-head">
+      <span class="roman">IV.</span>
+      <h2>The Plan</h2>
+      <span class="tag">18 weeks · sub-4hr stretch goal</span>
+    </div>
+
+    <div class="plan-intro">
+      <div class="text">
+        <h3>An honest path to 03:59:59</h3>
+        <p>Sub-four needs 5:40/km on race day. Médoc adds time at every château — treat it as a stretch goal. The realistic win: everyone finishes upright, in costume, with photos.</p>
+      </div>
+      <div class="target">
+        <div class="v">5:40</div>
+        <div class="l">Sub-4 pace</div>
+      </div>
+      <div class="target alt">
+        <div class="v">4:30</div>
+        <div class="l">Realistic finish</div>
+      </div>
+    </div>
+
+    <div class="phases">
+        <div class="phase current">
+          <div class="num">I</div>
+          <div class="name">Foundation</div>
+          <div class="when">Wks 1–4 · May</div>
+          <div class="desc">Easy aerobic base. Build to 40km/week. Just consistency.</div>
+        </div>
+        <div class="phase">
+          <div class="num">II</div>
+          <div class="name">Build</div>
+          <div class="when">Wks 5–10 · Jun–Jul</div>
+          <div class="desc">Intervals enter the chat. Long runs to 24km. Tempo at threshold.</div>
+        </div>
+        <div class="phase">
+          <div class="num">III</div>
+          <div class="name">Peak</div>
+          <div class="when">Wks 11–16 · Jul–Aug</div>
+          <div class="desc">The hard yards. 32km long runs, marathon-pace efforts. Sleep more.</div>
+        </div>
+        <div class="phase">
+          <div class="num">IV</div>
+          <div class="name">Taper</div>
+          <div class="when">Wks 17–18 · Aug–Sep</div>
+          <div class="desc">Volume drops by half. Carb load. Trust the work. Pack the costume.</div>
+        </div>
+    </div>
+
+    <div class="week-detail">
+      <div class="week-detail-head">
+        <h4>This week's sessions — pick what fits</h4>
+        <span class="pick">Choose 3–6 days · scale to level</span>
+      </div>
+      <div class="workouts">
+          <div class="workout">
+            <div class="d">Mon</div>
+            <div class="t">Easy</div>
+            <div class="v">5km Z2</div>
+          </div>
+          <div class="workout">
+            <div class="d">Tue</div>
+            <div class="t">Easy</div>
+            <div class="v">6km Z2</div>
+          </div>
+          <div class="workout rest">
+            <div class="d">Wed</div>
+            <div class="t">Rest</div>
+            <div class="v">or yoga</div>
+          </div>
+          <div class="workout">
+            <div class="d">Thu</div>
+            <div class="t">Easy</div>
+            <div class="v">7km Z2</div>
+          </div>
+          <div class="workout rest">
+            <div class="d">Fri</div>
+            <div class="t">Rest</div>
+            <div class="v">or walk</div>
+          </div>
+          <div class="workout">
+            <div class="d">Sat</div>
+            <div class="t">Strides</div>
+            <div class="v">5km + 6×100m</div>
+          </div>
+          <div class="workout long">
+            <div class="d">Sun</div>
+            <div class="t">Long Run</div>
+            <div class="v">14km @ 6:00</div>
+          </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION V — MEDOC FUN -->
+  <section class="section">
+    <div class="section-head">
+      <span class="roman">V.</span>
+      <h2>Le Médoc, En Avance</h2>
+      <span class="tag">For motivation</span>
+    </div>
+
+    <div class="medoc-strip">
+        <div class="medoc-stat">
+          <div class="num">23</div>
+          <div class="lbl">Wine Stops</div>
+          <div class="desc">Châteaux pouring along the route. Pace yourself.</div>
+        </div>
+        <div class="medoc-stat">
+          <div class="num">42.2<span style="font-size:24px">km</span></div>
+          <div class="lbl">The Distance</div>
+          <div class="desc">Through Pauillac vineyards. The most beautiful suffering.</div>
+        </div>
+        <div class="medoc-stat">
+          <div class="num">6:30</div>
+          <div class="lbl">Time Limit</div>
+          <div class="desc">After that they pack up the oysters. Be earlier than that.</div>
+        </div>
+    </div>
+
+    <div class="costume-poll">
+      <h4>Group costume vote — closes 1 July</h4>
+      <div class="sub">2026 official theme: <b style="color:var(--rust)">The 80s</b> · we vote, we commit, we suffer in style</div>
+      <div class="costume-options">
+          <div class="costume leading">
+            <div class="emoji">🕺</div>
+            <div class="name">Top Gun Pilots</div>
+            <div class="votes">3 votes · leading</div>
+          </div>
+          <div class="costume">
+            <div class="emoji">💪</div>
+            <div class="name">Aerobics Class</div>
+            <div class="votes">1 vote · neon leotards</div>
+          </div>
+          <div class="costume">
+            <div class="emoji">🎸</div>
+            <div class="name">Hair Metal Band</div>
+            <div class="votes">1 vote · wigs essential</div>
+          </div>
+          <div class="costume">
+            <div class="emoji">👻</div>
+            <div class="name">Ghostbusters</div>
+            <div class="votes">0 votes · proton packs?</div>
+          </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div>Synced from Strava · Updated 00:02 BST</div>
+    <div><em>« On y va, doucement. »</em></div>
+    <div>Le Domaine · MMXXVI</div>
+  </footer>
+
+</div>
+</body>
+</html>

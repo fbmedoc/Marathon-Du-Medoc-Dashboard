@@ -1,0 +1,15 @@
+[
+  { "id": "louis",    "name": "Louis Illig",    "tag": "★ The Groom",     "secret": "STRAVA_TOKEN_LOUIS",    "is_groom": true,  "is_brother": false },
+  { "id": "brother1", "name": "[Brother 1]",    "tag": "Sibling Rivalry", "secret": "STRAVA_TOKEN_BROTHER1", "is_groom": false, "is_brother": true },
+  { "id": "brother2", "name": "[Brother 2]",    "tag": "Sibling Rivalry", "secret": "STRAVA_TOKEN_BROTHER2", "is_groom": false, "is_brother": true },
+  { "id": "matt",     "name": "Matt M.",        "tag": null,              "secret": "STRAVA_TOKEN_MATT",     "is_groom": false, "is_brother": false },
+  { "id": "will",     "name": "Will J.",        "tag": null,              "secret": "STRAVA_TOKEN_WILL",     "is_groom": false, "is_brother": false },
+  { "id": "freddy",   "name": "Freddy B.",      "tag": null,              "secret": "STRAVA_TOKEN_FREDDY",   "is_groom": false, "is_brother": false },
+  { "id": "friend7",  "name": "[Friend 7]",     "tag": null,              "secret": "STRAVA_TOKEN_FRIEND7",  "is_groom": false, "is_brother": false },
+  { "id": "friend8",  "name": "[Friend 8]",     "tag": null,              "secret": "STRAVA_TOKEN_FRIEND8",  "is_groom": false, "is_brother": false },
+  { "id": "friend9",  "name": "[Friend 9]",     "tag": null,              "secret": "STRAVA_TOKEN_FRIEND9",  "is_groom": false, "is_brother": false },
+  { "id": "friend10", "name": "[Friend 10]",    "tag": null,              "secret": "STRAVA_TOKEN_FRIEND10", "is_groom": false, "is_brother": false },
+  { "id": "friend11", "name": "[Friend 11]",    "tag": null,              "secret": "STRAVA_TOKEN_FRIEND11", "is_groom": false, "is_brother": false },
+  { "id": "friend12", "name": "[Friend 12]",    "tag": null,              "secret": "STRAVA_TOKEN_FRIEND12", "is_groom": false, "is_brother": false },
+  { "id": "friend13", "name": "[Friend 13]",    "tag": null,              "secret": "STRAVA_TOKEN_FRIEND13", "is_groom": false, "is_brother": false }
+]

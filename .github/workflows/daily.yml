@@ -1,0 +1,95 @@
+name: Daily dashboard rebuild
+
+on:
+  schedule:
+    # 07:00 UTC = 08:00 UK time (BST in summer, GMT in winter — close enough)
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build dashboard
+        env:
+          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          STRAVA_TOKEN_LOUIS: ${{ secrets.STRAVA_TOKEN_LOUIS }}
+          STRAVA_TOKEN_BROTHER1: ${{ secrets.STRAVA_TOKEN_BROTHER1 }}
+          STRAVA_TOKEN_BROTHER2: ${{ secrets.STRAVA_TOKEN_BROTHER2 }}
+          STRAVA_TOKEN_MATT: ${{ secrets.STRAVA_TOKEN_MATT }}
+          STRAVA_TOKEN_WILL: ${{ secrets.STRAVA_TOKEN_WILL }}
+          STRAVA_TOKEN_FREDDY: ${{ secrets.STRAVA_TOKEN_FREDDY }}
+          STRAVA_TOKEN_FRIEND7: ${{ secrets.STRAVA_TOKEN_FRIEND7 }}
+          STRAVA_TOKEN_FRIEND8: ${{ secrets.STRAVA_TOKEN_FRIEND8 }}
+          STRAVA_TOKEN_FRIEND9: ${{ secrets.STRAVA_TOKEN_FRIEND9 }}
+          STRAVA_TOKEN_FRIEND10: ${{ secrets.STRAVA_TOKEN_FRIEND10 }}
+          STRAVA_TOKEN_FRIEND11: ${{ secrets.STRAVA_TOKEN_FRIEND11 }}
+          STRAVA_TOKEN_FRIEND12: ${{ secrets.STRAVA_TOKEN_FRIEND12 }}
+          STRAVA_TOKEN_FRIEND13: ${{ secrets.STRAVA_TOKEN_FRIEND13 }}
+        run: python scripts/build_dashboard.py
+
+      - name: Commit refreshed HTML if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html mobile.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: daily dashboard refresh ($(date -u +%Y-%m-%d))"
+            git push
+          fi
+
+      # Inject the Strava OAuth credentials into connect.html for the Pages
+      # artifact only. The committed file keeps its placeholders, so the
+      # client_secret never lands in git history.
+      - name: Inject OAuth credentials into connect.html
+        env:
+          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+        run: |
+          python - <<'PY'
+          import os, pathlib
+          p = pathlib.Path("connect.html")
+          html = p.read_text(encoding="utf-8")
+          html = html.replace("__STRAVA_CLIENT_ID__", os.environ.get("STRAVA_CLIENT_ID", ""))
+          html = html.replace("__STRAVA_CLIENT_SECRET__", os.environ.get("STRAVA_CLIENT_SECRET", ""))
+          p.write_text(html, encoding="utf-8")
+          print("connect.html credentials injected for Pages artifact")
+          PY
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

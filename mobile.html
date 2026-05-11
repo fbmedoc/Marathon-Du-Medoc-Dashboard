@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+<meta name="theme-color" content="#4a0e1f">
+<title>Le Louis 26 — Mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wine: #4a0e1f;
+    --wine-deep: #2d0812;
+    --wine-light: #6b1a2e;
+    --bordeaux: #722f37;
+    --cream: #f4ead5;
+    --cream-warm: #ede0c1;
+    --gold: #c9a961;
+    --gold-bright: #e6c87d;
+    --ink: #1a0a0e;
+    --paper: #faf3e0;
+    --moss: #5a6b3f;
+    --rust: #a84e2e;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+  html, body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    line-height: 1.45;
+    overflow-x: hidden;
+  }
+
+  body{
+    background-image:
+      radial-gradient(ellipse at top, rgba(74,14,31,0.05), transparent 60%),
+      radial-gradient(ellipse at bottom, rgba(201,169,97,0.08), transparent 60%);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  body::before{
+    content:'';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: multiply;
+  }
+
+  .app{
+    position: relative;
+    z-index: 2;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+
+  .header{
+    padding: 20px 20px 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--wine);
+    position: relative;
+  }
+  .crest{
+    width: 48px;
+    height: 48px;
+    border: 1.5px solid var(--wine);
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: var(--paper);
+  }
+  .crest::before{
+    content:'';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid var(--wine);
+    border-radius: 50%;
+  }
+  .crest svg{ width: 24px; height: 24px; }
+  .header h1{
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    font-style: italic;
+    font-size: 38px;
+    line-height: 1;
+    color: var(--wine);
+    letter-spacing: -0.02em;
+  }
+  .header .sub{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin-top: 8px;
+  }
+
+  .countdown-card{
+    margin: 16px 16px 0;
+    background: var(--wine);
+    color: var(--cream);
+    padding: 16px 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .countdown-card::before{
+    content:'';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid rgba(201,169,97,0.3);
+    pointer-events: none;
+    border-radius: 2px;
+  }
+  .countdown-card .label{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-bright);
+    line-height: 1.4;
+  }
+  .countdown-card .label .date{
+    color: var(--cream);
+    opacity: 0.7;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    margin-top: 4px;
+    display: block;
+  }
+  .countdown-card .num{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 44px;
+    font-weight: 800;
+    color: var(--gold-bright);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    position: relative;
+    z-index: 1;
+  }
+  .countdown-card .num small{
+    font-size: 11px;
+    font-style: normal;
+    font-family: 'DM Mono', monospace;
+    color: var(--cream);
+    opacity: 0.7;
+    letter-spacing: 0.15em;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .newsflash{
+    margin-top: 16px;
+    background: var(--wine-deep);
+    color: var(--cream);
+    overflow: hidden;
+    border-top: 1px solid var(--gold);
+    border-bottom: 1px solid var(--gold);
+  }
+  .nf-track{
+    display: inline-block;
+    white-space: nowrap;
+    animation: nf-tick 60s linear infinite;
+    padding: 10px 0;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    font-style: italic;
+  }
+  .nf-track span{ margin: 0 12px; }
+  .nf-track b{
+    color: var(--gold-bright);
+    font-style: normal;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    margin-right: 4px;
+  }
+  @keyframes nf-tick{
+    from{ transform: translateX(0); }
+    to{ transform: translateX(-50%); }
+  }
+
+  .tabs{
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    border-bottom: 1px solid var(--wine);
+    z-index: 50;
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar{ display: none; }
+  .tab{
+    flex-shrink: 0;
+    padding: 14px 16px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .tab.active{
+    color: var(--wine);
+    border-bottom-color: var(--wine);
+  }
+
+  .content{ padding: 20px 16px 0; }
+  .panel{ display: none; }
+  .panel.active{ display: block; animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn{
+    from{ opacity: 0; transform: translateY(4px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+
+  .sec-head{
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--wine);
+  }
+  .sec-head .roman{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--gold);
+    font-weight: 600;
+  }
+  .sec-head h2{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--wine);
+    letter-spacing: -0.01em;
+  }
+  .sec-head .meta{
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+
+  .squad-card{
+    background: linear-gradient(135deg, var(--wine) 0%, var(--wine-deep) 100%);
+    color: var(--cream);
+    padding: 18px;
+    margin-bottom: 16px;
+    border-radius: 4px;
+    position: relative;
+  }
+  .squad-card::before{
+    content:'';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid rgba(201,169,97,0.25);
+    pointer-events: none;
+    border-radius: 2px;
+  }
+  .squad-card .title{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--gold-bright);
+    margin-bottom: 4px;
+  }
+  .squad-card .sub{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--cream);
+    opacity: 0.7;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .squad-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .squad-grid .stat{
+    border-left: 1px solid rgba(201,169,97,0.3);
+    padding-left: 10px;
+  }
+  .squad-grid .stat .v{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    line-height: 1;
+  }
+  .squad-grid .stat .v .u{
+    font-size: 11px;
+    color: var(--cream);
+    opacity: 0.7;
+    margin-left: 2px;
+    font-weight: 400;
+  }
+  .squad-grid .stat .l{
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    color: var(--cream);
+    opacity: 0.7;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .big-card{
+    background: var(--cream);
+    border: 1px solid rgba(74,14,31,0.25);
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+    position: relative;
+  }
+  .big-card .lbl{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin-bottom: 6px;
+  }
+  .big-card .v{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--wine);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .big-card .v .unit{
+    font-size: 13px;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--wine-light);
+    margin-left: 3px;
+  }
+  .big-card .delta{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+  .big-card .delta.up{ color: var(--moss); }
+  .big-card .delta.down{ color: var(--rust); }
+
+  .big-card.groom{
+    background: var(--wine);
+    color: var(--cream);
+    border-color: var(--gold);
+  }
+  .big-card.groom .lbl{ color: var(--gold-bright); }
+  .big-card.groom .v{ color: var(--gold-bright); }
+  .big-card.groom .v .unit{ color: var(--cream); opacity: 0.7; }
+  .big-card.groom .meta{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--cream);
+    opacity: 0.85;
+    margin-top: 6px;
+  }
+
+  .stat-row{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .stat-row .big-card{ margin-bottom: 0; }
+
+  .runner-card{
+    background: var(--cream);
+    border: 1px solid rgba(74,14,31,0.2);
+    padding: 14px 14px 12px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    position: relative;
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    gap: 12px;
+    align-items: center;
+  }
+  .runner-card.top{
+    background: var(--wine);
+    color: var(--cream);
+    border-color: var(--gold);
+  }
+  .runner-card .rank{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--wine);
+    text-align: center;
+    line-height: 1;
+  }
+  .runner-card.top .rank{ color: var(--gold-bright); }
+
+  .runner-card .info .name{
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .runner-card.top .info .name{ color: var(--cream); }
+  .runner-card .info .badge{
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border: 1px solid var(--gold);
+    border-radius: 2px;
+    line-height: 1;
+  }
+  .runner-card.top .info .badge{ color: var(--gold-bright); border-color: var(--gold-bright); }
+  .runner-card .info .badge.rust{ color: var(--rust); border-color: var(--rust); }
+  .runner-card .info .meta{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin-top: 4px;
+  }
+  .runner-card.top .info .meta{ color: var(--cream); opacity: 0.75; }
+
+  .runner-card .stat{ text-align: right; }
+  .runner-card .stat .v{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--wine);
+    line-height: 1;
+  }
+  .runner-card.top .stat .v{ color: var(--gold-bright); }
+  .runner-card .stat .v .u{
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.7;
+    margin-left: 1px;
+  }
+  .runner-card .stat .l{
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    color: var(--wine-light);
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+  .runner-card.top .stat .l{ color: var(--cream); opacity: 0.75; }
+
+  .runner-card .extras{
+    grid-column: 1 / -1;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(74,14,31,0.2);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .runner-card.top .extras{ border-top-color: rgba(201,169,97,0.3); }
+  .runner-card .extras .x{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .runner-card .extras .x .l{
+    color: var(--wine-light);
+    margin-bottom: 2px;
+  }
+  .runner-card.top .extras .x .l{ color: var(--cream); opacity: 0.65; }
+  .runner-card .extras .x .v{
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    font-style: italic;
+    color: var(--wine);
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .runner-card.top .extras .x .v{ color: var(--gold-bright); }
+
+  .awards-list{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .award{
+    background: var(--paper);
+    border: 1px solid var(--wine);
+    padding: 12px 14px;
+    border-radius: 4px;
+    display: grid;
+    grid-template-columns: 38px 1fr;
+    gap: 12px;
+    align-items: center;
+  }
+  .award .icon{
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--wine);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--cream);
+    font-size: 18px;
+  }
+  .award .title{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--wine);
+    line-height: 1.2;
+  }
+  .award .winner{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+  .award .winner b{ color: var(--rust); font-weight: 500; }
+
+  .award.featured{
+    background: var(--wine);
+    color: var(--cream);
+    border-color: var(--gold);
+  }
+  .award.featured .icon{
+    background: var(--wine-deep);
+    border-color: var(--gold);
+  }
+  .award.featured .title{ color: var(--gold-bright); }
+  .award.featured .winner{ color: var(--cream); }
+  .award.featured .winner b{ color: var(--gold-bright); }
+
+  .award.shame{ border-left: 3px solid var(--rust); }
+  .award.shame .icon{
+    border-color: var(--rust);
+    background: rgba(168,78,46,0.08);
+  }
+  .award.shame .title{ color: var(--rust); }
+
+  .mini-board{
+    background: var(--cream);
+    border: 1px solid rgba(74,14,31,0.2);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+  }
+  .mini-board h3{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--wine);
+    border-bottom: 1px dashed var(--wine);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .mini-board h3 .meta{
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    font-style: normal;
+    font-weight: 400;
+  }
+  .mini-row{
+    display: grid;
+    grid-template-columns: 20px 1fr auto;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(74,14,31,0.08);
+    align-items: center;
+  }
+  .mini-row:last-child{ border-bottom: none; }
+  .mini-row .pos{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--wine-light);
+  }
+  .mini-row.top .pos{ color: var(--gold); }
+  .mini-row .name{
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .mini-row .v{
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--wine);
+  }
+  .mini-row .v.good{ color: var(--moss); }
+  .mini-row .v.bad{ color: var(--rust); }
+
+  .form-mini{
+    display: inline-flex;
+    gap: 3px;
+    align-items: center;
+  }
+  .form-mini .d{
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(74,14,31,0.15);
+    border: 1px solid rgba(74,14,31,0.3);
+  }
+  .form-mini .d.on{ background: var(--moss); border-color: var(--moss); }
+  .form-mini .d.partial{ background: var(--gold); border-color: var(--gold); }
+  .form-mini .d.skip{ background: var(--rust); border-color: var(--rust); }
+
+  .plan-card{
+    background: var(--wine);
+    color: var(--cream);
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 4px;
+    position: relative;
+  }
+  .plan-card h3{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--gold-bright);
+    margin-bottom: 6px;
+  }
+  .plan-card p{
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.5;
+    opacity: 0.9;
+    margin-bottom: 14px;
+  }
+  .plan-targets{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(201,169,97,0.3);
+  }
+  .plan-targets .t{ text-align: center; }
+  .plan-targets .t .v{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    line-height: 1;
+  }
+  .plan-targets .t .l{
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    color: var(--cream);
+    opacity: 0.7;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .phases-mobile{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .phase{
+    background: var(--paper);
+    border: 1px solid var(--wine);
+    border-radius: 4px;
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    position: relative;
+  }
+  .phase.now{
+    background: var(--cream);
+    border-width: 2px;
+  }
+  .phase .num{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .phase .body .name{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--wine);
+  }
+  .phase .body .desc{
+    font-size: 12px;
+    color: var(--wine-light);
+    margin-top: 2px;
+    font-style: italic;
+  }
+  .phase .when{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    text-align: right;
+  }
+  .phase.now::before{
+    content: 'NOW';
+    position: absolute;
+    top: -8px;
+    right: 10px;
+    background: var(--rust);
+    color: var(--paper);
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+
+  .week-block{
+    background: var(--cream);
+    border: 1px solid var(--wine);
+    border-radius: 4px;
+    padding: 14px;
+  }
+  .week-block h4{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--wine);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--wine);
+  }
+  .workouts-mobile{
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .workout-row{
+    display: grid;
+    grid-template-columns: 38px 1fr auto;
+    gap: 12px;
+    padding: 10px 12px;
+    align-items: center;
+    background: var(--paper);
+    border: 1px solid rgba(74,14,31,0.2);
+    border-radius: 3px;
+  }
+  .workout-row.long{
+    background: var(--wine);
+    color: var(--cream);
+    border-color: var(--gold);
+  }
+  .workout-row.rest{
+    background: repeating-linear-gradient(45deg, var(--paper), var(--paper) 4px, var(--cream-warm) 4px, var(--cream-warm) 8px);
+    opacity: 0.7;
+  }
+  .workout-row .day{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    font-weight: 500;
+  }
+  .workout-row.long .day{ color: var(--gold-bright); }
+  .workout-row .type{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--wine);
+  }
+  .workout-row.long .type{ color: var(--gold-bright); }
+  .workout-row .v{
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--ink);
+  }
+  .workout-row.long .v{ color: var(--cream); }
+
+  .medoc-card{
+    background: linear-gradient(135deg, var(--wine) 0%, var(--wine-deep) 100%);
+    color: var(--cream);
+    padding: 18px;
+    margin-bottom: 16px;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+  .medoc-card::before{
+    content: '🍷';
+    position: absolute;
+    font-size: 180px;
+    right: -30px;
+    top: -40px;
+    opacity: 0.06;
+    transform: rotate(-15deg);
+  }
+  .medoc-stats{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .medoc-stats .s{ text-align: center; }
+  .medoc-stats .s .num{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold-bright);
+    line-height: 1;
+  }
+  .medoc-stats .s .num small{ font-size: 14px; }
+  .medoc-stats .s .l{
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--cream);
+    opacity: 0.8;
+    margin-top: 6px;
+  }
+
+  .costume-block{
+    background: var(--paper);
+    border: 1px solid var(--wine);
+    border-radius: 4px;
+    padding: 16px;
+  }
+  .costume-block h4{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--wine);
+  }
+  .costume-block .sub{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--wine-light);
+    text-transform: uppercase;
+    margin-top: 4px;
+    margin-bottom: 14px;
+  }
+  .costume-block .sub b{ color: var(--rust); font-weight: 500; }
+  .costume-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .costume{
+    border: 1px solid rgba(74,14,31,0.3);
+    padding: 14px 10px;
+    text-align: center;
+    background: var(--cream);
+    border-radius: 3px;
+  }
+  .costume .emoji{ font-size: 28px; }
+  .costume .name{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--wine);
+    margin-top: 6px;
+  }
+  .costume .votes{
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    color: var(--wine-light);
+    margin-top: 4px;
+  }
+  .costume.leading{
+    background: var(--wine);
+    color: var(--cream);
+    border-color: var(--gold);
+  }
+  .costume.leading .name{ color: var(--gold-bright); }
+  .costume.leading .votes{ color: var(--cream); opacity: 0.8; }
+
+  .footer{
+    margin-top: 32px;
+    padding: 20px 16px;
+    border-top: 1px solid var(--wine);
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+  .footer em{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--wine);
+    font-size: 13px;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  @media (min-width: 500px){
+    body{
+      background: #1a0a0e;
+      padding: 20px 0 60px;
+    }
+    body::before{ display: none; }
+    .app{
+      max-width: 390px;
+      background: var(--paper);
+      background-image:
+        radial-gradient(ellipse at top, rgba(74,14,31,0.05), transparent 60%),
+        radial-gradient(ellipse at bottom, rgba(201,169,97,0.08), transparent 60%);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 8px #2a1a1e, 0 0 0 9px #444;
+      border-radius: 36px;
+      overflow: hidden;
+      position: relative;
+      min-height: 800px;
+    }
+    .app::after{
+      content:'';
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 24px;
+      background: #000;
+      border-radius: 14px;
+      z-index: 100;
+    }
+    .header{ padding-top: 50px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="crest">
+      <svg viewBox="0 0 40 40" fill="none">
+        <path d="M20 4 L24 14 L20 22 L16 14 Z" fill="#4a0e1f"/>
+        <path d="M20 22 L20 34" stroke="#4a0e1f" stroke-width="1.5"/>
+        <path d="M14 32 L26 32" stroke="#4a0e1f" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <h1>Le Louis 26</h1>
+    <div class="sub">A Stag Dossier · Médoc MMXXVI</div>
+  </header>
+
+  <div class="countdown-card">
+    <div class="label">
+      Days Until<br>Glory
+      <span class="date">5 September 2026</span>
+    </div>
+    <div class="num">116<small>days</small></div>
+  </div>
+
+  <div class="newsflash">
+    <div class="nf-track">
+        <span><b>POLL:</b> Top Gun Pilots leading the costume vote — leading</span>
+        <span><b>POLL:</b> Top Gun Pilots leading the costume vote — leading</span>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="standings">Standings</button>
+    <button class="tab" data-tab="awards">Awards</button>
+    <button class="tab" data-tab="stats">Stats</button>
+    <button class="tab" data-tab="plan">Plan</button>
+    <button class="tab" data-tab="medoc">Médoc</button>
+  </nav>
+
+  <main class="content">
+
+    <!-- ============ OVERVIEW ============ -->
+    <section class="panel active" data-panel="overview">
+
+      <div class="squad-card">
+        <div class="title">Squad Total</div>
+        <div class="sub">Last 7 days</div>
+        <div class="squad-grid">
+          <div class="stat"><div class="v">0<span class="u">km</span></div><div class="l">Distance</div></div>
+          <div class="stat"><div class="v">0</div><div class="l">Sessions</div></div>
+          <div class="stat"><div class="v">—</div><div class="l">Avg pace</div></div>
+        </div>
+      </div>
+
+      <div class="big-card groom">
+        <div class="lbl">Le Groom · #1</div>
+        <div class="v">Louis Illig</div>
+        <div class="meta">—km · 0-day streak · —/km</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="big-card">
+          <div class="lbl">Group Predicted</div>
+          <div class="v">—<span class="unit">:00</span></div>
+          <div class="delta down">—</div>
+        </div>
+        <div class="big-card">
+          <div class="lbl">Top Performer</div>
+          <div class="v">Louis</div>
+          <div class="delta up">▲ — predicted</div>
+        </div>
+      </div>
+
+      <div class="big-card">
+        <div class="lbl">Squad Elevation · Last 60 days</div>
+        <div class="v">0<span class="unit">m</span></div>
+        <div class="delta up">▲ Vertical metres climbed</div>
+      </div>
+
+      <div class="big-card">
+        <div class="lbl">vs Last Week</div>
+        <div class="v">
+            —
+        </div>
+        <div class="delta ">
+— First week of data
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ STANDINGS ============ -->
+    <section class="panel" data-panel="standings">
+      <div class="sec-head">
+        <span class="roman">I.</span>
+        <h2>Standings</h2>
+        <span class="meta">Foundation</span>
+      </div>
+
+      <div class="runner-card top">
+        <div class="rank">I</div>
+        <div class="info">
+          <div class="name">Louis Illig
+              <span class="badge">★ The Groom</span>
+          </div>
+          <div class="meta">not connected — visit /connect.html</div>
+        </div>
+        <div class="stat">
+          <div class="v">—</div>
+          <div class="l">—</div>
+        </div>
+        <div class="extras">
+          <div class="x"><div class="l">This wk</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Total</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+        </div>
+      </div>
+      <div class="runner-card">
+        <div class="rank">II</div>
+        <div class="info">
+          <div class="name">Freddy B.
+          </div>
+          <div class="meta">not connected — visit /connect.html</div>
+        </div>
+        <div class="stat">
+          <div class="v">—</div>
+          <div class="l">—</div>
+        </div>
+        <div class="extras">
+          <div class="x"><div class="l">This wk</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Total</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+        </div>
+      </div>
+      <div class="runner-card">
+        <div class="rank">III</div>
+        <div class="info">
+          <div class="name">Matt M.
+          </div>
+          <div class="meta">not connected — visit /connect.html</div>
+        </div>
+        <div class="stat">
+          <div class="v">—</div>
+          <div class="l">—</div>
+        </div>
+        <div class="extras">
+          <div class="x"><div class="l">This wk</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Total</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+        </div>
+      </div>
+      <div class="runner-card">
+        <div class="rank">IV</div>
+        <div class="info">
+          <div class="name">Will J.
+          </div>
+          <div class="meta">not connected — visit /connect.html</div>
+        </div>
+        <div class="stat">
+          <div class="v">—</div>
+          <div class="l">—</div>
+        </div>
+        <div class="extras">
+          <div class="x"><div class="l">This wk</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Total</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+        </div>
+      </div>
+      <div class="runner-card">
+        <div class="rank">V</div>
+        <div class="info">
+          <div class="name">[Brother 1]
+              <span class="badge rust">Sibling Rivalry</span>
+          </div>
+          <div class="meta">not connected — visit /connect.html</div>
+        </div>
+        <div class="stat">
+          <div class="v">—</div>
+          <div class="l">—</div>
+        </div>
+        <div class="extras">
+          <div class="x"><div class="l">This wk</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Total</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+        </div>
+      </div>
+      <div class="runner-card">
+        <div class="rank">VI</div>
+        <div class="info">
+          <div class="name">[Brother 2]
+              <span class="badge rust">Sibling Rivalry</span>
+          </div>
+          <div class="meta">not connected — visit /connect.html</div>
+        </div>
+        <div class="stat">
+          <div class="v">—</div>
+          <div class="l">—</div>
+        </div>
+        <div class="extras">
+          <div class="x"><div class="l">This wk</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Total</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+        </div>
+      </div>
+      <div class="runner-card">
+        <div class="rank">VII</div>
+        <div class="info">
+          <div class="name">[Friend 10]
+          </div>
+          <div class="meta">not connected — visit /connect.html</div>
+        </div>
+        <div class="stat">
+          <div class="v">—</div>
+          <div class="l">—</div>
+        </div>
+        <div class="extras">
+          <div class="x"><div class="l">This wk</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Total</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+        </div>
+      </div>
+      <div class="runner-card">
+        <div class="rank">VIII</div>
+        <div class="info">
+          <div class="name">[Friend 11]
+          </div>
+          <div class="meta">not connected — visit /connect.html</div>
+        </div>
+        <div class="stat">
+          <div class="v">—</div>
+          <div class="l">—</div>
+        </div>
+        <div class="extras">
+          <div class="x"><div class="l">This wk</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Total</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+        </div>
+      </div>
+      <div class="runner-card">
+        <div class="rank">IX</div>
+        <div class="info">
+          <div class="name">[Friend 12]
+          </div>
+          <div class="meta">not connected — visit /connect.html</div>
+        </div>
+        <div class="stat">
+          <div class="v">—</div>
+          <div class="l">—</div>
+        </div>
+        <div class="extras">
+          <div class="x"><div class="l">This wk</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Total</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+        </div>
+      </div>
+      <div class="runner-card">
+        <div class="rank">X</div>
+        <div class="info">
+          <div class="name">[Friend 13]
+          </div>
+          <div class="meta">not connected — visit /connect.html</div>
+        </div>
+        <div class="stat">
+          <div class="v">—</div>
+          <div class="l">—</div>
+        </div>
+        <div class="extras">
+          <div class="x"><div class="l">This wk</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Total</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+        </div>
+      </div>
+      <div class="runner-card">
+        <div class="rank">XI</div>
+        <div class="info">
+          <div class="name">[Friend 7]
+          </div>
+          <div class="meta">not connected — visit /connect.html</div>
+        </div>
+        <div class="stat">
+          <div class="v">—</div>
+          <div class="l">—</div>
+        </div>
+        <div class="extras">
+          <div class="x"><div class="l">This wk</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Total</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+        </div>
+      </div>
+      <div class="runner-card">
+        <div class="rank">XII</div>
+        <div class="info">
+          <div class="name">[Friend 8]
+          </div>
+          <div class="meta">not connected — visit /connect.html</div>
+        </div>
+        <div class="stat">
+          <div class="v">—</div>
+          <div class="l">—</div>
+        </div>
+        <div class="extras">
+          <div class="x"><div class="l">This wk</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Total</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+        </div>
+      </div>
+      <div class="runner-card">
+        <div class="rank">XIII</div>
+        <div class="info">
+          <div class="name">[Friend 9]
+          </div>
+          <div class="meta">not connected — visit /connect.html</div>
+        </div>
+        <div class="stat">
+          <div class="v">—</div>
+          <div class="l">—</div>
+        </div>
+        <div class="extras">
+          <div class="x"><div class="l">This wk</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Total</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AWARDS ============ -->
+    <section class="panel" data-panel="awards">
+      <div class="sec-head">
+        <span class="roman">II.</span>
+        <h2>Hall of Fame &amp; Shame</h2>
+        <span class="meta">Updated daily</span>
+      </div>
+
+      <div class="awards-list">
+          <div class="award featured">
+            <div class="icon">🤵</div>
+            <div>
+              <div class="title">Le Groom</div>
+              <div class="winner">Top of the table — <b>Louis</b>, leading by example. As he should.</div>
+            </div>
+          </div>
+          <div class="award">
+            <div class="icon">👯</div>
+            <div>
+              <div class="title">The Sibling Rivalry</div>
+              <div class="winner">Waiting on a brother to log a run.</div>
+            </div>
+          </div>
+          <div class="award">
+            <div class="icon">👑</div>
+            <div>
+              <div class="title">Top Dog (non-Illig)</div>
+              <div class="winner">Up for grabs.</div>
+            </div>
+          </div>
+          <div class="award">
+            <div class="icon">📈</div>
+            <div>
+              <div class="title">Biggest Glow-Up</div>
+              <div class="winner">Nobody's improving yet — keep showing up.</div>
+            </div>
+          </div>
+          <div class="award">
+            <div class="icon">🔥</div>
+            <div>
+              <div class="title">La Flamme</div>
+              <div class="winner">No active streaks. Embarrassing.</div>
+            </div>
+          </div>
+          <div class="award">
+            <div class="icon">🌅</div>
+            <div>
+              <div class="title">L'Aurore</div>
+              <div class="winner">Everyone's allergic to mornings this week.</div>
+            </div>
+          </div>
+          <div class="award shame">
+            <div class="icon">👻</div>
+            <div>
+              <div class="title">The Ghost</div>
+              <div class="winner">Everyone ran today. Miracle.</div>
+            </div>
+          </div>
+          <div class="award shame">
+            <div class="icon">🍷</div>
+            <div>
+              <div class="title">The Hangover Hero</div>
+              <div class="winner">No suspicious Sundays. Yet.</div>
+            </div>
+          </div>
+      </div>
+    </section>
+
+    <!-- ============ STATS ============ -->
+    <section class="panel" data-panel="stats">
+      <div class="sec-head">
+        <span class="roman">III.</span>
+        <h2>The Detail</h2>
+        <span class="meta">Top 5</span>
+      </div>
+
+      <div class="mini-board">
+        <h3>Longest Run <span class="meta">All-time PB</span></h3>
+          <div class="mini-row"><span class="pos">—</span><span class="name">No long runs yet</span><span class="v">—</span></div>
+      </div>
+
+      <div class="mini-board">
+        <h3>Pace Improvement <span class="meta">Last 30d · /km</span></h3>
+          <div class="mini-row"><span class="pos">—</span><span class="name">Need 60 days of data</span><span class="v">—</span></div>
+      </div>
+
+      <div class="mini-board">
+        <h3>Elevation <span class="meta">60 days · m</span></h3>
+          <div class="mini-row"><span class="pos">—</span><span class="name">No elevation data</span><span class="v">—</span></div>
+      </div>
+
+      <div class="mini-board">
+        <h3>Avg Heart Rate <span class="meta">Lower = aerobic</span></h3>
+          <div class="mini-row"><span class="pos">—</span><span class="name">No HR data yet</span><span class="v">—</span></div>
+      </div>
+
+      <div class="mini-board">
+        <h3>Form <span class="meta">Last 5 sessions</span></h3>
+          <div class="mini-row"><span class="pos">—</span><span class="name">Waiting on runs</span><span class="v">—</span></div>
+      </div>
+    </section>
+
+    <!-- ============ PLAN ============ -->
+    <section class="panel" data-panel="plan">
+      <div class="sec-head">
+        <span class="roman">IV.</span>
+        <h2>The Plan</h2>
+        <span class="meta">18 weeks</span>
+      </div>
+
+      <div class="plan-card">
+        <h3>Path to 03:59:59</h3>
+        <p>Sub-four needs 5:40/km on race day. Médoc adds time at every château — treat it as the stretch goal. Realistic win: everyone finishes in costume.</p>
+        <div class="plan-targets">
+          <div class="t"><div class="v">5:40</div><div class="l">Sub-4 pace</div></div>
+          <div class="t"><div class="v">4:30</div><div class="l">Realistic</div></div>
+          <div class="t"><div class="v">6:30</div><div class="l">Cutoff</div></div>
+        </div>
+      </div>
+
+      <div class="phases-mobile">
+          <div class="phase now">
+            <div class="num">I</div>
+            <div class="body">
+              <div class="name">Foundation</div>
+              <div class="desc">Aerobic base · 40km/wk</div>
+            </div>
+            <div class="when">Wks 1–4 · May</div>
+          </div>
+          <div class="phase">
+            <div class="num">II</div>
+            <div class="body">
+              <div class="name">Build</div>
+              <div class="desc">Intervals · 24km longs</div>
+            </div>
+            <div class="when">Wks 5–10 · Jun–Jul</div>
+          </div>
+          <div class="phase">
+            <div class="num">III</div>
+            <div class="body">
+              <div class="name">Peak</div>
+              <div class="desc">32km longs · MP efforts</div>
+            </div>
+            <div class="when">Wks 11–16 · Jul–Aug</div>
+          </div>
+          <div class="phase">
+            <div class="num">IV</div>
+            <div class="body">
+              <div class="name">Taper</div>
+              <div class="desc">Halve volume · carb up</div>
+            </div>
+            <div class="when">Wks 17–18 · Aug–Sep</div>
+          </div>
+      </div>
+
+      <div class="week-block">
+        <h4>This week — pick 3–6 days</h4>
+        <div class="workouts-mobile">
+            <div class="workout-row">
+              <div class="day">Mon</div>
+              <div class="type">Easy</div>
+              <div class="v">5km Z2</div>
+            </div>
+            <div class="workout-row">
+              <div class="day">Tue</div>
+              <div class="type">Easy</div>
+              <div class="v">6km Z2</div>
+            </div>
+            <div class="workout-row rest">
+              <div class="day">Wed</div>
+              <div class="type">Rest</div>
+              <div class="v">or yoga</div>
+            </div>
+            <div class="workout-row">
+              <div class="day">Thu</div>
+              <div class="type">Easy</div>
+              <div class="v">7km Z2</div>
+            </div>
+            <div class="workout-row rest">
+              <div class="day">Fri</div>
+              <div class="type">Rest</div>
+              <div class="v">or walk</div>
+            </div>
+            <div class="workout-row">
+              <div class="day">Sat</div>
+              <div class="type">Strides</div>
+              <div class="v">5km + 6×100m</div>
+            </div>
+            <div class="workout-row long">
+              <div class="day">Sun</div>
+              <div class="type">Long Run</div>
+              <div class="v">14km @ 6:00</div>
+            </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MEDOC ============ -->
+    <section class="panel" data-panel="medoc">
+      <div class="sec-head">
+        <span class="roman">V.</span>
+        <h2>Le Médoc</h2>
+        <span class="meta">For motivation</span>
+      </div>
+
+      <div class="medoc-card">
+        <div class="medoc-stats">
+            <div class="s">
+              <div class="num">23</div>
+              <div class="l">Wine Stops</div>
+            </div>
+            <div class="s">
+              <div class="num">42.2<small>km</small></div>
+              <div class="l">The Distance</div>
+            </div>
+            <div class="s">
+              <div class="num">6:30</div>
+              <div class="l">Time Limit</div>
+            </div>
+        </div>
+      </div>
+
+      <div class="costume-block">
+        <h4>Costume Vote</h4>
+        <div class="sub">2026 theme: <b>The 80s</b> · closes 1 July</div>
+        <div class="costume-grid">
+            <div class="costume leading">
+              <div class="emoji">🕺</div>
+              <div class="name">Top Gun Pilots</div>
+              <div class="votes">3 votes · leading</div>
+            </div>
+            <div class="costume">
+              <div class="emoji">💪</div>
+              <div class="name">Aerobics Class</div>
+              <div class="votes">1 vote · neon leotards</div>
+            </div>
+            <div class="costume">
+              <div class="emoji">🎸</div>
+              <div class="name">Hair Metal Band</div>
+              <div class="votes">1 vote · wigs essential</div>
+            </div>
+            <div class="costume">
+              <div class="emoji">👻</div>
+              <div class="name">Ghostbusters</div>
+              <div class="votes">0 votes · proton packs?</div>
+            </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <em>« On y va, doucement. »</em>
+    Synced from Strava · 00:02 BST
+  </footer>
+
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.panel');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+      tabs.forEach(t => t.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelector(`.panel[data-panel="${target}"]`).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+</script>
+
+</body>
+</html>
