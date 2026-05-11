@@ -570,14 +570,14 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
 
     awards: dict[str, dict] = {}
 
-    # Le Groom — always Louis (the rank-1 logic enforced elsewhere too)
+    # Le Groom — always Louis, regardless of where he sits on the leaderboard
     groom = next((r for r in runners if r.cfg.get("is_groom")), None)
     if groom:
         first_name = groom.cfg["name"].split()[0]
         awards["le_groom"] = {
             "title":   "Le Groom",
             "icon":    "🤵",
-            "detail":  winner_html("Top of the table — ", first_name, ", leading by example. As he should."),
+            "detail":  winner_html("The whole reason we're here — ", first_name, ". Looking glorious at every château."),
             "featured": True,
         }
     else:
@@ -810,15 +810,14 @@ def phases_with_current(today_uk: date) -> list[dict]:
 # ─── Build the leaderboard rows that the templates iterate over ────────
 def make_runner_rows(runners: list[RunnerStats]) -> list[dict]:
     """
-    Order: Louis first (always rank I), then the rest by total_km desc.
-    Each dict matches what desktop.html.j2 and mobile.html.j2 iterate over.
+    Everyone — including the groom — is ranked on the same scale: connected
+    runners first (sorted by total km descending), disconnected runners last.
+    The groom keeps his ★ tag in the UI but earns his position like anyone else.
     """
-    groom = next((r for r in runners if r.cfg.get("is_groom")), None)
-    others = sorted(
-        [r for r in runners if not r.cfg.get("is_groom")],
-        key=lambda r: (-r.connected * 1, -r.total_km, r.cfg["name"]),
+    ordered = sorted(
+        runners,
+        key=lambda r: (not r.connected, -r.total_km, r.cfg["name"]),
     )
-    ordered = ([groom] if groom else []) + others
 
     # Progress-bar fill: relative to top runner's predicted_medoc_s.
     # We want the *fastest* (lowest seconds) to be 100%.
@@ -894,6 +893,7 @@ def main() -> None:
     by_total = sorted(runners, key=lambda r: r.total_km, reverse=True)
 
     rows         = make_runner_rows(runners)
+    groom_row    = next((r for r in rows if r["is_groom"]), None)
     group        = build_group_stats(runners, today_uk)
     week_grid, week_summary = build_week_grid(runners, today_uk)
     awards       = build_awards(runners, by_total)
@@ -916,6 +916,7 @@ def main() -> None:
         "this_week":      this_week,
         "news_flash":     news_flash,
         "runners":        rows,
+        "groom_row":      groom_row,
         "group":          group,
         "week_grid":      week_grid,
         "week_summary":   week_summary,

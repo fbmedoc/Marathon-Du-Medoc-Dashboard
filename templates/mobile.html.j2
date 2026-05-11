@@ -1050,12 +1050,13 @@
         </div>
       </div>
 
-      {% set groom_row = runners[0] %}
+      {% if groom_row %}
       <div class="big-card groom">
-        <div class="lbl">Le Groom · #1</div>
+        <div class="lbl">Le Groom · rank #{{ groom_row.rank }}</div>
         <div class="v">{{ groom_row.name }}</div>
         <div class="meta">{{ groom_row.total_km }}km · {{ groom_row.streak }}-day streak · {{ groom_row.avg_pace }}/km</div>
       </div>
+      {% endif %}
 
       <div class="stat-row">
         <div class="big-card">
@@ -1063,10 +1064,11 @@
           <div class="v">{{ group.predicted }}<span class="unit">:00</span></div>
           <div class="delta {% if 'on for sub-4' in group.predicted_delta %}up{% else %}down{% endif %}">{{ group.predicted_delta }}</div>
         </div>
+        {% set leader = runners[0] %}
         <div class="big-card">
           <div class="lbl">Top Performer</div>
-          <div class="v">{{ groom_row.name.split()[0] }}</div>
-          <div class="delta up">▲ {{ groom_row.predicted }} predicted</div>
+          <div class="v">{{ leader.name.split()[0] }}</div>
+          <div class="delta up">▲ {{ leader.predicted }} predicted</div>
         </div>
       </div>
 
