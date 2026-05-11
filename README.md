@@ -12,10 +12,10 @@ vineyards, and a fully-automated leaderboard tracking every km along the way.
 ## How it works
 
 A scheduled GitHub Actions workflow runs every morning at 07:00 UTC (08:00
-UK time). It pulls the last 60 days of activities from Strava for each
-connected runner, computes the per-runner and group stats, renders the
-desktop and mobile dashboards from Jinja2 templates, and commits the
-updated HTML. GitHub Pages serves the latest version.
+UK time). It pulls every run logged since **1 May 2026** (the training-cycle
+start) from Strava for each connected runner, computes the per-runner and
+group stats, renders the desktop and mobile dashboards from Jinja2 templates,
+and commits the updated HTML. GitHub Pages serves the latest version.
 
 ## Adding a runner
 

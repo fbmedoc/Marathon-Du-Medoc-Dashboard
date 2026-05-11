@@ -2,8 +2,9 @@
 Build the Le Louis 26 dashboard.
 
 Reads runner config from runners.json, refreshes each runner's Strava access
-token, pulls the last 60 days of runs, computes per-runner and group stats,
-then renders index.html (desktop) and mobile.html from Jinja2 templates.
+token, pulls every run since the training-cycle start (1 May 2026),
+computes per-runner and group stats, then renders index.html (desktop) and
+mobile.html from Jinja2 templates.
 
 Designed to be tolerant: missing secrets, revoked tokens, runners with zero
 activities, and Strava API hiccups all degrade gracefully to "—" rather
@@ -35,13 +36,14 @@ RUNNERS_FILE     = ROOT / "runners.json"
 INDEX_OUT        = ROOT / "index.html"
 MOBILE_OUT       = ROOT / "mobile.html"
 
-RACE_DATE        = date(2026, 9, 5)        # Marathon du Médoc 2026
-RACE_DATE_LABEL  = "5 September 2026"
-UK_TZ            = pytz.timezone("Europe/London")
-SUB_4_SECONDS    = 4 * 3600                # reference time for "to sub-4" deltas
-MEDOC_PENALTY    = 1.10                    # Médoc time = marathon × this (wine stops!)
-DAYS_BACK        = 60
-WEEK_DAYS        = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+RACE_DATE          = date(2026, 9, 5)        # Marathon du Médoc 2026
+RACE_DATE_LABEL    = "5 September 2026"
+TRAINING_START     = date(2026, 5, 1)        # All cumulative stats start here
+TRAINING_START_LBL = "since 1 May"           # Short label for the UI
+UK_TZ              = pytz.timezone("Europe/London")
+SUB_4_SECONDS      = 4 * 3600                # reference time for "to sub-4" deltas
+MEDOC_PENALTY      = 1.10                    # Médoc time = marathon × this (wine stops!)
+WEEK_DAYS          = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 STRAVA_CLIENT_ID     = os.environ.get("STRAVA_CLIENT_ID", "")
 STRAVA_CLIENT_SECRET = os.environ.get("STRAVA_CLIENT_SECRET", "")
@@ -303,10 +305,10 @@ def compute_runner(cfg: dict, today_uk: date) -> RunnerStats:
         print(f"[{cfg['id']}] token refresh failed — marking disconnected")
         return rs
 
-    # Strava expects unix seconds. Use 60 days ago at start of UK day.
-    cutoff_uk = UK_TZ.localize(datetime.combine(today_uk - timedelta(days=DAYS_BACK), time.min))
+    # Pull every run since the training-cycle start date.
+    cutoff_uk = UK_TZ.localize(datetime.combine(TRAINING_START, time.min))
     activities = fetch_activities(access, int(cutoff_uk.timestamp()))
-    print(f"[{cfg['id']}] {len(activities)} runs in last {DAYS_BACK}d")
+    print(f"[{cfg['id']}] {len(activities)} runs since {TRAINING_START.isoformat()}")
 
     rs.connected = True
     rs.activities = activities
@@ -837,7 +839,7 @@ def make_runner_rows(runners: list[RunnerStats]) -> list[dict]:
             else:
                 pct = 0
         elif r.connected:
-            meta = "no runs in 60 days"
+            meta = "no runs since 1 May"
             predicted = "—"
             sub4 = "—"
             pct = 0

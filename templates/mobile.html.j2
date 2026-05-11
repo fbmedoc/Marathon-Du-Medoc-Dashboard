@@ -1071,7 +1071,7 @@
       </div>
 
       <div class="big-card">
-        <div class="lbl">Squad Elevation · Last 60 days</div>
+        <div class="lbl">Squad Elevation · since 1 May</div>
         <div class="v">{{ group.elevation_m|comma }}<span class="unit">m</span></div>
         <div class="delta up">▲ Vertical metres climbed</div>
       </div>
@@ -1170,12 +1170,12 @@
         {% for row in mini_boards.pace_imp %}
           <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v {{ row.class|default('') }}">{{ row.value }}</span></div>
         {% else %}
-          <div class="mini-row"><span class="pos">—</span><span class="name">Need 60 days of data</span><span class="v">—</span></div>
+          <div class="mini-row"><span class="pos">—</span><span class="name">Need 30+ days of data</span><span class="v">—</span></div>
         {% endfor %}
       </div>
 
       <div class="mini-board">
-        <h3>Elevation <span class="meta">60 days · m</span></h3>
+        <h3>Elevation <span class="meta">Since 1 May · m</span></h3>
         {% for row in mini_boards.elevation %}
           <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
         {% else %}
