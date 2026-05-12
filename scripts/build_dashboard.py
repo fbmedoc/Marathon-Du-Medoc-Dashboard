@@ -17,6 +17,7 @@ import json
 import math
 import os
 import sys
+import time as time_module
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
@@ -35,6 +36,9 @@ TEMPLATES_DIR    = ROOT / "templates"
 RUNNERS_FILE     = ROOT / "runners.json"
 INDEX_OUT        = ROOT / "index.html"
 MOBILE_OUT       = ROOT / "mobile.html"
+CACHE_DIR        = ROOT / "cache"
+TOKEN_CACHE_FILE = CACHE_DIR / "strava_tokens.json"
+TOKEN_BUFFER_S   = 300                          # refresh 5 min before expiry
 
 RACE_DATE          = date(2026, 9, 5)        # Marathon du Médoc 2026
 RACE_DATE_LABEL    = "5 September 2026"
@@ -116,8 +120,28 @@ PLAN_TARGETS = {
 
 
 # ─── Strava API ────────────────────────────────────────────────────────
-def refresh_token(refresh: str) -> str | None:
-    """Exchange a refresh token for a fresh access token. None on failure."""
+def load_token_cache() -> dict:
+    """Read the persisted token cache (or return empty dict)."""
+    if not TOKEN_CACHE_FILE.exists():
+        return {}
+    try:
+        return json.loads(TOKEN_CACHE_FILE.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"  token cache unreadable, starting fresh: {e}", file=sys.stderr)
+        return {}
+
+
+def save_token_cache(cache: dict) -> None:
+    """Persist the token cache so the next run can skip refresh calls."""
+    try:
+        CACHE_DIR.mkdir(exist_ok=True)
+        TOKEN_CACHE_FILE.write_text(json.dumps(cache, indent=2), encoding="utf-8")
+    except Exception as e:
+        print(f"  token cache save failed: {e}", file=sys.stderr)
+
+
+def _exchange_refresh_token(refresh: str) -> dict | None:
+    """POST to Strava's /oauth/token. Returns the full JSON response or None."""
     if not (STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET and refresh):
         return None
     try:
@@ -132,10 +156,47 @@ def refresh_token(refresh: str) -> str | None:
             timeout=15,
         )
         r.raise_for_status()
-        return r.json().get("access_token")
+        return r.json()
     except Exception as e:
         print(f"  token refresh failed: {e}", file=sys.stderr)
         return None
+
+
+def get_access_token(runner_id: str, secret_refresh: str, cache: dict) -> str | None:
+    """
+    Get a working access token for the runner, using the cache to avoid
+    unnecessary refreshes. Strava rotates refresh tokens, so we cache the
+    latest one and prefer it; the GitHub-Secret refresh_token is a fallback
+    for cold-cache cases.
+    """
+    now = int(time_module.time())
+    entry = cache.get(runner_id, {})
+
+    # 1. Cached access_token still valid? Use it directly.
+    if entry.get("access_token") and entry.get("expires_at", 0) > now + TOKEN_BUFFER_S:
+        return entry["access_token"]
+
+    # 2. Need to refresh. Prefer the cached (most recent) refresh_token.
+    refresh_to_use = entry.get("refresh_token") or secret_refresh
+    if not refresh_to_use:
+        return None
+
+    new_tokens = _exchange_refresh_token(refresh_to_use)
+
+    # 3. Cached refresh_token failed (rotated/revoked)? Fall back to the secret.
+    if not new_tokens and entry.get("refresh_token") and entry["refresh_token"] != secret_refresh:
+        print(f"  cached refresh token invalid, falling back to secret", file=sys.stderr)
+        new_tokens = _exchange_refresh_token(secret_refresh)
+
+    if not new_tokens:
+        return None
+
+    cache[runner_id] = {
+        "access_token":  new_tokens["access_token"],
+        "refresh_token": new_tokens["refresh_token"],
+        "expires_at":    new_tokens["expires_at"],
+    }
+    return new_tokens["access_token"]
 
 
 def fetch_activities(access_token: str, after_ts: int) -> list[dict]:
@@ -249,7 +310,7 @@ class RunnerStats:
     wow_shift_km: float | None = None         # this week's km minus last week's km
 
 
-def compute_runner(cfg: dict, today_uk: date) -> RunnerStats:
+def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
     """Compute every stat the dashboard needs for one runner."""
     rs = RunnerStats(cfg=cfg)
 
@@ -259,7 +320,7 @@ def compute_runner(cfg: dict, today_uk: date) -> RunnerStats:
         print(f"[{cfg['id']}] no secret — marking disconnected")
         return rs
 
-    access = refresh_token(refresh)
+    access = get_access_token(cfg["id"], refresh, token_cache)
     if not access:
         print(f"[{cfg['id']}] token refresh failed — marking disconnected")
         return rs
@@ -1014,16 +1075,21 @@ def main() -> None:
     runners_cfg = json.loads(RUNNERS_FILE.read_text(encoding="utf-8"))
     today_uk = datetime.now(UK_TZ).date()
     days_until = max(0, (RACE_DATE - today_uk).days)
+    token_cache = load_token_cache()
+    cache_hits_before = sum(1 for v in token_cache.values() if v.get("access_token"))
 
     # Crunch per-runner stats
     runners: list[RunnerStats] = []
     for cfg in runners_cfg:
         try:
-            rs = compute_runner(cfg, today_uk)
+            rs = compute_runner(cfg, today_uk, token_cache)
         except Exception as e:
             print(f"[{cfg['id']}] unexpected error: {e}", file=sys.stderr)
             rs = RunnerStats(cfg=cfg)
         runners.append(rs)
+
+    save_token_cache(token_cache)
+    print(f"Token cache: {cache_hits_before} entries restored, {len(token_cache)} entries saved.")
 
     # Order by total_km for award lookups (groom-first ordering happens in make_runner_rows)
     by_total = sorted(runners, key=lambda r: r.total_km, reverse=True)

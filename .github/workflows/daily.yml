@@ -34,6 +34,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Restore the Strava access-token cache from previous runs so we don't
+      # have to refresh every runner's token on every build. Tokens are
+      # valid 6 hours; with 20-min cadence this cuts API calls roughly in half.
+      - name: Restore Strava token cache
+        uses: actions/cache@v4
+        with:
+          path: cache/strava_tokens.json
+          key: strava-tokens-${{ github.run_id }}
+          restore-keys: |
+            strava-tokens-
+
       - name: Build dashboard
         env:
           STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
