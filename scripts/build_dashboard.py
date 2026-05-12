@@ -708,50 +708,132 @@ def build_mini_boards(runners: list[RunnerStats]) -> dict:
 
 
 # ─── News flash auto-generator ─────────────────────────────────────────
-def build_newsflash(runners: list[RunnerStats], group: dict) -> list[dict]:
-    """A handful of one-liners derived from current data. Falls back to evergreens."""
+def build_newsflash(
+    runners: list[RunnerStats],
+    group: dict,
+    days_until: int,
+    this_week: dict,
+    plan_status: dict,
+) -> list[dict]:
+    """
+    A mix of data-driven highlights and evergreen Médoc lore. Designed to feel
+    alive even with sparse data — the marquee always has something to say.
+    """
     items: list[dict] = []
     connected = [r for r in runners if r.connected]
+    not_connected_n = sum(1 for r in runners if not r.connected)
 
-    # Louis long run highlight
+    # ── COUNTDOWN ─────────────────────────────────────────────────
+    if days_until > 84:
+        items.append({"label": "COUNTDOWN", "text": f"{days_until} days till the start gun · {days_until // 7} long Sundays to fill"})
+    elif days_until > 28:
+        items.append({"label": "COUNTDOWN", "text": f"{days_until} days till Pauillac · the months are getting smaller"})
+    elif days_until > 14:
+        items.append({"label": "COUNTDOWN", "text": f"{days_until} days · taper season approaches, try not to peak too early"})
+    elif days_until > 0:
+        items.append({"label": "COUNTDOWN", "text": f"{days_until} days · we are now officially in the panic zone"})
+    else:
+        items.append({"label": "RACE DAY",  "text": "Today is the day · on y va, doucement"})
+
+    # ── PHASE ───────────────────────────────────────────────────
+    items.append({"label": "PHASE", "text": f"Week {this_week['week_num']} of 18 — {this_week['phase']} · {this_week['focus']}"})
+
+    # ── SQUAD TARGET PROGRESS ───────────────────────────────────
+    if plan_status["connected_n"] > 0 and plan_status["total_target"] > 0:
+        if plan_status["pct"] >= 100:
+            items.append({"label": "TARGET", "text": f"Squad smashed this week's {plan_status['total_target']}km target — {plan_status['actual']}km logged. Order more electrolytes."})
+        elif plan_status["pct"] >= 70:
+            items.append({"label": "TARGET", "text": f"Squad at {plan_status['actual']}/{plan_status['total_target']}km · close, but the lads on Strava silent mode need a nudge"})
+        elif plan_status["pct"] >= 30:
+            items.append({"label": "TARGET", "text": f"Squad at {plan_status['pct']}% of weekly target · recover Sunday, ramp Monday"})
+
+    # ── ROLL CALL ───────────────────────────────────────────────
+    if not_connected_n > 0:
+        items.append({"label": "ROLL CALL", "text": f"{not_connected_n} of 13 still off the grid · they know who they are"})
+
+    # ── LOUIS LONG RUN ──────────────────────────────────────────
     louis = next((r for r in runners if r.cfg.get("is_groom")), None)
     if louis and louis.longest_km > 0:
-        items.append({"label": "BREAKING", "text": f"Louis logs {louis.longest_km:.1f}km long run — confidence at all-time high"})
+        items.append({"label": "BREAKING", "text": f"Louis logs {louis.longest_km:.1f}km long run — the groom is cooking"})
 
-    # Best brother
+    # ── SIBLING RIVALRY ─────────────────────────────────────────
     bros = [r for r in connected if r.cfg.get("is_brother")]
-    if bros:
+    if bros and louis and louis.total_km > 0:
         best_bro = max(bros, key=lambda r: r.total_km)
-        gap = (louis.total_km - best_bro.total_km) if louis else 0
-        if gap > 0:
-            items.append({"label": "RIVALRY", "text": f"{best_bro.cfg['name']} closes the gap to {int(round(gap))}km — sibling tension rising"})
+        gap = louis.total_km - best_bro.total_km
+        if gap > 0.5:
+            items.append({"label": "RIVALRY", "text": f"{best_bro.cfg['name']} sitting {int(round(gap))}km behind the groom · the family Christmas is going to be awkward"})
+        elif gap < -0.5:
+            items.append({"label": "RIVALRY", "text": f"{best_bro.cfg['name']} {int(round(-gap))}km AHEAD of Louis · the groom may need a quiet word"})
+        else:
+            items.append({"label": "RIVALRY", "text": f"Illig brothers within a km of each other · this is anyone's race"})
 
-    # Group km milestone
-    if group["total_km"] >= 100:
-        items.append({"label": "MILESTONE", "text": f"Group passes {group['total_km']}km combined — Médoc bound"})
+    # ── DARK HORSE: who's quietly putting in the work ──────────
+    non_illig = [r for r in connected if not r.cfg.get("is_brother") and not r.cfg.get("is_groom")]
+    if non_illig:
+        dh = max(non_illig, key=lambda r: r.total_km)
+        if dh.total_km >= 30:
+            items.append({"label": "DARK HORSE", "text": f"{dh.cfg['name']} quietly stacking {int(round(dh.total_km))}km · the non-Illigs are coming"})
 
-    # Biggest glow-up
+    # ── PACE GLOW-UP ────────────────────────────────────────────
     glow_cand = [r for r in connected if r.pace_improvement_s is not None and r.pace_improvement_s < -10]
     if glow_cand:
         g = min(glow_cand, key=lambda r: r.pace_improvement_s)
-        items.append({"label": "PB", "text": f"{g.cfg['name']} drops {fmt_pace_delta(g.pace_improvement_s)}/km this month — the dark horse is galloping"})
+        items.append({"label": "PB", "text": f"{g.cfg['name']} drops {fmt_pace_delta(g.pace_improvement_s)}/km in 30 days · the engine is warming up"})
 
-    # Group prediction
+    # ── GROUP PROJECTION ────────────────────────────────────────
     if group["predicted"] != "—":
-        items.append({"label": "ALERT", "text": f"Sub-4 prediction sitting at {group['predicted']} — the dream is alive"})
+        if "on for sub-4" in group["predicted_delta"]:
+            items.append({"label": "PROJECTION", "text": f"Group prediction {group['predicted']} · sub-4 is on the table, lads"})
+        else:
+            items.append({"label": "PROJECTION", "text": f"Group prediction {group['predicted']} · {group['predicted_delta']}, but we have months"})
 
-    # The Ghost
-    ghosts = [r for r in connected if r.days_since_last_run >= 7]
+    # ── KM MILESTONES ───────────────────────────────────────────
+    if group["total_km"] >= 1000:
+        items.append({"label": "MILESTONE", "text": f"Squad crosses {group['total_km']}km combined · that's London to Bordeaux on foot, ironically"})
+    elif group["total_km"] >= 500:
+        items.append({"label": "MILESTONE", "text": f"{group['total_km']}km logged · over halfway to Paris if anyone fancied a detour"})
+    elif group["total_km"] >= 200:
+        items.append({"label": "MILESTONE", "text": f"{group['total_km']}km combined · {int(group['total_km'] / 42.2)} marathons' worth between us"})
+    elif group["total_km"] >= 50:
+        items.append({"label": "MILESTONE", "text": f"{group['total_km']}km in the bank · keep stacking"})
+
+    # ── EARLY BIRDS ─────────────────────────────────────────────
+    early = sorted([r for r in connected if r.pre7am_runs_week > 0], key=lambda r: r.pre7am_runs_week, reverse=True)
+    if early:
+        e = early[0]
+        run_s = "run" if e.pre7am_runs_week == 1 else "runs"
+        items.append({"label": "DAWN PATROL", "text": f"{e.cfg['name']} clocked {e.pre7am_runs_week} pre-7am {run_s} this week · respect, fear, slight concern"})
+
+    # ── GHOST WATCH ─────────────────────────────────────────────
+    ghosts = [r for r in connected if r.days_since_last_run >= 5]
     if ghosts:
         g = max(ghosts, key=lambda r: r.days_since_last_run)
-        items.append({"label": "UPDATE", "text": f"{g.cfg['name']} \"starts Monday\" — {g.days_since_last_run} days off the gas"})
+        items.append({"label": "GHOST WATCH", "text": f"{g.cfg['name']} hasn't logged a run in {g.days_since_last_run} days · 'starts Monday' (week 4 of starting Monday)"})
 
-    # Always-on fallbacks
+    # ── STREAK ──────────────────────────────────────────────────
+    streakers = sorted([r for r in connected if r.streak >= 3], key=lambda r: r.streak, reverse=True)
+    if streakers:
+        s = streakers[0]
+        items.append({"label": "ON FIRE", "text": f"{s.cfg['name']} on a {s.streak}-day streak · the gas is on"})
+
+    # ── ALWAYS-ON EVERGREEN BITS ────────────────────────────────
+    items.extend([
+        {"label": "FACT",       "text": "Médoc has 23 wine stops along the course · 1.77 châteaux per runner if shared evenly"},
+        {"label": "REMINDER",   "text": "Oysters are served at km 38 · plan your stomach accordingly"},
+        {"label": "DISCLAIMER", "text": "Predictions use Riegel's formula, not your hangover history"},
+        {"label": "TERROIR",    "text": "Pauillac is mostly gravel · wear shoes that won't murder your feet"},
+        {"label": "CUTOFF",     "text": "6h30m race cutoff · after that they pack up the oysters and you walk home"},
+        {"label": "HOT TAKE",   "text": "The Médoc isn't a wine tour, it's a marathon with optional refreshments"},
+        {"label": "RUMOUR",     "text": "One château allegedly pours grand cru · look for the queue, join it, lose 12 minutes"},
+        {"label": "DRESS CODE", "text": "Costumes are mandatory · this is non-negotiable and yes, it'll chafe"},
+        {"label": "PSA",        "text": "If you can hold a conversation on your long run, the pace is right · if you're explaining politics, you're going too easy"},
+    ])
+
+    # Defensive fallback (shouldn't fire — we always have countdown + phase)
     if not items:
-        items = [
-            {"label": "DOSSIER", "text": "The training files are being assembled. Stand by."},
-            {"label": "MÉDOC",   "text": "23 châteaux. 42.2km. One stag-do. Pace yourselves."},
-        ]
+        items = [{"label": "STATUS", "text": "The training files are being assembled. Stand by."}]
+
     return items
 
 
@@ -952,10 +1034,10 @@ def main() -> None:
     week_grid, week_summary = build_week_grid(runners, today_uk)
     awards       = build_awards(runners, by_total)
     mini_boards  = build_mini_boards(runners)
-    news_flash   = build_newsflash(runners, group)
     phases       = phases_with_current(today_uk)
     this_week    = current_week_plan(today_uk)
     plan_status  = group_plan_status(runners, this_week)
+    news_flash   = build_newsflash(runners, group, days_until, this_week, plan_status)
 
     synced_uk = datetime.now(UK_TZ).strftime("%H:%M %Z")
 
