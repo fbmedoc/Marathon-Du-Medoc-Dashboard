@@ -2,12 +2,17 @@ name: Daily dashboard rebuild
 
 on:
   schedule:
-    # Every 20 minutes. Keeps under Strava's 2000-reads/day cap with 13
-    # connected runners (~72 builds × 26 calls = 1,872 calls/day).
-    - cron: '*/20 * * * *'
+    # Hourly cron as a safety net — webhooks do the heavy lifting now, but
+    # if Strava ever misses or our Worker is down, we still get one refresh
+    # per hour. Daily call count: 24 × ~21 fetches = ~500 calls.
+    - cron: '0 * * * *'
   workflow_dispatch:
   push:
     branches: [main]
+  # Cloudflare Worker fires this whenever any connected athlete posts/edits
+  # a run. Workflow rebuilds immediately — typically <60 sec end-to-end.
+  repository_dispatch:
+    types: [strava-webhook]
 
 permissions:
   contents: write

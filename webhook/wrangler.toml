@@ -1,0 +1,21 @@
+# Cloudflare Worker config for the Le Marathon Du Médoc 26 webhook receiver.
+#
+# Deploy:
+#   cd webhook
+#   wrangler deploy
+#
+# Set secrets (one-time, only needed once per worker):
+#   wrangler secret put STRAVA_VERIFY_TOKEN
+#   wrangler secret put GITHUB_PAT
+
+name = "medoc-26-webhook"
+main = "worker.js"
+compatibility_date = "2026-05-12"
+
+# Non-secret variable. Public — the repo name isn't sensitive.
+[vars]
+GITHUB_REPO = "fbmedoc/Marathon-Du-Medoc-Dashboard"
+
+# The Worker will be reachable at:
+#   https://medoc-26-webhook.<your-cloudflare-account>.workers.dev
+# Custom domain is optional and not needed for Strava webhooks.
