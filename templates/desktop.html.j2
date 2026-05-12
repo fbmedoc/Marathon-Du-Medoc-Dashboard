@@ -1139,13 +1139,7 @@
     <div class="hero-cell">
       <div class="lbl">Group Total · since 1 May</div>
       <div class="v">{{ group.total_km }}<span class="u">km</span></div>
-      {% if group.wow_pct is not none %}
-        <div class="delta {% if group.wow_pct > 0 %}up{% elif group.wow_pct < 0 %}down{% else %}flat{% endif %}">
-          {% if group.wow_pct > 0 %}▲{% elif group.wow_pct < 0 %}▼{% else %}—{% endif %} {{ group.wow_pct|abs }}% vs last week
-        </div>
-      {% else %}
-        <div class="delta flat">— no prior week</div>
-      {% endif %}
+      <div class="delta flat">{{ trailing_7d.total_km }}km in the last 7 days</div>
     </div>
     <div class="hero-cell">
       <div class="lbl">Group Elevation · since 1 May</div>
@@ -1196,7 +1190,7 @@
               —
             {% endif %}
           </div>
-          <div class="l">vs prior 7 days</div>
+          <div class="l">km vs prior 7d</div>
         </div>
       </div>
     </div>
