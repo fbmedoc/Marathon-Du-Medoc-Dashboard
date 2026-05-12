@@ -54,9 +54,21 @@ export default {
         return new Response("Bad request", { status: 400 });
       }
 
-      // We only care about activities — ignore athlete deauth events for now.
-      if (body.object_type !== "activity") {
-        return new Response("OK (ignored: non-activity event)", { status: 200 });
+      // We trigger a rebuild on TWO kinds of events:
+      //   1. Any activity create / update / delete (object_type === "activity")
+      //   2. An athlete deauthorising the app
+      //      (object_type === "athlete" AND updates.authorized === "false")
+      // The rebuild script's existing logic handles both — a deauthorised
+      // athlete's token refresh will fail and they'll be marked disconnected
+      // on the dashboard within ~60s.
+      const isActivity = body.object_type === "activity";
+      const isDeauth   = body.object_type === "athlete"
+                      && body.aspect_type === "update"
+                      && body.updates
+                      && body.updates.authorized === "false";
+
+      if (!isActivity && !isDeauth) {
+        return new Response(`OK (ignored: ${body.object_type}/${body.aspect_type})`, { status: 200 });
       }
 
       // Strava expects sub-2-second responses. Fire the GitHub dispatch in
