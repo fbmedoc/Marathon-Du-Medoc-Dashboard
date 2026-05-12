@@ -308,6 +308,9 @@ class RunnerStats:
     days_since_last_run: int = 999
     hangover_score: float | None = None       # Sunday HR / speed; higher = more hungover
     wow_shift_km: float | None = None         # this week's km minus last week's km
+    rest_days_this_week: int = 0              # passed days in current Mon→Sun with no run
+    avg_hr_this_week: float | None = None     # duration-weighted, requires ≥3 HR runs
+    hr_runs_this_week: int = 0
 
 
 def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
@@ -466,6 +469,24 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
             sun_scores.append(hr / spd)
     if sun_scores:
         rs.hangover_score = max(sun_scores)
+
+    # ─── Rest days so far this week (Mon..yesterday inclusive) ─────
+    # On a Monday, range is empty → 0 rest days → award shows "—".
+    rest_count = 0
+    for i in range(today_uk.weekday()):
+        day = monday_uk + timedelta(days=i)
+        if by_day.get(day, 0.0) == 0:
+            rest_count += 1
+    rs.rest_days_this_week = rest_count
+
+    # ─── This-week avg HR (duration-weighted) for The Sufferer ─────
+    hr_week_runs = [a for a in week_runs if a.get("average_heartrate")]
+    rs.hr_runs_this_week = len(hr_week_runs)
+    if len(hr_week_runs) >= 3:
+        num = sum((a["average_heartrate"] * ((a.get("moving_time") or 0))) for a in hr_week_runs)
+        den = sum(((a.get("moving_time") or 0)) for a in hr_week_runs)
+        if den > 0:
+            rs.avg_hr_this_week = num / den
 
     return rs
 
@@ -730,6 +751,35 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
         }
     else:
         awards["laurore"] = {"title": "L'Aurore", "icon": "🌅", "detail": "Everyone's allergic to mornings this week."}
+
+    # The Sufferer — highest weekly avg HR (≥3 HR runs required per runner)
+    sufferer, hr_val = first(
+        lambda r: r.connected and r.avg_hr_this_week is not None,
+        lambda r: r.avg_hr_this_week,
+    )
+    if sufferer and hr_val:
+        awards["the_sufferer"] = {
+            "title":  "The Sufferer",
+            "icon":   "🌡️",
+            "detail": winner_html("Highest avg HR this week — ", sufferer.cfg["name"], f", {int(round(hr_val))}bpm. Either training hard or chasing buses."),
+        }
+    else:
+        awards["the_sufferer"] = {"title": "The Sufferer", "icon": "🌡️", "detail": "Not enough HR data yet — strap on the monitors."}
+
+    # The Rested — most rest days so far in current week (Mon..yesterday)
+    rested, rested_d = first(
+        lambda r: r.connected and r.rest_days_this_week > 0,
+        lambda r: r.rest_days_this_week,
+    )
+    if rested and rested_d and rested_d > 0:
+        s = "day" if rested_d == 1 else "days"
+        awards["the_rested"] = {
+            "title":  "The Rested",
+            "icon":   "💤",
+            "detail": winner_html("Most rest days this week — ", rested.cfg["name"], f", {rested_d} {s}. Champion of recovery."),
+        }
+    else:
+        awards["the_rested"] = {"title": "The Rested", "icon": "💤", "detail": "No rest days clocked yet — early in the week."}
 
     # The Ghost — most days since last run (only counts connected runners)
     ghost, ghost_d = first(lambda r: r.connected, lambda r: r.days_since_last_run)
