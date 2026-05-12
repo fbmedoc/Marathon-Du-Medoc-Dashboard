@@ -1213,13 +1213,19 @@
       </div>
 
       <div class="plan-card">
-        <h3>Path to 03:59:59</h3>
-        <p>{{ plan_targets.blurb_short }}</p>
+        <h3>Week {{ this_week.week_num }} of 18 — {{ this_week.phase }}</h3>
+        <p>{{ this_week.focus }}</p>
         <div class="plan-targets">
-          <div class="t"><div class="v">{{ plan_targets.sub4_pace }}</div><div class="l">Sub-4 pace</div></div>
-          <div class="t"><div class="v">{{ plan_targets.realistic }}</div><div class="l">Realistic</div></div>
-          <div class="t"><div class="v">{{ plan_targets.cutoff }}</div><div class="l">Cutoff</div></div>
+          <div class="t"><div class="v">{{ this_week.target_km }}<span style="font-size:11px">km</span></div><div class="l">Target</div></div>
+          <div class="t"><div class="v">{% if this_week.long_km == "RACE" %}42.2<span style="font-size:11px">km</span>{% else %}{{ this_week.long_km }}<span style="font-size:11px">km</span>{% endif %}</div><div class="l">{% if this_week.long_km == "RACE" %}Race{% else %}Long run{% endif %}</div></div>
+          <div class="t"><div class="v">{{ plan_status.pct }}<span style="font-size:11px">%</span></div><div class="l">Squad done</div></div>
         </div>
+      </div>
+
+      <div class="big-card">
+        <div class="lbl">Squad tracking · {{ plan_status.status }}</div>
+        <div class="v">{{ plan_status.actual }}<span class="unit">/{{ plan_status.total_target }}km</span></div>
+        <div class="delta {{ plan_status.tone }}">{{ plan_status.target_per_runner }}km per runner this week</div>
       </div>
 
       <div class="phases-mobile">
@@ -1263,20 +1269,6 @@
             <div class="s">
               <div class="num">{{ f.num }}{% if f.unit_small %}<small>{{ f.unit }}</small>{% endif %}</div>
               <div class="l">{{ f.lbl }}</div>
-            </div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <div class="costume-block">
-        <h4>Costume Vote</h4>
-        <div class="sub">2026 theme: <b>{{ costume_poll.theme }}</b> · closes 1 July</div>
-        <div class="costume-grid">
-          {% for c in costume_poll.options %}
-            <div class="costume{% if c.leading %} leading{% endif %}">
-              <div class="emoji">{{ c.emoji }}</div>
-              <div class="name">{{ c.name }}</div>
-              <div class="votes">{{ c.votes }} vote{% if c.votes != 1 %}s{% endif %} · {{ c.note }}</div>
             </div>
           {% endfor %}
         </div>

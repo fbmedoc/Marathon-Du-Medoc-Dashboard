@@ -58,98 +58,56 @@ PROLOGUE_TEXT = (
 
 FOOTER_QUOTE = "« On y va, doucement. »"
 
-COSTUME_POLL = {
-    "title": "Group costume vote — closes 1 July",
-    "theme": "The 80s",
-    "options": [
-        {"emoji": "🕺", "name": "Top Gun Pilots",  "votes": 3, "note": "leading",       "leading": True},
-        {"emoji": "💪", "name": "Aerobics Class",  "votes": 1, "note": "neon leotards", "leading": False},
-        {"emoji": "🎸", "name": "Hair Metal Band", "votes": 1, "note": "wigs essential","leading": False},
-        {"emoji": "👻", "name": "Ghostbusters",    "votes": 0, "note": "proton packs?", "leading": False},
-    ],
-}
-
 MEDOC_FACTS = [
     {"num": "23",        "lbl": "Wine Stops",  "desc": "Châteaux pouring along the route. Pace yourself."},
     {"num": "42.2",      "lbl": "The Distance","desc": "Through Pauillac vineyards. The most beautiful suffering.","unit_small": True, "unit": "km"},
     {"num": "6:30",      "lbl": "Time Limit",  "desc": "After that they pack up the oysters. Be earlier than that."},
 ]
 
-# 18-week plan, anchored to race day. Each phase has its own template week.
-TRAINING_PHASES = [
-    {
-        "num": "I", "name": "Foundation", "when": "Wks 1–4 · May",
-        "desc_long":  "Easy aerobic base. Build to 40km/week. Just consistency.",
-        "desc_short": "Aerobic base · 40km/wk",
-        "weeks_before_race": (18, 14),
-        "workouts": [
-            {"day": "Mon", "type": "Easy",     "value": "5km Z2",        "kind": "normal"},
-            {"day": "Tue", "type": "Easy",     "value": "6km Z2",        "kind": "normal"},
-            {"day": "Wed", "type": "Rest",     "value": "or yoga",       "kind": "rest"},
-            {"day": "Thu", "type": "Easy",     "value": "7km Z2",        "kind": "normal"},
-            {"day": "Fri", "type": "Rest",     "value": "or walk",       "kind": "rest"},
-            {"day": "Sat", "type": "Strides",  "value": "5km + 6×100m",  "kind": "normal"},
-            {"day": "Sun", "type": "Long Run", "value": "14km @ 6:00",   "kind": "long"},
-        ],
-    },
-    {
-        "num": "II", "name": "Build", "when": "Wks 5–10 · Jun–Jul",
-        "desc_long":  "Intervals enter the chat. Long runs to 24km. Tempo at threshold.",
-        "desc_short": "Intervals · 24km longs",
-        "weeks_before_race": (14, 8),
-        "workouts": [
-            {"day": "Mon", "type": "Recovery", "value": "5–6km easy",      "kind": "normal"},
-            {"day": "Tue", "type": "Intervals","value": "6×800m @ 5:00",   "kind": "normal"},
-            {"day": "Wed", "type": "Rest",    "value": "or yoga",          "kind": "rest"},
-            {"day": "Thu", "type": "Tempo",   "value": "8km @ 5:30",       "kind": "normal"},
-            {"day": "Fri", "type": "Easy",    "value": "5km Z2",           "kind": "normal"},
-            {"day": "Sat", "type": "Rest",    "value": "or 30' walk",      "kind": "rest"},
-            {"day": "Sun", "type": "Long Run","value": "22km @ 6:00",      "kind": "long"},
-        ],
-    },
-    {
-        "num": "III", "name": "Peak", "when": "Wks 11–16 · Jul–Aug",
-        "desc_long":  "The hard yards. 32km long runs, marathon-pace efforts. Sleep more.",
-        "desc_short": "32km longs · MP efforts",
-        "weeks_before_race": (8, 2),
-        "workouts": [
-            {"day": "Mon", "type": "Recovery","value": "6km easy",         "kind": "normal"},
-            {"day": "Tue", "type": "MP",     "value": "10km @ 5:40",       "kind": "normal"},
-            {"day": "Wed", "type": "Rest",   "value": "or yoga",           "kind": "rest"},
-            {"day": "Thu", "type": "Intervals","value": "5×1km @ 4:50",    "kind": "normal"},
-            {"day": "Fri", "type": "Easy",   "value": "6km Z2",            "kind": "normal"},
-            {"day": "Sat", "type": "Rest",   "value": "or 30' walk",       "kind": "rest"},
-            {"day": "Sun", "type": "Long Run","value": "30km @ 5:55",      "kind": "long"},
-        ],
-    },
-    {
-        "num": "IV", "name": "Taper", "when": "Wks 17–18 · Aug–Sep",
-        "desc_long":  "Volume drops by half. Carb load. Trust the work. Pack the costume.",
-        "desc_short": "Halve volume · carb up",
-        "weeks_before_race": (2, 0),
-        "workouts": [
-            {"day": "Mon", "type": "Easy",     "value": "5km Z2",        "kind": "normal"},
-            {"day": "Tue", "type": "Strides",  "value": "4km + 4×100m",  "kind": "normal"},
-            {"day": "Wed", "type": "Rest",     "value": "or yoga",       "kind": "rest"},
-            {"day": "Thu", "type": "MP",       "value": "5km @ 5:40",    "kind": "normal"},
-            {"day": "Fri", "type": "Rest",     "value": "carb up",       "kind": "rest"},
-            {"day": "Sat", "type": "Shakeout", "value": "3km easy",      "kind": "normal"},
-            {"day": "Sun", "type": "RACE DAY", "value": "42.2km",        "kind": "long"},
-        ],
-    },
-]
+# ─── 18-week marathon plan ────────────────────────────────────────────
+# Keyed by "weeks before race day" — 18 = first week of plan, 0 = race week.
+# Plan targets a sub-4 marathon (~5:40/km marathon pace). Long runs progress
+# from 12 to 32km with deliberate cutback weeks every 3–4 weeks. Race day
+# falls on Sunday 5 Sep 2026, so weeks_to_race = (race - today) // 7.
+MARATHON_PLAN = {
+    18: {"phase_num": "I",   "phase": "Foundation", "target_km": 28, "long_km": 12, "key_session": "Easy run + 6×100m strides",       "focus": "Build aerobic base. Easy effort, just consistency."},
+    17: {"phase_num": "I",   "phase": "Foundation", "target_km": 32, "long_km": 14, "key_session": "6×400m @ 5K pace · 90s recovery",  "focus": "First intervals. Keep them short and snappy."},
+    16: {"phase_num": "I",   "phase": "Foundation", "target_km": 36, "long_km": 16, "key_session": "5×800m @ 5K pace · 2 min recovery","focus": "Adding volume slowly. Easy days stay easy."},
+    15: {"phase_num": "I",   "phase": "Foundation", "target_km": 30, "long_km": 12, "key_session": "Tempo 6km @ half-marathon pace",   "focus": "Cutback week. Recover before the build phase."},
+    14: {"phase_num": "II",  "phase": "Build",      "target_km": 40, "long_km": 18, "key_session": "6×800m @ 5K pace",                 "focus": "Build phase begins. Long run lengthens."},
+    13: {"phase_num": "II",  "phase": "Build",      "target_km": 43, "long_km": 20, "key_session": "Tempo 8km @ half-marathon pace",   "focus": "Threshold work is the engine builder."},
+    12: {"phase_num": "II",  "phase": "Build",      "target_km": 46, "long_km": 22, "key_session": "5×1km @ 5K pace · 2 min recovery", "focus": "Quality session matters most this week."},
+    11: {"phase_num": "II",  "phase": "Build",      "target_km": 38, "long_km": 16, "key_session": "Tempo 8km",                        "focus": "Cutback. Don't skip it — the next 6 weeks are heavy."},
+    10: {"phase_num": "II",  "phase": "Build",      "target_km": 50, "long_km": 24, "key_session": "6×1km @ 5K pace",                  "focus": "First long over 22km. Slow it down."},
+     9: {"phase_num": "II",  "phase": "Build",      "target_km": 53, "long_km": 26, "key_session": "12km @ marathon pace (5:40/km)",   "focus": "Practising race pace. This is the crucial one."},
+     8: {"phase_num": "III", "phase": "Peak",       "target_km": 56, "long_km": 28, "key_session": "4×1.6km @ tempo pace",             "focus": "Peak phase. Hard yards. Sleep matters."},
+     7: {"phase_num": "III", "phase": "Peak",       "target_km": 46, "long_km": 20, "key_session": "Tempo 10km",                       "focus": "Cutback. You've earned it."},
+     6: {"phase_num": "III", "phase": "Peak",       "target_km": 60, "long_km": 30, "key_session": "16km @ marathon pace",             "focus": "Biggest week. Eat. Sleep. Run. Trust the work."},
+     5: {"phase_num": "III", "phase": "Peak",       "target_km": 58, "long_km": 32, "key_session": "4×2km @ tempo pace",               "focus": "Final big long run. Pace yourself — it's a rehearsal."},
+     4: {"phase_num": "III", "phase": "Peak",       "target_km": 50, "long_km": 24, "key_session": "12km @ marathon pace",             "focus": "Volume peaking. Niggles? Back off."},
+     3: {"phase_num": "IV",  "phase": "Taper",      "target_km": 40, "long_km": 18, "key_session": "Tempo 8km",                        "focus": "Taper begins. Volume drops, intensity stays."},
+     2: {"phase_num": "IV",  "phase": "Taper",      "target_km": 30, "long_km": 14, "key_session": "Tempo 6km",                        "focus": "Halve the volume. Keep legs fresh."},
+     1: {"phase_num": "IV",  "phase": "Taper",      "target_km": 20, "long_km": 10, "key_session": "4×400m @ marathon pace",           "focus": "Race week ahead. Pack the costume."},
+     0: {"phase_num": "IV",  "phase": "Race Week",  "target_km": 12, "long_km": "RACE", "key_session": "Shakeout 3km",                 "focus": "RACE DAY 🍷 · 42.2km · château by château. On y va."},
+}
+
+PHASE_META = {
+    "I":   {"name": "Foundation", "when": "Wks 1–4 · May",      "desc_long": "Easy aerobic base. Build from 28 → 36km/wk. Just consistency.",         "desc_short": "Aerobic base · 28–36km/wk"},
+    "II":  {"name": "Build",      "when": "Wks 5–10 · Jun–Jul", "desc_long": "Intervals and threshold enter the chat. Long runs to 26km.",            "desc_short": "Intervals · 26km longs"},
+    "III": {"name": "Peak",       "when": "Wks 11–14 · Jul–Aug","desc_long": "The hard yards. 30–32km long runs at 60km weeks. Marathon-pace efforts.","desc_short": "32km longs · 60km/wk"},
+    "IV":  {"name": "Taper",      "when": "Wks 15–18 · Aug–Sep","desc_long": "Volume drops by half. Carb load. Trust the work. Pack the costume.",    "desc_short": "Halve volume · carb up"},
+}
 
 PLAN_TARGETS = {
     "headline": "An honest path to 03:59:59",
     "blurb": (
-        "Sub-four needs 5:40/km on race day. Médoc adds time at every "
-        "château — treat it as a stretch goal. The realistic win: everyone "
-        "finishes upright, in costume, with photos."
+        "Sub-four needs 5:40/km on race day. Médoc adds time at every château — "
+        "treat it as a stretch goal. The realistic win: everyone finishes "
+        "upright, in costume, with photos."
     ),
     "blurb_short": (
-        "Sub-four needs 5:40/km on race day. Médoc adds time at every "
-        "château — treat it as the stretch goal. Realistic win: everyone "
-        "finishes in costume."
+        "Sub-four needs 5:40/km on race day. Médoc adds time at every château — "
+        "treat it as the stretch goal. Realistic win: everyone finishes in costume."
     ),
     "sub4_pace": "5:40",
     "realistic":  "4:30",
@@ -288,6 +246,7 @@ class RunnerStats:
     pre7am_runs_week: int = 0
     days_since_last_run: int = 999
     hangover_score: float | None = None       # Sunday HR / speed; higher = more hungover
+    wow_shift_km: float | None = None         # this week's km minus last week's km
 
 
 def compute_runner(cfg: dict, today_uk: date) -> RunnerStats:
@@ -418,6 +377,15 @@ def compute_runner(cfg: dict, today_uk: date) -> RunnerStats:
     # ─── Days since last run ───────────────────────────────────────
     last_day = max(by_day.keys())
     rs.days_since_last_run = (today_uk - last_day).days
+
+    # ─── Week-on-week km shift (for Biggest Shift award) ──────────
+    last_monday = monday_uk - timedelta(days=7)
+    last_sunday = monday_uk - timedelta(days=1)
+    last_week_km = sum(
+        (a.get("distance", 0) / 1000.0) for a in activities
+        if last_monday <= utc_to_uk(a["start_date"]).date() <= last_sunday
+    )
+    rs.wow_shift_km = rs.week_km - last_week_km
 
     # ─── Hangover Hero: highest avg HR per m/s on Sunday runs ──────
     sun_scores = []
@@ -601,19 +569,19 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     else:
         awards["sibling_rivalry"] = {"title": "The Sibling Rivalry", "icon": "👯", "detail": "Waiting on a brother to log a run."}
 
-    # Top Dog (non-Illig) — most km this week
-    top, top_km = first(
-        lambda r: not r.cfg.get("is_brother") and not r.cfg.get("is_groom") and r.connected,
-        lambda r: r.week_km,
+    # Biggest Shift — largest week-on-week km increase
+    shift, shift_d = first(
+        lambda r: r.connected and r.wow_shift_km is not None,
+        lambda r: r.wow_shift_km,
     )
-    if top and top_km and top_km > 0:
+    if shift and shift_d is not None and shift_d > 0.5:
         awards["top_dog"] = {
-            "title":  "Top Dog (non-Illig)",
-            "icon":   "👑",
-            "detail": winner_html("Most km this week — ", top.cfg["name"], f" at {top_km:.0f}km"),
+            "title":  "Biggest Shift",
+            "icon":   "📊",
+            "detail": winner_html("Biggest jump vs last week — ", shift.cfg["name"], f", +{shift_d:.0f}km. Momentum is a hell of a drug."),
         }
     else:
-        awards["top_dog"] = {"title": "Top Dog (non-Illig)", "icon": "👑", "detail": "Up for grabs."}
+        awards["top_dog"] = {"title": "Biggest Shift", "icon": "📊", "detail": "Nobody's stepped up vs last week — opportunity wide open."}
 
     # Biggest Glow-Up — most negative pace_improvement_s (faster)
     glow, glow_d = first(
@@ -766,11 +734,6 @@ def build_newsflash(runners: list[RunnerStats], group: dict) -> list[dict]:
     if group["predicted"] != "—":
         items.append({"label": "ALERT", "text": f"Sub-4 prediction sitting at {group['predicted']} — the dream is alive"})
 
-    # Costume poll
-    leader = next((o for o in COSTUME_POLL["options"] if o.get("leading")), None)
-    if leader:
-        items.append({"label": "POLL", "text": f"{leader['name']} leading the costume vote — {leader['note']}"})
-
     # The Ghost
     ghosts = [r for r in connected if r.days_since_last_run >= 7]
     if ghosts:
@@ -786,25 +749,110 @@ def build_newsflash(runners: list[RunnerStats], group: dict) -> list[dict]:
     return items
 
 
-# ─── Training plan: pick the current phase ─────────────────────────────
-def current_phase(today_uk: date) -> dict:
-    days_to_race = max(0, (RACE_DATE - today_uk).days)
-    weeks_to_race = days_to_race // 7
-    for phase in TRAINING_PHASES:
-        lo, hi = phase["weeks_before_race"]  # (max_weeks_out, min_weeks_out)
-        if hi <= weeks_to_race <= lo:
-            return phase
-    # Past race day or before plan started — default to first/last as appropriate
-    return TRAINING_PHASES[0] if weeks_to_race > 18 else TRAINING_PHASES[-1]
+# ─── Training plan: pick the current week & generate workouts ──────────
+def weeks_to_race(today_uk: date) -> int:
+    """Whole weeks from today to race day. 0 = race week. Clamped to [0, 18]."""
+    days = (RACE_DATE - today_uk).days
+    return max(0, min(18, days // 7))
+
+
+def current_week_plan(today_uk: date) -> dict:
+    """The plan entry for the current week, with derived day-by-day workouts."""
+    w = weeks_to_race(today_uk)
+    plan = dict(MARATHON_PLAN[w])   # copy
+    plan["weeks_out"] = w
+    plan["week_num"]  = 18 - w + 1   # week 1..19 (race week = 19)
+    plan["workouts"]  = generate_workouts(plan)
+    return plan
+
+
+def generate_workouts(week_plan: dict) -> list[dict]:
+    """Derive a 7-day workout list from a week's target volume + key session."""
+    long_km     = week_plan["long_km"]
+    key_session = week_plan["key_session"]
+    target      = week_plan["target_km"]
+
+    # Race week gets a bespoke template
+    if isinstance(long_km, str):  # "RACE"
+        return [
+            {"day": "Mon", "type": "Rest",     "value": "or travel",     "kind": "rest"},
+            {"day": "Tue", "type": "Easy",     "value": "3km Z2",        "kind": "normal"},
+            {"day": "Wed", "type": "Strides",  "value": "3km + 4×100m",  "kind": "normal"},
+            {"day": "Thu", "type": "Shakeout", "value": "2–3km easy",    "kind": "normal"},
+            {"day": "Fri", "type": "Rest",     "value": "carb up",       "kind": "rest"},
+            {"day": "Sat", "type": "Shakeout", "value": "2km easy",      "kind": "normal"},
+            {"day": "Sun", "type": "RACE DAY", "value": "42.2km",        "kind": "long"},
+        ]
+
+    # Roughly: 5 running days (Mon recovery, Tue quality, Thu easy, Fri easy, Sun long).
+    # Quality day counted as ~8km of the weekly total; the rest spread across easy days.
+    easy_budget = max(0, target - long_km - 8)
+    mon_km = max(3, round(easy_budget * 0.25))
+    thu_km = max(4, round(easy_budget * 0.40))
+    fri_km = max(3, easy_budget - mon_km - thu_km)
+    if fri_km < 3:
+        fri_km = 3
+
+    return [
+        {"day": "Mon", "type": "Recovery", "value": f"{mon_km}km easy",        "kind": "normal"},
+        {"day": "Tue", "type": "Quality",  "value": key_session,               "kind": "normal"},
+        {"day": "Wed", "type": "Rest",     "value": "or yoga",                 "kind": "rest"},
+        {"day": "Thu", "type": "Easy",     "value": f"{thu_km}km Z2",          "kind": "normal"},
+        {"day": "Fri", "type": "Easy",     "value": f"{fri_km}km Z2",          "kind": "normal"},
+        {"day": "Sat", "type": "Rest",     "value": "or 30' walk",             "kind": "rest"},
+        {"day": "Sun", "type": "Long Run", "value": f"{long_km}km @ easy effort","kind": "long"},
+    ]
 
 
 def phases_with_current(today_uk: date) -> list[dict]:
-    """Return the four phases with `is_current` flag set."""
-    cur = current_phase(today_uk)
+    """The four high-level phases with the current one flagged."""
+    cur_num = current_week_plan(today_uk)["phase_num"]
     out = []
-    for p in TRAINING_PHASES:
-        out.append({**p, "is_current": (p["num"] == cur["num"])})
+    for num in ["I", "II", "III", "IV"]:
+        meta = PHASE_META[num]
+        out.append({
+            "num":         num,
+            "name":        meta["name"],
+            "when":        meta["when"],
+            "desc_long":   meta["desc_long"],
+            "desc_short":  meta["desc_short"],
+            "is_current":  num == cur_num,
+        })
     return out
+
+
+def group_plan_status(runners: list[RunnerStats], week_plan: dict) -> dict:
+    """How the squad is tracking against this week's per-runner target."""
+    connected = [r for r in runners if r.connected]
+    connected_n = len(connected)
+    target_per = week_plan["target_km"]
+    total_target = target_per * connected_n
+    actual = sum(r.week_km for r in connected)
+
+    if total_target > 0:
+        pct = (actual / total_target) * 100
+    else:
+        pct = 0
+
+    if pct >= 95:
+        status, tone = "on target", "up"
+    elif pct >= 70:
+        status, tone = "close to target", "flat"
+    elif pct > 0:
+        status, tone = f"under target ({int(round(pct))}%)", "down"
+    else:
+        status, tone = "no runs yet this week", "flat"
+
+    return {
+        "target_per_runner": target_per,
+        "long_km":           week_plan["long_km"],
+        "total_target":      round(total_target),
+        "actual":            round(actual),
+        "pct":               int(round(pct)),
+        "status":            status,
+        "tone":              tone,
+        "connected_n":       connected_n,
+    }
 
 
 # ─── Build the leaderboard rows that the templates iterate over ────────
@@ -900,7 +948,8 @@ def main() -> None:
     mini_boards  = build_mini_boards(runners)
     news_flash   = build_newsflash(runners, group)
     phases       = phases_with_current(today_uk)
-    this_week    = current_phase(today_uk)
+    this_week    = current_week_plan(today_uk)
+    plan_status  = group_plan_status(runners, this_week)
 
     synced_uk = datetime.now(UK_TZ).strftime("%H:%M %Z")
 
@@ -914,6 +963,7 @@ def main() -> None:
         "current_phase":  next((p for p in phases if p["is_current"]), phases[1]),
         "phases":         phases,
         "this_week":      this_week,
+        "plan_status":    plan_status,
         "news_flash":     news_flash,
         "runners":        rows,
         "groom_row":      groom_row,
@@ -922,7 +972,6 @@ def main() -> None:
         "week_summary":   week_summary,
         "awards":         awards,
         "mini_boards":    mini_boards,
-        "costume_poll":   COSTUME_POLL,
         "medoc_facts":    MEDOC_FACTS,
         "plan_targets":   PLAN_TARGETS,
     }

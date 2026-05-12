@@ -1347,16 +1347,27 @@
 
     <div class="plan-intro">
       <div class="text">
-        <h3>{{ plan_targets.headline }}</h3>
-        <p>{{ plan_targets.blurb }}</p>
+        <h3>Week {{ this_week.week_num }} of 18 — {{ this_week.phase }}</h3>
+        <p>{{ this_week.focus }}</p>
       </div>
       <div class="target">
-        <div class="v">{{ plan_targets.sub4_pace }}</div>
-        <div class="l">Sub-4 pace</div>
+        <div class="v">{{ this_week.target_km }}<span style="font-size:14px">km</span></div>
+        <div class="l">Target this week</div>
       </div>
       <div class="target alt">
-        <div class="v">{{ plan_targets.realistic }}</div>
-        <div class="l">Realistic finish</div>
+        <div class="v">{% if this_week.long_km == "RACE" %}42.2<span style="font-size:14px">km</span>{% else %}{{ this_week.long_km }}<span style="font-size:14px">km</span>{% endif %}</div>
+        <div class="l">{% if this_week.long_km == "RACE" %}Race day{% else %}Long run{% endif %}</div>
+      </div>
+    </div>
+
+    <!-- GROUP TRACKING vs THIS WEEK'S TARGET -->
+    <div class="week-detail" style="margin-bottom:24px;padding:18px 24px">
+      <div class="week-detail-head" style="margin-bottom:8px;padding-bottom:0;border-bottom:none">
+        <h4>Squad tracking <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--wine-light);text-transform:uppercase;margin-left:8px">{{ plan_status.status }}</span></h4>
+        <span class="pick">{{ plan_status.actual }} / {{ plan_status.total_target }} km · target {{ plan_status.target_per_runner }}km per runner</span>
+      </div>
+      <div style="height:6px;background:rgba(74,14,31,0.1);position:relative;overflow:hidden;margin-top:14px">
+        <div style="position:absolute;inset:0 auto 0 0;width:{% if plan_status.pct > 100 %}100{% else %}{{ plan_status.pct }}{% endif %}%;background:linear-gradient(90deg, var(--wine) 0%, var(--bordeaux) 70%, var(--gold) 100%);"></div>
       </div>
     </div>
 
@@ -1404,20 +1415,6 @@
           <div class="desc">{{ f.desc }}</div>
         </div>
       {% endfor %}
-    </div>
-
-    <div class="costume-poll">
-      <h4>{{ costume_poll.title }}</h4>
-      <div class="sub">2026 official theme: <b style="color:var(--rust)">{{ costume_poll.theme }}</b> · we vote, we commit, we suffer in style</div>
-      <div class="costume-options">
-        {% for c in costume_poll.options %}
-          <div class="costume{% if c.leading %} leading{% endif %}">
-            <div class="emoji">{{ c.emoji }}</div>
-            <div class="name">{{ c.name }}</div>
-            <div class="votes">{{ c.votes }} vote{% if c.votes != 1 %}s{% endif %} · {{ c.note }}</div>
-          </div>
-        {% endfor %}
-      </div>
     </div>
   </section>
 
