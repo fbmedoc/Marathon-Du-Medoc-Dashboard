@@ -308,7 +308,7 @@ class RunnerStats:
     days_since_last_run: int = 999
     hangover_score: float | None = None       # Sunday HR / speed; higher = more hungover
     wow_shift_km: float | None = None         # this week's km minus last week's km
-    rest_days_this_week: int = 0              # passed days in current Mon→Sun with no run
+    rest_days_trailing_7d: int = 0            # rest days in the past 7 calendar days (excl today)
     avg_hr_this_week: float | None = None     # duration-weighted, requires ≥3 HR runs
     hr_runs_this_week: int = 0
 
@@ -470,14 +470,15 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
     if sun_scores:
         rs.hangover_score = max(sun_scores)
 
-    # ─── Rest days so far this week (Mon..yesterday inclusive) ─────
-    # On a Monday, range is empty → 0 rest days → award shows "—".
+    # ─── Rest days in the trailing 7 days (yesterday + 6 before) ───
+    # Excludes today (still in progress). Window is rolling, so the award
+    # remains meaningful on a Monday — it just reflects last Mon→Sun.
     rest_count = 0
-    for i in range(today_uk.weekday()):
-        day = monday_uk + timedelta(days=i)
+    for i in range(1, 8):
+        day = today_uk - timedelta(days=i)
         if by_day.get(day, 0.0) == 0:
             rest_count += 1
-    rs.rest_days_this_week = rest_count
+    rs.rest_days_trailing_7d = rest_count
 
     # ─── This-week avg HR (duration-weighted) for The Sufferer ─────
     hr_week_runs = [a for a in week_runs if a.get("average_heartrate")]
@@ -733,10 +734,11 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     flame, flame_d = first(lambda r: r.connected and r.streak > 0, lambda r: r.streak)
     if flame:
         first_name = flame.cfg["name"].split()[0]
+        days_s = "day" if flame_d == 1 else "days"
         awards["la_flamme"] = {
             "title":  "La Flamme",
             "icon":   "🔥",
-            "detail": winner_html("Longest streak — ", first_name, f", {flame_d} days. Locked in."),
+            "detail": winner_html("Longest streak — ", first_name, f", {flame_d} {days_s}. Locked in."),
         }
     else:
         awards["la_flamme"] = {"title": "La Flamme", "icon": "🔥", "detail": "No active streaks. Embarrassing."}
@@ -766,28 +768,29 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     else:
         awards["the_sufferer"] = {"title": "The Sufferer", "icon": "🌡️", "detail": "Not enough HR data yet — strap on the monitors."}
 
-    # The Rested — most rest days so far in current week (Mon..yesterday)
+    # The Rested — most rest days in the trailing 7 days (rolling window)
     rested, rested_d = first(
-        lambda r: r.connected and r.rest_days_this_week > 0,
-        lambda r: r.rest_days_this_week,
+        lambda r: r.connected and r.rest_days_trailing_7d > 0,
+        lambda r: r.rest_days_trailing_7d,
     )
     if rested and rested_d and rested_d > 0:
-        s = "day" if rested_d == 1 else "days"
+        days_s = "day" if rested_d == 1 else "days"
         awards["the_rested"] = {
             "title":  "The Rested",
             "icon":   "💤",
-            "detail": winner_html("Most rest days this week — ", rested.cfg["name"], f", {rested_d} {s}. Champion of recovery."),
+            "detail": winner_html("Most rest in last 7 days — ", rested.cfg["name"], f", {rested_d} {days_s}. Champion of recovery."),
         }
     else:
-        awards["the_rested"] = {"title": "The Rested", "icon": "💤", "detail": "No rest days clocked yet — early in the week."}
+        awards["the_rested"] = {"title": "The Rested", "icon": "💤", "detail": "Nobody's rested in 7 days — admirable, or possibly broken."}
 
     # The Ghost — most days since last run (only counts connected runners)
     ghost, ghost_d = first(lambda r: r.connected, lambda r: r.days_since_last_run)
     if ghost and ghost_d is not None and ghost_d > 0:
+        days_s = "day" if ghost_d == 1 else "days"
         awards["ghost"] = {
             "title":  "The Ghost",
             "icon":   "👻",
-            "detail": winner_html("Most days since last run — ", ghost.cfg["name"], f", {ghost_d} days. 'Starts Monday.'"),
+            "detail": winner_html("Most days since last run — ", ghost.cfg["name"], f", {ghost_d} {days_s}. 'Starts Monday.'"),
             "shame":  True,
         }
     else:
