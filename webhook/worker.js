@@ -39,6 +39,17 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
+    // ─── Access-code check (called before Strava authorise) ─────
+    if (url.pathname === "/check-code") {
+      if (request.method === "OPTIONS") {
+        return new Response(null, { status: 204, headers: corsHeaders(env) });
+      }
+      if (request.method === "POST") {
+        return handleAccessCodeCheck(request, env);
+      }
+      return new Response("Method not allowed", { status: 405 });
+    }
+
     // ─── OAuth code exchange (server-side, keeps client_secret hidden) ─
     if (url.pathname === "/exchange") {
       if (request.method === "OPTIONS") {
@@ -110,9 +121,37 @@ export default {
 };
 
 /**
+ * Validate the shared access code without performing any Strava action.
+ * Used by connect.html before showing the Connect-with-Strava button, so
+ * we don't burn Strava athlete-limit slots on people who don't have the code.
+ */
+async function handleAccessCodeCheck(request, env) {
+  const cors = corsHeaders(env);
+  const jsonHeaders = { "Content-Type": "application/json", ...cors };
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ ok: false, error: "Malformed body" }), { status: 400, headers: jsonHeaders });
+  }
+
+  const supplied = (body.access_code || "").toString().trim().toLowerCase();
+  const expected = (env.ACCESS_CODE || "").toString().trim().toLowerCase();
+
+  if (expected && supplied === expected) {
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: jsonHeaders });
+  }
+  return new Response(JSON.stringify({ ok: false, error: "Wrong access code" }), { status: 401, headers: jsonHeaders });
+}
+
+/**
  * Server-side OAuth code → refresh_token exchange. The browser sends just the
  * Strava authorisation code; the Worker adds the client_secret (held here only)
  * and forwards to Strava. Returns the refresh_token plus a friendly athlete name.
+ *
+ * Also requires the shared access_code as defence-in-depth — even if someone
+ * bypasses the client-side gate, they can't get a token without it.
  */
 async function handleOAuthExchange(request, env) {
   const cors = corsHeaders(env);
@@ -123,6 +162,13 @@ async function handleOAuthExchange(request, env) {
     body = await request.json();
   } catch {
     return new Response(JSON.stringify({ error: "Malformed JSON body" }), { status: 400, headers: jsonHeaders });
+  }
+
+  // Defence-in-depth: also require the access code here.
+  const supplied = (body.access_code || "").toString().trim().toLowerCase();
+  const expected = (env.ACCESS_CODE || "").toString().trim().toLowerCase();
+  if (!expected || supplied !== expected) {
+    return new Response(JSON.stringify({ error: "Wrong or missing access code" }), { status: 401, headers: jsonHeaders });
   }
 
   if (!body.code || typeof body.code !== "string") {

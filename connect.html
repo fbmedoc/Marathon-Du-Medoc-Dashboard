@@ -253,6 +253,27 @@
   }
 
   .hidden{ display: none; }
+
+  /* Step 0 — access code input */
+  .code-input{
+    width: 100%;
+    padding: 14px 16px;
+    margin-top: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    letter-spacing: 0.1em;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--wine);
+    border-radius: 0;
+    outline: none;
+    text-align: center;
+    text-transform: lowercase;
+  }
+  .code-input:focus{
+    border-color: var(--gold);
+    box-shadow: inset 0 0 0 1px var(--gold);
+  }
 </style>
 </head>
 <body>
@@ -281,8 +302,21 @@
     copy the token it gives you, send it to Freddy on WhatsApp.
   </p>
 
+  <!-- STEP 0: Access code gate -->
+  <div class="card" id="step-0">
+    <div class="step">Step 0</div>
+    <h2>Access code</h2>
+    <p>
+      This dossier is for invited runners only. Ask Freddy if you weren't given
+      the code. It's a short word, all lowercase.
+    </p>
+    <input id="code-input" class="code-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="access code">
+    <button id="code-btn" class="btn">Continue</button>
+    <div class="err" id="code-err"></div>
+  </div>
+
   <!-- STEP 1: Send to Strava OAuth -->
-  <div class="card" id="step-1">
+  <div class="card hidden" id="step-1">
     <div class="step">Step 1</div>
     <h2>Authorise Strava</h2>
     <p>
@@ -342,15 +376,26 @@
   const STRAVA_CLIENT_ID = "243802";
   const REDIRECT_URI     = "https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/connect.html";
   const SCOPE            = "activity:read_all";
-  const EXCHANGE_URL     = "https://medoc-26-webhook.bloem-fred.workers.dev/exchange";
+  const WORKER_BASE      = "https://medoc-26-webhook.bloem-fred.workers.dev";
+  const EXCHANGE_URL     = WORKER_BASE + "/exchange";
+  const CHECK_CODE_URL   = WORKER_BASE + "/check-code";
+  const CODE_STORAGE_KEY = "medoc26.accessCode";
 
   // ─── Helpers ──────────────────────────────────────────────────────
   const $ = (id) => document.getElementById(id);
 
   function showStep(n) {
+    $("step-0").classList.toggle("hidden", n !== 0);
     $("step-1").classList.toggle("hidden", n !== 1);
     $("step-2").classList.toggle("hidden", n !== 2);
     $("step-3").classList.toggle("hidden", n !== 3);
+  }
+
+  function getStoredCode() {
+    try { return localStorage.getItem(CODE_STORAGE_KEY) || ""; } catch { return ""; }
+  }
+  function setStoredCode(c) {
+    try { localStorage.setItem(CODE_STORAGE_KEY, c); } catch {}
   }
 
   function showError(el, msg) {
@@ -370,18 +415,66 @@
     window.location.href = url.toString();
   });
 
-  // ─── On load: did Strava send us back with a code? ────────────────
+  // ─── Step 0: access code gate ────────────────────────────────────
+  $("code-btn").addEventListener("click", async () => {
+    const code = $("code-input").value.trim().toLowerCase();
+    $("code-err").style.display = "none";
+    if (!code) {
+      showError($("code-err"), "Type the code first.");
+      return;
+    }
+    const btn = $("code-btn");
+    btn.disabled = true;
+    btn.textContent = "Checking…";
+    try {
+      const r = await fetch(CHECK_CODE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ access_code: code })
+      });
+      const data = await r.json();
+      if (!r.ok || !data.ok) {
+        showError($("code-err"), "Wrong code. Ask Freddy in the group chat.");
+        btn.disabled = false;
+        btn.textContent = "Continue";
+        return;
+      }
+      setStoredCode(code);
+      enterApp();
+    } catch (err) {
+      showError($("code-err"), "Couldn't reach the server: " + err.message);
+      btn.disabled = false;
+      btn.textContent = "Continue";
+    }
+  });
+
+  // Enter is the same as clicking Continue
+  $("code-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); $("code-btn").click(); }
+  });
+
+  // ─── Decide which step to show on load ────────────────────────────
   const params = new URLSearchParams(window.location.search);
   const code   = params.get("code");
   const error  = params.get("error");
 
-  if (error) {
-    showError($("page-err"),
-      "Strava said: " + error + ". You probably tapped 'Cancel'. Refresh and try again.");
-  } else if (code) {
-    showStep(2);
+  function enterApp() {
+    if (error) {
+      showStep(1);
+      showError($("page-err"),
+        "Strava said: " + error + ". You probably tapped 'Cancel'. Refresh and try again.");
+    } else if (code) {
+      showStep(2);
+    } else {
+      showStep(1);
+    }
+  }
+
+  if (getStoredCode()) {
+    // Code already validated previously — skip Step 0
+    enterApp();
   } else {
-    showStep(1);
+    showStep(0);
   }
 
   // ─── Step 2: exchange the code for a refresh token ────────────────
@@ -395,7 +488,7 @@
       const res = await fetch(EXCHANGE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code })
+        body: JSON.stringify({ code: code, access_code: getStoredCode() })
       });
       const data = await res.json();
       if (!res.ok || !data.refresh_token) {
