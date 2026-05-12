@@ -1,9 +1,10 @@
-# Le Louis 26 — Médoc Marathon Stag Dossier
+# Le Marathon Du Médoc 26
 
-A daily-updating Strava dashboard for a stag-do running group training for the
-**Marathon du Médoc** on **5 September 2026**. Thirteen mates, one groom
-(Louis Illig), one preposterously beautiful course through the Bordeaux
-vineyards, and a fully-automated leaderboard tracking every km along the way.
+A daily-updating Strava dashboard for 13 amateurs trying to survive 18 weeks
+of marathon training before tackling the **Marathon du Médoc** on **5 September
+2026** — 42.2 km through Bordeaux vineyards with 23 wine châteaux along the
+way. Built for a stag-do running group (groom: Louis Illig); the dashboard
+publishes a fully-automated leaderboard tracking every km of the journey.
 
 **Live site:** <https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/>
 **Mobile view:** <https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/mobile.html>

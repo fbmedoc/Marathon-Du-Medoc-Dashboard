@@ -1,5 +1,5 @@
 """
-Build the Le Louis 26 dashboard.
+Build the Le Marathon Du Médoc 26 dashboard.
 
 Reads runner config from runners.json, refreshes each runner's Strava access
 token, pulls every run since the training-cycle start (1 May 2026),
@@ -927,7 +927,7 @@ def make_runner_rows(runners: list[RunnerStats]) -> list[dict]:
 
 # ─── Main render ───────────────────────────────────────────────────────
 def main() -> None:
-    print(f"Le Louis 26 dashboard build · {datetime.utcnow().isoformat()} UTC")
+    print(f"Le Marathon Du Médoc 26 dashboard build · {datetime.utcnow().isoformat()} UTC")
 
     runners_cfg = json.loads(RUNNERS_FILE.read_text(encoding="utf-8"))
     today_uk = datetime.now(UK_TZ).date()
