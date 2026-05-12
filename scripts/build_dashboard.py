@@ -669,40 +669,59 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     else:
         awards["le_groom"] = {"title": "Le Groom", "icon": "🤵", "detail": "—", "featured": True}
 
-    # Sibling Rivalry — best non-Louis Illig brother by total km
-    sib, sib_km = first(
-        lambda r: r.cfg.get("is_brother") and not r.cfg.get("is_groom") and r.connected,
-        lambda r: r.total_km,
+    # Sibling Rivalry — pecking order of all Illigs (groom + brothers) by
+    # total km since 1 May. Live ranking, leader on top, others shown behind.
+    illigs = sorted(
+        [r for r in runners if (r.cfg.get("is_groom") or r.cfg.get("is_brother"))
+                            and r.connected and r.total_km > 0],
+        key=lambda r: r.total_km,
+        reverse=True,
     )
-    if sib:
-        all_illigs = [r for r in runners if (r.cfg.get("is_brother") or r.cfg.get("is_groom"))]
-        all_illigs.sort(key=lambda r: r.total_km, reverse=True)
-        above = next((r for r in all_illigs if r.total_km > sib_km), None)
-        gap = f"By {int(round(above.total_km - sib_km))}km" if above else "by default"
+    if illigs:
+        leader = illigs[0]
+        others = illigs[1:]
+        if others:
+            tail = " · Behind: " + ", ".join(
+                f"{r.cfg['name']} ({int(round(r.total_km))}km)" for r in others
+            ) + "."
+        else:
+            tail = ". The other Illigs haven't shown up yet."
         awards["sibling_rivalry"] = {
             "title":  "The Sibling Rivalry",
             "icon":   "👯",
-            "detail": winner_html("Best brother (non-groom) — ", sib.cfg["name"], f". {gap}. For now."),
+            "detail": winner_html("Top Illig — ", leader.cfg["name"], f" ({int(round(leader.total_km))}km)" + tail),
         }
     else:
-        awards["sibling_rivalry"] = {"title": "The Sibling Rivalry", "icon": "👯", "detail": "Waiting on a brother to log a run."}
+        awards["sibling_rivalry"] = {"title": "The Sibling Rivalry", "icon": "👯", "detail": "Waiting on the Illigs to lace up."}
+
+    # Top Dog — most km this week (Mon→today), anyone eligible.
+    top, top_km = first(
+        lambda r: r.connected,
+        lambda r: r.week_km,
+    )
+    if top and top_km and top_km > 0:
+        awards["top_dog"] = {
+            "title":  "Top Dog",
+            "icon":   "👑",
+            "detail": winner_html("Most km this week — ", top.cfg["name"], f" at {top_km:.0f}km. King of the leaderboard."),
+        }
+    else:
+        awards["top_dog"] = {"title": "Top Dog", "icon": "👑", "detail": "Up for grabs — first to log a run wins it."}
 
     # Biggest Shift — strictly the biggest positive week-on-week volume jump.
-    # No volume fallback (would overlap with the leaderboard's rank-1 spot).
-    # Pairs with Biggest Glow-Up: that's pace-change, this is volume-change —
-    # different dimensions of "you're improving".
+    # Pairs with Biggest Glow-Up: that's pace-change, this is volume-change.
     shift, shift_d = first(
         lambda r: r.connected and r.wow_shift_km is not None,
         lambda r: r.wow_shift_km,
     )
     if shift and shift_d is not None and shift_d > 0.5:
-        awards["top_dog"] = {
+        awards["biggest_shift"] = {
             "title":  "Biggest Shift",
             "icon":   "📊",
             "detail": winner_html("Up most vs same days last week — ", shift.cfg["name"], f", +{shift_d:.0f}km. Momentum is a hell of a drug."),
         }
     else:
-        awards["top_dog"] = {"title": "Biggest Shift", "icon": "📊", "detail": "Squad holding steady — no week-on-week jumps yet. First mover claims it."}
+        awards["biggest_shift"] = {"title": "Biggest Shift", "icon": "📊", "detail": "Squad holding steady — no week-on-week jumps yet."}
 
     # Biggest Glow-Up — most negative pace_improvement_s (faster)
     glow, glow_d = first(
