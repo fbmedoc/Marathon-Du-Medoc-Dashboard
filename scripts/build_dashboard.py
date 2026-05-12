@@ -379,13 +379,16 @@ def compute_runner(cfg: dict, today_uk: date) -> RunnerStats:
     rs.days_since_last_run = (today_uk - last_day).days
 
     # ─── Week-on-week km shift (for Biggest Shift award) ──────────
+    # Compare same period: this week so far (Mon → today) vs last week's
+    # equivalent days (last Mon → same weekday last week). Stops the
+    # comparison being unfair early in the week.
     last_monday = monday_uk - timedelta(days=7)
-    last_sunday = monday_uk - timedelta(days=1)
-    last_week_km = sum(
+    last_week_cutoff = last_monday + (today_uk - monday_uk)   # same weekday, last week
+    last_week_same_period_km = sum(
         (a.get("distance", 0) / 1000.0) for a in activities
-        if last_monday <= utc_to_uk(a["start_date"]).date() <= last_sunday
+        if last_monday <= utc_to_uk(a["start_date"]).date() <= last_week_cutoff
     )
-    rs.wow_shift_km = rs.week_km - last_week_km
+    rs.wow_shift_km = rs.week_km - last_week_same_period_km
 
     # ─── Hangover Hero: highest avg HR per m/s on Sunday runs ──────
     sun_scores = []
@@ -569,7 +572,7 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     else:
         awards["sibling_rivalry"] = {"title": "The Sibling Rivalry", "icon": "👯", "detail": "Waiting on a brother to log a run."}
 
-    # Biggest Shift — largest week-on-week km increase
+    # Biggest Shift — largest week-on-week km increase (same period last week)
     shift, shift_d = first(
         lambda r: r.connected and r.wow_shift_km is not None,
         lambda r: r.wow_shift_km,
@@ -578,7 +581,7 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
         awards["top_dog"] = {
             "title":  "Biggest Shift",
             "icon":   "📊",
-            "detail": winner_html("Biggest jump vs last week — ", shift.cfg["name"], f", +{shift_d:.0f}km. Momentum is a hell of a drug."),
+            "detail": winner_html("Up most vs same days last week — ", shift.cfg["name"], f", +{shift_d:.0f}km. Momentum is a hell of a drug."),
         }
     else:
         awards["top_dog"] = {"title": "Biggest Shift", "icon": "📊", "detail": "Nobody's stepped up vs last week — opportunity wide open."}
