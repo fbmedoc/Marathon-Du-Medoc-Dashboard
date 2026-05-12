@@ -1234,7 +1234,7 @@
       <div class="big-card">
         <div class="lbl">Squad tracking · {{ plan_status.status }}</div>
         <div class="v">{{ plan_status.actual }}<span class="unit">/{{ plan_status.total_target }}km</span></div>
-        <div class="delta {{ plan_status.tone }}">{{ plan_status.target_per_runner }}km per runner this week</div>
+        <div class="delta {{ plan_status.tone }}">{{ plan_status.target_ratio_pct }}% of {{ plan_status.full_target }}km full plan ({{ plan_status.target_per_runner }}km × {{ plan_status.connected_n }})</div>
       </div>
 
       <div class="phases-mobile">

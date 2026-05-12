@@ -47,6 +47,7 @@ TRAINING_START_LBL = "since 1 May"           # Short label for the UI
 UK_TZ              = pytz.timezone("Europe/London")
 SUB_4_SECONDS      = 4 * 3600                # reference time for "to sub-4" deltas
 MEDOC_PENALTY      = 1.10                    # Médoc time = marathon × this (wine stops!)
+GROUP_TARGET_RATIO = 0.75                    # "good week" = 75% of full plan total
 WEEK_DAYS          = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 STRAVA_CLIENT_ID     = os.environ.get("STRAVA_CLIENT_ID", "")
@@ -1066,36 +1067,45 @@ def phases_with_current(today_uk: date) -> list[dict]:
 
 
 def group_plan_status(runners: list[RunnerStats], week_plan: dict) -> dict:
-    """How the squad is tracking against this week's per-runner target."""
+    """
+    How the squad is tracking against this week's *realistic* group target.
+    The realistic target is GROUP_TARGET_RATIO (75%) of the full plan total
+    — assumes not every runner hits 100% every week.
+    """
     connected = [r for r in runners if r.connected]
     connected_n = len(connected)
     target_per = week_plan["target_km"]
-    total_target = target_per * connected_n
+    full_target      = target_per * connected_n
+    realistic_target = full_target * GROUP_TARGET_RATIO
     actual = sum(r.week_km for r in connected)
 
-    if total_target > 0:
-        pct = (actual / total_target) * 100
+    if realistic_target > 0:
+        pct = (actual / realistic_target) * 100
     else:
         pct = 0
 
-    if pct >= 95:
+    if pct >= 100:
+        status, tone = "smashing the target", "up"
+    elif pct >= 80:
         status, tone = "on target", "up"
-    elif pct >= 70:
-        status, tone = "close to target", "flat"
+    elif pct >= 50:
+        status, tone = "behind target", "flat"
     elif pct > 0:
-        status, tone = f"under target ({int(round(pct))}%)", "down"
+        status, tone = f"well behind ({int(round(pct))}%)", "down"
     else:
         status, tone = "no runs yet this week", "flat"
 
     return {
         "target_per_runner": target_per,
         "long_km":           week_plan["long_km"],
-        "total_target":      round(total_target),
+        "full_target":       round(full_target),
+        "total_target":      round(realistic_target),   # the realistic 75% one
         "actual":            round(actual),
         "pct":               int(round(pct)),
         "status":            status,
         "tone":              tone,
         "connected_n":       connected_n,
+        "target_ratio_pct":  int(GROUP_TARGET_RATIO * 100),
     }
 
 

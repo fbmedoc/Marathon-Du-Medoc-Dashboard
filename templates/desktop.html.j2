@@ -1338,6 +1338,17 @@
         <div class="stat"><div class="v">{% if week_summary.wow_pct is not none %}{{ week_summary.wow_pct|signed_pct }}%{% else %}—{% endif %}</div><div class="l">vs last week</div></div>
       </div>
     </div>
+
+    <!-- SQUAD TRACKING vs realistic group target (75% of full plan total) -->
+    <div class="week-detail" style="margin-top:24px;padding:18px 24px">
+      <div class="week-detail-head" style="margin-bottom:8px;padding-bottom:0;border-bottom:none">
+        <h4>Squad tracking <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--wine-light);text-transform:uppercase;margin-left:8px">{{ plan_status.status }}</span></h4>
+        <span class="pick">{{ plan_status.actual }} / {{ plan_status.total_target }} km · {{ plan_status.target_ratio_pct }}% of {{ plan_status.full_target }}km full-plan target ({{ plan_status.target_per_runner }}km × {{ plan_status.connected_n }} runner{% if plan_status.connected_n != 1 %}s{% endif %})</span>
+      </div>
+      <div style="height:6px;background:rgba(74,14,31,0.1);position:relative;overflow:hidden;margin-top:14px">
+        <div style="position:absolute;inset:0 auto 0 0;width:{% if plan_status.pct > 100 %}100{% else %}{{ plan_status.pct }}{% endif %}%;background:linear-gradient(90deg, var(--wine) 0%, var(--bordeaux) 70%, var(--gold) 100%);"></div>
+      </div>
+    </div>
   </section>
 
   <!-- SECTION IV — TRAINING PLAN -->
@@ -1360,17 +1371,6 @@
       <div class="target alt">
         <div class="v">{% if this_week.long_km == "RACE" %}42.2<span style="font-size:14px">km</span>{% else %}{{ this_week.long_km }}<span style="font-size:14px">km</span>{% endif %}</div>
         <div class="l">{% if this_week.long_km == "RACE" %}Race day{% else %}Long run{% endif %}</div>
-      </div>
-    </div>
-
-    <!-- GROUP TRACKING vs THIS WEEK'S TARGET -->
-    <div class="week-detail" style="margin-bottom:24px;padding:18px 24px">
-      <div class="week-detail-head" style="margin-bottom:8px;padding-bottom:0;border-bottom:none">
-        <h4>Squad tracking <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--wine-light);text-transform:uppercase;margin-left:8px">{{ plan_status.status }}</span></h4>
-        <span class="pick">{{ plan_status.actual }} / {{ plan_status.total_target }} km · target {{ plan_status.target_per_runner }}km per runner</span>
-      </div>
-      <div style="height:6px;background:rgba(74,14,31,0.1);position:relative;overflow:hidden;margin-top:14px">
-        <div style="position:absolute;inset:0 auto 0 0;width:{% if plan_status.pct > 100 %}100{% else %}{{ plan_status.pct }}{% endif %}%;background:linear-gradient(90deg, var(--wine) 0%, var(--bordeaux) 70%, var(--gold) 100%);"></div>
       </div>
     </div>
 
