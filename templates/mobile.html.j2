@@ -1146,7 +1146,7 @@
       </div>
 
       <div class="awards-list">
-        {% for key in ['le_groom', 'sibling_rivalry', 'top_dog', 'glow_up', 'la_flamme', 'laurore', 'the_sufferer', 'the_rested', 'ghost', 'hangover_hero'] %}
+        {% for key in ['le_groom', 'sibling_rivalry', 'top_dog', 'glow_up', 'la_flamme', 'laurore', 'the_sufferer', 'ghost', 'hangover_hero'] %}
           {% set a = awards[key] %}
           <div class="award{% if a.featured %} featured{% endif %}{% if a.shame %} shame{% endif %}">
             <div class="icon">{{ a.icon }}</div>

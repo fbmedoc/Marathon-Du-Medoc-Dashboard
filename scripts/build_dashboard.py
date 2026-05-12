@@ -308,7 +308,6 @@ class RunnerStats:
     days_since_last_run: int = 999
     hangover_score: float | None = None       # Sunday HR / speed; higher = more hungover
     wow_shift_km: float | None = None         # this week's km minus last week's km
-    rest_days_trailing_7d: int = 0            # rest days in the past 7 calendar days (excl today)
     avg_hr_this_week: float | None = None     # duration-weighted, requires ≥3 HR runs
     hr_runs_this_week: int = 0
 
@@ -469,16 +468,6 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
             sun_scores.append(hr / spd)
     if sun_scores:
         rs.hangover_score = max(sun_scores)
-
-    # ─── Rest days in the trailing 7 days (yesterday + 6 before) ───
-    # Excludes today (still in progress). Window is rolling, so the award
-    # remains meaningful on a Monday — it just reflects last Mon→Sun.
-    rest_count = 0
-    for i in range(1, 8):
-        day = today_uk - timedelta(days=i)
-        if by_day.get(day, 0.0) == 0:
-            rest_count += 1
-    rs.rest_days_trailing_7d = rest_count
 
     # ─── This-week avg HR (duration-weighted) for The Sufferer ─────
     hr_week_runs = [a for a in week_runs if a.get("average_heartrate")]
@@ -767,21 +756,6 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
         }
     else:
         awards["the_sufferer"] = {"title": "The Sufferer", "icon": "🌡️", "detail": "Not enough HR data yet — strap on the monitors."}
-
-    # The Rested — most rest days in the trailing 7 days (rolling window)
-    rested, rested_d = first(
-        lambda r: r.connected and r.rest_days_trailing_7d > 0,
-        lambda r: r.rest_days_trailing_7d,
-    )
-    if rested and rested_d and rested_d > 0:
-        days_s = "day" if rested_d == 1 else "days"
-        awards["the_rested"] = {
-            "title":  "The Rested",
-            "icon":   "💤",
-            "detail": winner_html("Most rest in last 7 days — ", rested.cfg["name"], f", {rested_d} {days_s}. Champion of recovery."),
-        }
-    else:
-        awards["the_rested"] = {"title": "The Rested", "icon": "💤", "detail": "Nobody's rested in 7 days — admirable, or possibly broken."}
 
     # The Ghost — most days since last run (only counts connected runners)
     ghost, ghost_d = first(lambda r: r.connected, lambda r: r.days_since_last_run)
