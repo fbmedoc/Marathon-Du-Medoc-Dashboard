@@ -402,9 +402,10 @@
       }
       $("token-display").textContent = data.refresh_token;
 
-      // WhatsApp prefill (no phone number — opens chooser on phones)
+      // WhatsApp prefill — sends straight to Freddy's number.
+      // wa.me format is country code + number, no "+" and no leading zero.
       const msg = "Strava refresh token for the Médoc dashboard:\n\n" + data.refresh_token;
-      $("whatsapp-btn").href = "https://wa.me/?text=" + encodeURIComponent(msg);
+      $("whatsapp-btn").href = "https://wa.me/447511750773?text=" + encodeURIComponent(msg);
 
       showStep(3);
     } catch (err) {
