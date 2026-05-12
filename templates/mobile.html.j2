@@ -1204,7 +1204,7 @@
       </div>
 
       <div class="mini-board">
-        <h3>Form <span class="meta">Last 5 sessions</span></h3>
+        <h3>Form <span class="meta">Last 7d · most consistent</span></h3>
         {% for row in mini_boards.form %}
           <div class="mini-row"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for d in row.dots %}<i class="d {{ d }}"></i>{% endfor %}</span></span></div>
         {% else %}

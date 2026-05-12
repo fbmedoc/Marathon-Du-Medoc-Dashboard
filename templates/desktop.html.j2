@@ -1295,7 +1295,7 @@
       </div>
 
       <div class="mini-board">
-        <h3>Form <span class="meta">Last 5 sessions · top runners</span></h3>
+        <h3>Form <span class="meta">Last 7 days · most consistent</span></h3>
         {% for row in mini_boards.form %}
           <div class="mini-row"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for d in row.dots %}<i class="d {{ d }}"></i>{% endfor %}</span></span></div>
         {% else %}
@@ -1304,10 +1304,10 @@
       </div>
 
       <div class="mini-board form-legend">
-        <h3>How to Read <span class="meta">Form indicator</span></h3>
-        <div class="legend-row"><span class="form-mini"><i class="d on"></i></span><span class="lbl">Ran the planned session</span></div>
-        <div class="legend-row"><span class="form-mini"><i class="d partial"></i></span><span class="lbl">Partial — turned up but cut short</span></div>
-        <div class="legend-row"><span class="form-mini"><i class="d skip"></i></span><span class="lbl">Skipped — better luck next week</span></div>
+        <h3>How to Read <span class="meta">Form dots · 7 days</span></h3>
+        <div class="legend-row"><span class="form-mini"><i class="d on"></i></span><span class="lbl">Solid run — at least 5 km</span></div>
+        <div class="legend-row"><span class="form-mini"><i class="d partial"></i></span><span class="lbl">Short or shake-out — under 5 km</span></div>
+        <div class="legend-row"><span class="form-mini"><i class="d"></i></span><span class="lbl">Rest day or no run logged</span></div>
       </div>
     </div>
   </section>

@@ -334,7 +334,7 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
     rs.activities = activities
 
     if not activities:
-        rs.form_dots = ["skip"] * 5
+        rs.form_dots = [""] * 7   # neutral dots — no judgement on inactivity
         return rs
 
     # ─── Distances, elevation ──────────────────────────────────────
@@ -389,14 +389,18 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
         cursor -= timedelta(days=1)
     rs.streak = streak
 
-    # ─── Form: last 5 calendar days ────────────────────────────────
-    # "on" = total day km >= 5; "partial" = ran but <5; "skip" = none.
+    # ─── Form: rolling last 7 days ─────────────────────────────────
+    # Honest activity dots — no judgement of rest days.
+    #   "on"      = solid run, day total >= 5km   (dark green)
+    #   "partial" = short / shake-out, ran > 0    (light green / gold)
+    #   ""        = rest day or no log            (neutral grey, default css)
+    # Oldest (6 days ago) on the left, today on the right.
     by_day = defaultdict(float)
     for a in activities:
         d = utc_to_uk(a["start_date"]).date()
         by_day[d] += a.get("distance", 0) / 1000.0
     dots = []
-    for i in range(5, 0, -1):    # 5 days ago → 1 day ago, left-to-right
+    for i in range(6, -1, -1):
         d = today_uk - timedelta(days=i)
         km = by_day.get(d, 0.0)
         if km >= 5:
@@ -404,7 +408,7 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
         elif km > 0:
             dots.append("partial")
         else:
-            dots.append("skip")
+            dots.append("")
     rs.form_dots = dots
 
     # ─── Predicted marathon time (Riegel) ──────────────────────────
@@ -800,9 +804,15 @@ def build_mini_boards(runners: list[RunnerStats]) -> dict:
         value_class=lambda v: "good" if v < 155 else "",
     )
 
-    # Form: take connected runners sorted by total_km (rough proxy for relevance)
-    form_runners = sorted(connected, key=lambda r: r.total_km, reverse=True)[:5]
-    form = [{"name": r.cfg["name"], "dots": r.form_dots or ["skip"]*5} for r in form_runners]
+    # Form: rank by count of solid-run days, ties broken by short-run days.
+    # Rewards consistency over the last 7 days, no penalty for rest.
+    def form_score(r):
+        on_count      = sum(1 for d in (r.form_dots or []) if d == "on")
+        partial_count = sum(1 for d in (r.form_dots or []) if d == "partial")
+        return (on_count, partial_count)
+
+    form_runners = sorted(connected, key=form_score, reverse=True)[:5]
+    form = [{"name": r.cfg["name"], "dots": r.form_dots or [""]*7} for r in form_runners]
 
     return {"longest": longest, "pace_imp": pace_imp, "elevation": elevation, "hr": hr, "form": form}
 
