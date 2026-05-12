@@ -572,10 +572,16 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     else:
         awards["sibling_rivalry"] = {"title": "The Sibling Rivalry", "icon": "👯", "detail": "Waiting on a brother to log a run."}
 
-    # Biggest Shift — largest week-on-week km increase (same period last week)
+    # Biggest Shift — prefer the biggest positive week-on-week jump,
+    # but fall back to the highest weekly volume when no one's "shifted"
+    # significantly. Keeps the award informative even when everyone's flat.
     shift, shift_d = first(
         lambda r: r.connected and r.wow_shift_km is not None,
         lambda r: r.wow_shift_km,
+    )
+    top, top_km = first(
+        lambda r: r.connected,
+        lambda r: r.week_km,
     )
     if shift and shift_d is not None and shift_d > 0.5:
         awards["top_dog"] = {
@@ -583,8 +589,14 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
             "icon":   "📊",
             "detail": winner_html("Up most vs same days last week — ", shift.cfg["name"], f", +{shift_d:.0f}km. Momentum is a hell of a drug."),
         }
+    elif top and top_km and top_km > 0:
+        awards["top_dog"] = {
+            "title":  "Biggest Shift",
+            "icon":   "📊",
+            "detail": winner_html("Moving the most miles this week — ", top.cfg["name"], f" at {top_km:.0f}km. Setting the tone."),
+        }
     else:
-        awards["top_dog"] = {"title": "Biggest Shift", "icon": "📊", "detail": "Nobody's stepped up vs last week — opportunity wide open."}
+        awards["top_dog"] = {"title": "Biggest Shift", "icon": "📊", "detail": "Nobody on the gas yet this week — opportunity wide open."}
 
     # Biggest Glow-Up — most negative pace_improvement_s (faster)
     glow, glow_d = first(
