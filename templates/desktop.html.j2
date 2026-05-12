@@ -1184,19 +1184,19 @@
         <span class="sub">Last 7 days</span>
       </div>
       <div class="stats">
-        <div class="stat"><div class="v">{{ week_summary.total_km }}<span class="u">km</span></div><div class="l">Distance</div></div>
-        <div class="stat"><div class="v">{{ week_summary.sessions }}</div><div class="l">Sessions</div></div>
-        <div class="stat"><div class="v">{{ week_summary.combined_pace }}</div><div class="l">Avg pace /km</div></div>
+        <div class="stat"><div class="v">{{ trailing_7d.total_km }}<span class="u">km</span></div><div class="l">Distance</div></div>
+        <div class="stat"><div class="v">{{ trailing_7d.sessions }}</div><div class="l">Sessions</div></div>
+        <div class="stat"><div class="v">{{ trailing_7d.combined_pace }}</div><div class="l">Avg pace /km</div></div>
         <div class="stat"><div class="v">{{ group.predicted }}</div><div class="l">Group prediction</div></div>
         <div class="stat">
           <div class="v">
-            {% if week_summary.wow_pct is not none %}
-              {{ week_summary.wow_pct|signed_pct }}<span class="u">%</span>
+            {% if trailing_7d.wow_pct is not none %}
+              {{ trailing_7d.wow_pct|signed_pct }}<span class="u">%</span>
             {% else %}
               —
             {% endif %}
           </div>
-          <div class="l">vs last week</div>
+          <div class="l">vs prior 7 days</div>
         </div>
       </div>
     </div>

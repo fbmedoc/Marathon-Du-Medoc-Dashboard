@@ -520,6 +520,45 @@ def build_group_stats(runners: list[RunnerStats], today_uk: date) -> dict:
     }
 
 
+def build_trailing_7d(runners: list[RunnerStats], today_uk: date) -> dict:
+    """
+    Stats for the rolling 7 calendar days ending today (inclusive). Used by
+    the "Squad Total · Last 7 days" band — distinct from the Mon-Sun week
+    grid which retains training-plan semantics.
+    """
+    end_now    = UK_TZ.localize(datetime.combine(today_uk + timedelta(days=1), time.min))
+    start_now  = UK_TZ.localize(datetime.combine(today_uk - timedelta(days=6), time.min))
+    start_prev = UK_TZ.localize(datetime.combine(today_uk - timedelta(days=13), time.min))
+
+    def collect(start: datetime, end: datetime) -> tuple[float, float, int]:
+        total_km = 0.0
+        total_time = 0.0
+        sessions = 0
+        for r in runners:
+            if not r.connected:
+                continue
+            for a in r.activities:
+                t = utc_to_uk(a["start_date"])
+                if start <= t < end:
+                    total_km   += (a.get("distance", 0) or 0) / 1000.0
+                    total_time += a.get("moving_time", 0) or 0
+                    sessions   += 1
+        return total_km, total_time, sessions
+
+    cur_km, cur_time, cur_sessions = collect(start_now, end_now)
+    prev_km, _, _                  = collect(start_prev, start_now)
+
+    pace_s = (cur_time / cur_km) if cur_km > 0 else None
+    wow_pct = round((cur_km - prev_km) / prev_km * 100) if prev_km > 0 else None
+
+    return {
+        "total_km":      round(cur_km),
+        "sessions":      cur_sessions,
+        "combined_pace": fmt_pace(pace_s),
+        "wow_pct":       wow_pct,
+    }
+
+
 def build_week_grid(runners: list[RunnerStats], today_uk: date) -> tuple[list[dict], dict]:
     """Group km per weekday Mon→Sun + week summary."""
     monday_uk = today_uk - timedelta(days=today_uk.weekday())
@@ -1097,6 +1136,7 @@ def main() -> None:
     rows         = make_runner_rows(runners)
     groom_row    = next((r for r in rows if r["is_groom"]), None)
     group        = build_group_stats(runners, today_uk)
+    trailing_7d  = build_trailing_7d(runners, today_uk)
     week_grid, week_summary = build_week_grid(runners, today_uk)
     awards       = build_awards(runners, by_total)
     mini_boards  = build_mini_boards(runners)
@@ -1122,6 +1162,7 @@ def main() -> None:
         "runners":        rows,
         "groom_row":      groom_row,
         "group":          group,
+        "trailing_7d":    trailing_7d,
         "week_grid":      week_grid,
         "week_summary":   week_summary,
         "awards":         awards,
