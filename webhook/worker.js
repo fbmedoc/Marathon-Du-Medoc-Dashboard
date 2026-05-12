@@ -1,26 +1,54 @@
 /**
- * Le Marathon Du Médoc 26 — Strava webhook receiver
+ * Le Marathon Du Médoc 26 — Strava webhook receiver + OAuth exchange
  *
- * Strava sends two kinds of requests to this Worker:
+ * This Worker serves three routes:
  *
- *   1. GET  ?hub.mode=subscribe&hub.challenge=…&hub.verify_token=…
- *      — one-off subscription handshake. Echo back the challenge.
+ *   1. GET  /  (or any path) with ?hub.mode=subscribe&hub.challenge=…
+ *      — Strava's one-off subscription handshake. Echo back the challenge.
  *
- *   2. POST { "object_type": "activity", "aspect_type": "create"/"update"/"delete",
- *             "owner_id": ..., "object_id": ..., ... }
- *      — fired every time any connected athlete creates/edits/deletes an activity.
- *      We respond 200 immediately and fire off a GitHub Actions repository_dispatch
- *      to rebuild the dashboard.
+ *   2. POST /  with Strava webhook payload
+ *      — fired on activity/athlete events. Triggers a GitHub Actions rebuild.
  *
- * Required environment bindings (set via wrangler secrets):
- *   STRAVA_VERIFY_TOKEN — random string we choose and pass to Strava at subscribe time
- *   GITHUB_PAT          — fine-grained PAT with Contents:write + Actions:write on the repo
- *   GITHUB_REPO         — "fbmedoc/Marathon-Du-Medoc-Dashboard" (plain var, not secret)
+ *   3. POST /exchange  with {code: "..."}
+ *      — connect.html calls this server-side to exchange an OAuth code for
+ *      a refresh_token. The client_secret never leaves this Worker.
+ *
+ * Required environment bindings:
+ *   STRAVA_CLIENT_ID    — plain var, the app's public client ID
+ *   STRAVA_CLIENT_SECRET — secret, used for OAuth exchange server-side
+ *   STRAVA_VERIFY_TOKEN — secret, random string for subscription handshake
+ *   GITHUB_PAT          — secret, PAT with Actions:write on the dashboard repo
+ *   GITHUB_REPO         — plain var, "owner/repo"
+ *   ALLOWED_ORIGIN      — plain var, the dashboard's origin for CORS
  */
+
+const CORS_BASE = {
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Max-Age": "86400",
+};
+
+function corsHeaders(env) {
+  return {
+    "Access-Control-Allow-Origin": env.ALLOWED_ORIGIN || "https://fbmedoc.github.io",
+    ...CORS_BASE,
+  };
+}
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    // ─── OAuth code exchange (server-side, keeps client_secret hidden) ─
+    if (url.pathname === "/exchange") {
+      if (request.method === "OPTIONS") {
+        return new Response(null, { status: 204, headers: corsHeaders(env) });
+      }
+      if (request.method === "POST") {
+        return handleOAuthExchange(request, env);
+      }
+      return new Response("Method not allowed", { status: 405 });
+    }
 
     // ─── Strava subscription verification ────────────────────────
     if (request.method === "GET") {
@@ -80,6 +108,68 @@ export default {
     return new Response("Method not allowed", { status: 405 });
   },
 };
+
+/**
+ * Server-side OAuth code → refresh_token exchange. The browser sends just the
+ * Strava authorisation code; the Worker adds the client_secret (held here only)
+ * and forwards to Strava. Returns the refresh_token plus a friendly athlete name.
+ */
+async function handleOAuthExchange(request, env) {
+  const cors = corsHeaders(env);
+  const jsonHeaders = { "Content-Type": "application/json", ...cors };
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Malformed JSON body" }), { status: 400, headers: jsonHeaders });
+  }
+
+  if (!body.code || typeof body.code !== "string") {
+    return new Response(JSON.stringify({ error: "Missing or invalid `code` field" }), { status: 400, headers: jsonHeaders });
+  }
+
+  if (!env.STRAVA_CLIENT_ID || !env.STRAVA_CLIENT_SECRET) {
+    return new Response(JSON.stringify({ error: "Worker not configured: missing Strava credentials" }), { status: 500, headers: jsonHeaders });
+  }
+
+  try {
+    const stravaResp = await fetch("https://www.strava.com/oauth/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: env.STRAVA_CLIENT_ID,
+        client_secret: env.STRAVA_CLIENT_SECRET,
+        code: body.code,
+        grant_type: "authorization_code",
+      }).toString(),
+    });
+
+    const data = await stravaResp.json();
+
+    if (!stravaResp.ok || !data.refresh_token) {
+      console.error(`Strava exchange failed: ${stravaResp.status}`, data);
+      return new Response(JSON.stringify({
+        error: data.message || `Strava exchange failed (HTTP ${stravaResp.status})`,
+        details: data,
+      }), { status: stravaResp.status >= 500 ? 502 : 400, headers: jsonHeaders });
+    }
+
+    // Return only what the browser needs — never expose the access_token,
+    // which the dashboard build will derive itself from the refresh_token.
+    const athleteName = data.athlete
+      ? `${data.athlete.firstname || ""} ${data.athlete.lastname || ""}`.trim()
+      : null;
+
+    return new Response(JSON.stringify({
+      refresh_token: data.refresh_token,
+      athlete_name: athleteName,
+    }), { status: 200, headers: jsonHeaders });
+  } catch (err) {
+    console.error(`OAuth exchange error: ${err.message}`);
+    return new Response(JSON.stringify({ error: err.message }), { status: 502, headers: jsonHeaders });
+  }
+}
 
 /**
  * Call GitHub's repository_dispatch endpoint to kick off the dashboard rebuild.

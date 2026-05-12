@@ -2,15 +2,18 @@
 <!--
   Le Marathon Du Médoc 26 — Strava connect page.
 
-  SECURITY NOTE
-  This page exchanges the Strava OAuth `code` for a refresh token directly
-  from the browser, which requires the client_secret to be present in the
-  page. That is normally a no-no, BUT for this stag-do project the trade-off
-  is intentional: 13 trusted friends, a Strava app dedicated to this one
-  weekend, and zero appetite to run a Python script 13 times. The credentials
-  are placeholders in the committed file and only injected into the deployed
-  copy by the GitHub Actions workflow, so they don't land in git history.
-  If the secret is ever leaked or abused, rotate it on Strava — done.
+  OAuth flow:
+    1. User clicks "Connect with Strava" — redirected to Strava with our
+       public client_id, scope, and redirect_uri.
+    2. After they authorise, Strava sends them back here with ?code=...
+    3. User clicks "Get my refresh token". The page POSTs the code to our
+       Cloudflare Worker's /exchange endpoint, which holds the client_secret
+       and forwards the call to Strava server-side.
+    4. The Worker returns the refresh_token; this page displays it for the
+       user to copy + WhatsApp to Freddy.
+
+  The client_secret is never present in this page or in the browser —
+  it lives only as a Cloudflare Worker secret.
 -->
 <html lang="en">
 <head>
@@ -333,13 +336,13 @@
 
 <script>
   // ─── Configuration ────────────────────────────────────────────────
-  // These placeholders are replaced by the GitHub Actions workflow at
-  // deploy time. In the committed source they remain as __PLACEHOLDERS__.
-  // See the comment at the top of the file for the security trade-off.
-  const STRAVA_CLIENT_ID     = "__STRAVA_CLIENT_ID__";
-  const STRAVA_CLIENT_SECRET = "__STRAVA_CLIENT_SECRET__";
-  const REDIRECT_URI         = "https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/connect.html";
-  const SCOPE                = "activity:read_all";
+  // STRAVA_CLIENT_ID is public per Strava docs — safe to hardcode.
+  // The client_secret is NEVER in this page; the Cloudflare Worker holds
+  // it and does the OAuth exchange server-side.
+  const STRAVA_CLIENT_ID = "243802";
+  const REDIRECT_URI     = "https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/connect.html";
+  const SCOPE            = "activity:read_all";
+  const EXCHANGE_URL     = "https://medoc-26-webhook.bloem-fred.workers.dev/exchange";
 
   // ─── Helpers ──────────────────────────────────────────────────────
   const $ = (id) => document.getElementById(id);
@@ -358,12 +361,6 @@
   // ─── Step 1: build & launch the Strava authorise URL ──────────────
   $("auth-btn").addEventListener("click", (e) => {
     e.preventDefault();
-    if (!STRAVA_CLIENT_ID || STRAVA_CLIENT_ID.startsWith("__")) {
-      showError($("page-err"),
-        "This page hasn't been deployed yet — the client ID is still a placeholder. " +
-        "Visit the live URL on fbmedoc.github.io instead of opening the file locally.");
-      return;
-    }
     const url = new URL("https://www.strava.com/oauth/authorize");
     url.searchParams.set("client_id", STRAVA_CLIENT_ID);
     url.searchParams.set("redirect_uri", REDIRECT_URI);
@@ -395,20 +392,14 @@
     $("exchange-err").style.display = "none";
 
     try {
-      const body = new URLSearchParams({
-        client_id: STRAVA_CLIENT_ID,
-        client_secret: STRAVA_CLIENT_SECRET,
-        code: code,
-        grant_type: "authorization_code"
-      });
-      const res = await fetch("https://www.strava.com/oauth/token", {
+      const res = await fetch(EXCHANGE_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: body.toString()
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: code })
       });
       const data = await res.json();
       if (!res.ok || !data.refresh_token) {
-        throw new Error(data.message || "No refresh_token in response — try again");
+        throw new Error(data.error || "No refresh_token in response — try again");
       }
       $("token-display").textContent = data.refresh_token;
 

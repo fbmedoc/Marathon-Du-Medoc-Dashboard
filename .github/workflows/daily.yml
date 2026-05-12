@@ -81,23 +81,9 @@ jobs:
             git push
           fi
 
-      # Inject the Strava OAuth credentials into connect.html for the Pages
-      # artifact only. The committed file keeps its placeholders, so the
-      # client_secret never lands in git history.
-      - name: Inject OAuth credentials into connect.html
-        env:
-          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
-          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
-        run: |
-          python - <<'PY'
-          import os, pathlib
-          p = pathlib.Path("connect.html")
-          html = p.read_text(encoding="utf-8")
-          html = html.replace("__STRAVA_CLIENT_ID__", os.environ.get("STRAVA_CLIENT_ID", ""))
-          html = html.replace("__STRAVA_CLIENT_SECRET__", os.environ.get("STRAVA_CLIENT_SECRET", ""))
-          p.write_text(html, encoding="utf-8")
-          print("connect.html credentials injected for Pages artifact")
-          PY
+      # No credentials injection needed — connect.html now calls the
+      # Cloudflare Worker's /exchange endpoint, which holds the client_secret
+      # server-side. client_id (243802) is public and safely hardcoded.
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

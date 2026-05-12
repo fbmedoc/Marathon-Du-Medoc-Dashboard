@@ -12,9 +12,12 @@ name = "medoc-26-webhook"
 main = "worker.js"
 compatibility_date = "2026-05-12"
 
-# Non-secret variable. Public — the repo name isn't sensitive.
+# Non-secret variables. None of these are sensitive — client_id is public per
+# Strava docs, repo name is public, origin is the public Pages URL.
 [vars]
-GITHUB_REPO = "fbmedoc/Marathon-Du-Medoc-Dashboard"
+GITHUB_REPO      = "fbmedoc/Marathon-Du-Medoc-Dashboard"
+STRAVA_CLIENT_ID = "243802"
+ALLOWED_ORIGIN   = "https://fbmedoc.github.io"
 
 # The Worker will be reachable at:
 #   https://medoc-26-webhook.<your-cloudflare-account>.workers.dev
