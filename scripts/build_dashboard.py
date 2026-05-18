@@ -316,7 +316,7 @@ class RunnerStats:
     pace_improvement_s: float | None = None   # negative = faster, vs 30 days prior
     pre7am_runs_week: int = 0
     days_since_last_run: int = 999
-    hangover_score: float | None = None       # Sunday HR / speed; higher = more hungover
+    hangover_score: float | None = None       # weekend (Sat/Sun) HR / speed; higher = more hungover
     wow_shift_km: float | None = None         # this week's km minus last week's km
     avg_hr_this_week: float | None = None     # duration-weighted, requires ≥3 HR runs
     hr_runs_this_week: int = 0
@@ -476,17 +476,18 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
     )
     rs.wow_shift_km = rs.week_km - last_week_same_period_km
 
-    # ─── Hangover Hero: highest avg HR per m/s on Sunday runs ──────
-    sun_scores = []
+    # ─── Hangover Hero: highest avg HR per m/s on weekend runs ─────
+    # Saturday or Sunday — catches the people who go big on Fri night too.
+    wknd_scores = []
     for a in activities:
-        if utc_to_uk(a["start_date"]).weekday() != 6:  # 6 = Sunday
+        if utc_to_uk(a["start_date"]).weekday() not in (5, 6):  # 5=Sat, 6=Sun
             continue
         hr = a.get("average_heartrate")
         spd = a.get("average_speed")
         if hr and spd and spd > 0:
-            sun_scores.append(hr / spd)
-    if sun_scores:
-        rs.hangover_score = max(sun_scores)
+            wknd_scores.append(hr / spd)
+    if wknd_scores:
+        rs.hangover_score = max(wknd_scores)
 
     # ─── This-week avg HR (duration-weighted) for The Sufferer ─────
     hr_week_runs = [a for a in week_runs if a.get("average_heartrate")]
@@ -808,22 +809,22 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     else:
         awards["ghost"] = {"title": "The Ghost", "icon": "👻", "detail": "Everyone ran today. Miracle.", "shame": True}
 
-    # Hangover Hero — highest Sunday HR / pace ratio
+    # Hangover Hero — highest weekend (Sat/Sun) HR / pace ratio
     hh, hh_d = first(lambda r: r.connected, lambda r: r.hangover_score)
     if hh and hh_d is not None:
         best_hr = 0
         for a in hh.activities:
-            if utc_to_uk(a["start_date"]).weekday() == 6 and a.get("average_heartrate"):
+            if utc_to_uk(a["start_date"]).weekday() in (5, 6) and a.get("average_heartrate"):
                 if a["average_heartrate"] > best_hr:
                     best_hr = a["average_heartrate"]
         awards["hangover_hero"] = {
             "title":  "The Hangover Hero",
             "icon":   "🍷",
-            "detail": winner_html(f"Highest Sunday HR — ", hh.cfg["name"], f", {int(best_hr)}bpm. Suspicious."),
+            "detail": winner_html(f"Highest weekend HR — ", hh.cfg["name"], f", {int(best_hr)}bpm. Suspicious."),
             "shame":  True,
         }
     else:
-        awards["hangover_hero"] = {"title": "The Hangover Hero", "icon": "🍷", "detail": "No suspicious Sundays. Yet.", "shame": True}
+        awards["hangover_hero"] = {"title": "The Hangover Hero", "icon": "🍷", "detail": "No suspicious weekends. Yet.", "shame": True}
 
     return awards
 
