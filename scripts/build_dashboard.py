@@ -317,7 +317,7 @@ class RunnerStats:
     pre7am_runs_week: int = 0
     days_since_last_run: int = 999
     hangover_score: float | None = None       # weekend (Sat/Sun) HR / speed; higher = more hungover
-    wow_shift_km: float | None = None         # this week's km minus last week's km
+    wow_shift_km: float | None = None         # trailing 7 days' km minus the 7 days before that
     avg_hr_this_week: float | None = None     # duration-weighted, requires ≥3 HR runs
     hr_runs_this_week: int = 0
 
@@ -464,17 +464,25 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
     last_day = max(by_day.keys())
     rs.days_since_last_run = (today_uk - last_day).days
 
-    # ─── Week-on-week km shift (for Biggest Shift award) ──────────
-    # Compare same period: this week so far (Mon → today) vs last week's
-    # equivalent days (last Mon → same weekday last week). Stops the
-    # comparison being unfair early in the week.
-    last_monday = monday_uk - timedelta(days=7)
-    last_week_cutoff = last_monday + (today_uk - monday_uk)   # same weekday, last week
-    last_week_same_period_km = sum(
+    # ─── Rolling 7-day-vs-prior-7 shift (for Biggest Shift award) ─
+    # Compare a runner's trailing 7 days against the 7 days before that.
+    # Dodges the "Tuesday morning" problem where a calendar-week comparison
+    # only has 1-2 days of data; rolling windows are always 7 days vs 7 days
+    # regardless of when the build runs.
+    trailing_start = today_uk - timedelta(days=6)
+    trailing_end   = today_uk                       # inclusive
+    prior_start    = today_uk - timedelta(days=13)
+    prior_end      = today_uk - timedelta(days=7)   # inclusive
+
+    trailing_7_km = sum(
         (a.get("distance", 0) / 1000.0) for a in activities
-        if last_monday <= utc_to_uk(a["start_date"]).date() <= last_week_cutoff
+        if trailing_start <= utc_to_uk(a["start_date"]).date() <= trailing_end
     )
-    rs.wow_shift_km = rs.week_km - last_week_same_period_km
+    prior_7_km = sum(
+        (a.get("distance", 0) / 1000.0) for a in activities
+        if prior_start <= utc_to_uk(a["start_date"]).date() <= prior_end
+    )
+    rs.wow_shift_km = trailing_7_km - prior_7_km
 
     # ─── Hangover Hero: highest avg HR per m/s on weekend runs ─────
     # Saturday or Sunday — catches the people who go big on Fri night too.
@@ -738,7 +746,7 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
         awards["biggest_shift"] = {
             "title":  "Biggest Shift",
             "icon":   "📊",
-            "detail": winner_html("Up most vs same days last week — ", shift.cfg["name"], f", +{shift_d:.0f}km. Momentum is a hell of a drug."),
+            "detail": winner_html("Up most vs prior 7 days — ", shift.cfg["name"], f", +{shift_d:.0f}km. Momentum is a hell of a drug."),
         }
     else:
         awards["biggest_shift"] = {"title": "Biggest Shift", "icon": "📊", "detail": "Squad holding steady — no week-on-week jumps yet."}
