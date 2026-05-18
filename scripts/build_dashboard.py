@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
 from html import escape as html_escape
 from pathlib import Path
+from statistics import median
 from typing import Any
 
 import pytz
@@ -313,7 +314,7 @@ class RunnerStats:
     form_dots: list[str] = field(default_factory=list)  # 5 entries
     predicted_marathon_s: float | None = None
     predicted_medoc_s: float | None = None
-    pace_improvement_s: float | None = None   # negative = faster, vs 30 days prior
+    pace_improvement_s: float | None = None   # negative = faster · median pace on ≥5km runs, last 14d vs prior 14d
     pre7am_runs_week: int = 0
     days_since_last_run: int = 999
     hangover_score: float | None = None       # weekend (Sat/Sun) HR / speed; higher = more hungover
@@ -437,22 +438,36 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
         rs.predicted_marathon_s = rs.longest_seconds * (42.2 / rs.longest_km) ** 1.06
         rs.predicted_medoc_s    = rs.predicted_marathon_s * MEDOC_PENALTY
 
-    # ─── Pace improvement: last 30 days vs 30–60 days ago ─────────
-    boundary = UK_TZ.localize(datetime.combine(today_uk - timedelta(days=30), time.min))
-    recent_dist, recent_time = 0.0, 0.0
-    older_dist,  older_time  = 0.0, 0.0
-    for a in activities:
-        when = utc_to_uk(a["start_date"])
-        d  = a.get("distance", 0) / 1000.0
-        t  = a.get("moving_time", 0) or 0
-        if when >= boundary:
-            recent_dist += d; recent_time += t
-        else:
-            older_dist  += d; older_time  += t
-    if recent_dist > 0 and older_dist > 0:
-        pace_recent = recent_time / recent_dist
-        pace_older  = older_time  / older_dist
-        rs.pace_improvement_s = pace_recent - pace_older  # negative = faster now
+    # ─── Pace improvement: median pace on ≥5km runs, 14d vs prior 14d ─
+    # The 5km filter excludes warm-downs, recovery shakeouts and sprint
+    # sessions, leaving the runs that actually reflect aerobic fitness.
+    # Median (vs mean) is robust to one-off outliers — a single bad long
+    # run on a hot day doesn't kill the comparison. Prior window is
+    # adaptive: 14 days, OR clamped to TRAINING_START if the cycle is
+    # younger, so the award activates from ~day 10 of training rather
+    # than waiting for a full 30 days of older data.
+    recent_start = today_uk - timedelta(days=13)              # last 14d incl.
+    recent_end   = today_uk
+    prior_end    = recent_start - timedelta(days=1)
+    prior_start  = max(prior_end - timedelta(days=13), TRAINING_START)
+
+    def _long_paces_in_window(start_d: date, end_d: date) -> list[float]:
+        """Pace (sec/km) for activities ≥ 5 km within [start, end] inclusive."""
+        paces = []
+        for a in activities:
+            dist_km = (a.get("distance", 0) or 0) / 1000.0
+            time_s  = a.get("moving_time", 0) or 0
+            if dist_km < 5 or time_s <= 0:
+                continue
+            if start_d <= utc_to_uk(a["start_date"]).date() <= end_d:
+                paces.append(time_s / dist_km)
+        return paces
+
+    recent_paces = _long_paces_in_window(recent_start, recent_end)
+    older_paces  = _long_paces_in_window(prior_start,  prior_end)
+
+    if len(recent_paces) >= 2 and len(older_paces) >= 2:
+        rs.pace_improvement_s = median(recent_paces) - median(older_paces)  # negative = faster now
 
     # ─── Pre-7am runs this week ────────────────────────────────────
     rs.pre7am_runs_week = sum(
@@ -761,19 +776,21 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
         awards["biggest_shift"] = {"title": "Biggest Shift", "icon": "📊", "detail": "Squad holding steady — no week-on-week jumps yet."}
 
     # Biggest Glow-Up — most negative pace_improvement_s (faster)
+    # Threshold of -5 sec/km filters out trivial fluctuations; real
+    # fitness gains over a fortnight will clear it comfortably.
     glow, glow_d = first(
         lambda r: r.connected,
         lambda r: r.pace_improvement_s,
         reverse=False,  # most negative wins
     )
-    if glow and glow_d is not None and glow_d < 0:
+    if glow and glow_d is not None and glow_d < -5:
         awards["glow_up"] = {
             "title":  "Biggest Glow-Up",
             "icon":   "📈",
-            "detail": winner_html(f"Pace dropped {fmt_pace_delta(glow_d)}/km — ", glow.cfg["name"], " is cooking"),
+            "detail": winner_html(f"Pace dropped {fmt_pace_delta(glow_d)}/km on long runs — ", glow.cfg["name"], " is cooking"),
         }
     else:
-        awards["glow_up"] = {"title": "Biggest Glow-Up", "icon": "📈", "detail": "Nobody's improving yet — keep showing up."}
+        awards["glow_up"] = {"title": "Biggest Glow-Up", "icon": "📈", "detail": "Nobody's clocking faster long runs yet — keep showing up."}
 
     # La Flamme — longest streak
     flame, flame_d = first(lambda r: r.connected and r.streak > 0, lambda r: r.streak)
@@ -972,7 +989,7 @@ def build_newsflash(
     glow_cand = [r for r in connected if r.pace_improvement_s is not None and r.pace_improvement_s < -10]
     if glow_cand:
         g = min(glow_cand, key=lambda r: r.pace_improvement_s)
-        items.append({"label": "PB", "text": f"{g.cfg['name']} drops {fmt_pace_delta(g.pace_improvement_s)}/km in 30 days · the engine is warming up"})
+        items.append({"label": "PB", "text": f"{g.cfg['name']} drops {fmt_pace_delta(g.pace_improvement_s)}/km on long runs · the engine is warming up"})
 
     # ── GROUP PROJECTION ────────────────────────────────────────
     if group["predicted"] != "—":
