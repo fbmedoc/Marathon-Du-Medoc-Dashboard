@@ -128,6 +128,7 @@ Worker env bindings:
 
 - **PowerShell 5.1, not Core.** `&&` and `||` don't work — use `;` with `if ($?)`. Ternary, null-coalescing, null-conditional all absent. Default file encoding is UTF-16 LE — pass `-Encoding utf8` for files other tools read.
 - **`wrangler secret put` via PowerShell stdin** appends a trailing newline that Strava rejects (403 on verify). Workaround: write to a temp file with `[System.IO.File]::WriteAllText` (no BOM, no newline) and pipe via `cmd /c "wrangler secret put NAME < file"`.
+- **`git commit -m "..."` in PowerShell mangles embedded double quotes** when passed to native exes. Symptom: git treats the rest of the message as pathspecs and errors `did not match any file(s) known to git`. Fix: write the message to a temp file with `[System.IO.File]::WriteAllText(..., UTF8Encoding($false))` and use `git commit -F <file>`. PowerShell here-strings (`@'...'@`) also work if the closing `'@` is at column 0 with no leading whitespace, but the temp-file route is bulletproof.
 - **PowerShell ExecutionPolicy** can block npm scripts. Fix: `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force`.
 - **Workflow auto-commits regenerated HTML** — `git pull --rebase` before pushing template/script changes, or stash `index.html`/`mobile.html` first.
 - **The `cd` Bash trick** prepending `cd <dir>; git ...` triggers a permission prompt — `git` already uses CWD.
@@ -160,33 +161,38 @@ Worker env bindings:
 
 Per runner: ~5 min runner side + ~2 min Fred side.
 
-## Current state (2026-05-18)
+## Current state (2026-05-19)
 
-Per-runner-app pivot is **written locally but not committed**. Cadence
-choice: **Option B — cron every 5 minutes** (vs. the old webhook-driven
-~60s cadence). Lowest cron interval GitHub Actions supports; balances
-freshness with onboarding simplicity.
+Per-runner-app pivot **landed and live**. Cadence: cron every 5 minutes
+(lowest GitHub Actions interval; chosen over webhooks because per-runner
+apps would each need their own webhook subscription).
 
-The following files have uncommitted changes:
+**Connected so far:** Freddy B. (the maintainer), Fred Illig (brother1
+slot), Louis Illig (groom). 10 runners still pending onboarding.
 
-- `runners.json` (new 3-slot schema)
-- `scripts/build_dashboard.py` (per-runner token refresh)
-- `.github/workflows/daily.yml` (39 secrets in env block)
-- `webhook/worker.js` (added `/exchange-personal`, removed `/exchange`)
-- `webhook/wrangler.toml` (dropped `STRAVA_CLIENT_ID` var)
-- `connect.html` (rewrite as 3-step walkthrough)
-- `README.md` (updated for new architecture)
+**Onboarding ops cadence:** runner sends 3 credentials via WhatsApp →
+Fred adds three GitHub Secrets (`<NAME>_CLIENT_ID`, `_CLIENT_SECRET`,
+`_REFRESH_TOKEN`) → Fred updates the placeholder name in `runners.json`
+→ next push or cron tick picks them up.
 
-Priority checklist still outstanding:
+**Recent UI/scoring tweaks (post-pivot):**
+- Masthead/title/prologue: dropped hard-coded "13 amateurs" — now reads
+  "Honest mileage, mild rivalries, and twenty-three wine stops at the
+  finish" (Option A copy).
+- Connect page Step 1/2: clearer "keep the Strava tab open" instruction;
+  Step 2 has a "Reopen Strava API settings" fallback link; empty
+  screenshot placeholder boxes removed.
+- Awards: each card now shows a small gold scope-chip next to its title
+  (`this week`, `since 1 May`, `right now`, `Sat / Sun`, etc.) so the
+  time window is scannable at a glance.
+- Hangover Hero: widened from Sunday-only to Sat OR Sun runs, catches
+  the Friday-night culprits too. Detail copy now "Highest weekend HR".
 
-1. Commit + push the 7 changed files.
-2. Deploy worker: `cd webhook && wrangler deploy`.
-3. Delete old Worker secret: `wrangler secret delete STRAVA_CLIENT_SECRET`.
-4. Delete old GitHub secrets (`STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`,
-   `STRAVA_TOKEN_*`) via web UI or `gh secret delete`.
-5. Fred re-onboards himself through the new flow → adds `FREDDY_CLIENT_ID`,
-   `FREDDY_CLIENT_SECRET`, `FREDDY_REFRESH_TOKEN` as GitHub Secrets.
-6. Fred sends connect URL + `medoc26` to the group.
+**Outstanding from priority list:**
+- Step 6: WhatsApp onboarding in progress (3 of 13 connected).
+- Optional: rotate `FREDDY_CLIENT_SECRET` on Strava (was pasted in chat
+  during the dogfood test) — 60-second job via Strava regenerate +
+  GitHub secret update.
 
 ## Style / brand
 
