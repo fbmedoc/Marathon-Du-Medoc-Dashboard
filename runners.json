@@ -1,6 +1,6 @@
 [
   { "id": "louis",    "name": "Louis Illig",    "tag": "★ The Groom",     "client_id_secret": "LOUIS_CLIENT_ID",    "client_secret_secret": "LOUIS_CLIENT_SECRET",    "refresh_token_secret": "LOUIS_REFRESH_TOKEN",    "is_groom": true,  "is_brother": false },
-  { "id": "brother1", "name": "[Brother 1]",    "tag": "Sibling Rivalry", "client_id_secret": "BROTHER1_CLIENT_ID", "client_secret_secret": "BROTHER1_CLIENT_SECRET", "refresh_token_secret": "BROTHER1_REFRESH_TOKEN", "is_groom": false, "is_brother": true  },
+  { "id": "brother1", "name": "Fred Illig",     "tag": "Sibling Rivalry", "client_id_secret": "BROTHER1_CLIENT_ID", "client_secret_secret": "BROTHER1_CLIENT_SECRET", "refresh_token_secret": "BROTHER1_REFRESH_TOKEN", "is_groom": false, "is_brother": true  },
   { "id": "brother2", "name": "[Brother 2]",    "tag": "Sibling Rivalry", "client_id_secret": "BROTHER2_CLIENT_ID", "client_secret_secret": "BROTHER2_CLIENT_SECRET", "refresh_token_secret": "BROTHER2_REFRESH_TOKEN", "is_groom": false, "is_brother": true  },
   { "id": "matt",     "name": "Matt M.",        "tag": null,              "client_id_secret": "MATT_CLIENT_ID",     "client_secret_secret": "MATT_CLIENT_SECRET",     "refresh_token_secret": "MATT_REFRESH_TOKEN",     "is_groom": false, "is_brother": false },
   { "id": "will",     "name": "Will J.",        "tag": null,              "client_id_secret": "WILL_CLIENT_ID",     "client_secret_secret": "WILL_CLIENT_SECRET",     "refresh_token_secret": "WILL_REFRESH_TOKEN",     "is_groom": false, "is_brother": false },
