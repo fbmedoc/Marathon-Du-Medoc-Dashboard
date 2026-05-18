@@ -5,10 +5,10 @@
 
 ## What this is
 
-A daily Strava dashboard for 13 amateurs training for the **Marathon du
+A daily Strava dashboard for the friend-group running the **Marathon du
 Médoc** on **5 September 2026** — 42.2 km through the Bordeaux vineyards,
 23 wine châteaux on the course, 6:30 cutoff. Stag-do dashboard for the
-groom Louis Illig.
+groom Louis Illig. Crowd size: up to 13, however many actually sign up.
 
 Training cycle starts **1 May 2026** — all cumulative stats are computed
 from that date, not rolling windows.

@@ -57,9 +57,9 @@ WEEK_DAYS          = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 # Non-Strava bits the dashboard wants. Edit these to taste — they don't
 # come from any API and the templates expect them in this shape.
 PROLOGUE_TEXT = (
-    "Thirteen souls. One groom. One marathon through the most beautifully "
-    "ridiculous course in France. Below: the data, the rivalries, the "
-    "sub-4 dream, the costume vote. On y va."
+    "One groom. One marathon through the most beautifully ridiculous "
+    "course in France. Below: the mileage, the rivalries, the sub-4 "
+    "dream, the costume vote. On y va."
 )
 
 FOOTER_QUOTE = "« On y va, doucement. »"

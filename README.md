@@ -1,8 +1,7 @@
 # Le Marathon Du Médoc 26
 
-A daily Strava dashboard for thirteen amateurs trying to survive eighteen
-weeks of marathon training before tackling the **Marathon du Médoc** on
-**5 September 2026** — 42.2 km through the Bordeaux vineyards,
+A daily Strava dashboard for the friend-group running the **Marathon du
+Médoc** on **5 September 2026** — 42.2 km through the Bordeaux vineyards,
 twenty-three wine châteaux on the course, six-and-a-half hour cutoff
 before they pack the oysters away.
 
