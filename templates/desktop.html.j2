@@ -561,6 +561,29 @@
     font-size: 16px;
     color: var(--wine);
   }
+  .award .scope{
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 7px;
+    font-family: 'DM Mono', monospace;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid rgba(201, 169, 97, 0.55);
+    vertical-align: 2px;
+    white-space: nowrap;
+  }
+  .award.featured .scope{
+    color: var(--gold-bright);
+    border-color: var(--gold-bright);
+  }
+  .award.shame .scope{
+    color: var(--rust);
+    border-color: rgba(168, 78, 46, 0.6);
+  }
   .award .winner{
     font-family: 'DM Mono', monospace;
     font-size: 10px;
@@ -1235,12 +1258,24 @@
           <span class="dot">·</span>
           <span>Hall of Shame</span>
         </div>
+        {% set award_scopes = {
+          'le_groom':        'always',
+          'sibling_rivalry': 'since 1 May',
+          'top_dog':         'this week',
+          'biggest_shift':   'wk on wk',
+          'glow_up':         'last 30d',
+          'la_flamme':       'right now',
+          'laurore':         'this week',
+          'the_sufferer':    'this week',
+          'ghost':           'right now',
+          'hangover_hero':   'last Sun',
+        } %}
         {% for key in ['le_groom', 'sibling_rivalry', 'top_dog', 'biggest_shift', 'glow_up', 'la_flamme', 'laurore', 'the_sufferer', 'ghost', 'hangover_hero'] %}
           {% set a = awards[key] %}
           <div class="award{% if a.featured %} featured{% endif %}{% if a.shame %} shame{% endif %}">
             <div class="icon">{{ a.icon }}</div>
             <div>
-              <div class="title">{{ a.title }}</div>
+              <div class="title">{{ a.title }}<span class="scope">{{ award_scopes[key] }}</span></div>
               <div class="winner">{{ a.detail|safe }}</div>
             </div>
           </div>
