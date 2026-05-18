@@ -2,17 +2,18 @@ name: Daily dashboard rebuild
 
 on:
   schedule:
-    # Hourly cron as a safety net — webhooks do the heavy lifting now, but
-    # if Strava ever misses or our Worker is down, we still get one refresh
-    # per hour. Daily call count: 24 × ~21 fetches = ~500 calls.
-    - cron: '0 * * * *'
+    # Every 5 minutes — the lowest cadence GitHub Actions cron supports.
+    # Each runner has their own personal Strava app, so webhooks aren't
+    # practical (each runner would need to subscribe their own app), and
+    # this cadence gets us to ~5-min freshness without that complexity.
+    #
+    # API volume: 288 builds/day × ~1 call/runner (access tokens cached
+    # for 6h) ≈ 288 calls/day per runner — well under Strava's 2000/day
+    # per-app rate limit. Each runner has their own 2000/day bucket.
+    - cron: '*/5 * * * *'
   workflow_dispatch:
   push:
     branches: [main]
-  # Cloudflare Worker fires this whenever any connected athlete posts/edits
-  # a run. Workflow rebuilds immediately — typically <60 sec end-to-end.
-  repository_dispatch:
-    types: [strava-webhook]
 
 permissions:
   contents: write
@@ -52,21 +53,49 @@ jobs:
 
       - name: Build dashboard
         env:
-          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
-          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
-          STRAVA_TOKEN_LOUIS: ${{ secrets.STRAVA_TOKEN_LOUIS }}
-          STRAVA_TOKEN_BROTHER1: ${{ secrets.STRAVA_TOKEN_BROTHER1 }}
-          STRAVA_TOKEN_BROTHER2: ${{ secrets.STRAVA_TOKEN_BROTHER2 }}
-          STRAVA_TOKEN_MATT: ${{ secrets.STRAVA_TOKEN_MATT }}
-          STRAVA_TOKEN_WILL: ${{ secrets.STRAVA_TOKEN_WILL }}
-          STRAVA_TOKEN_FREDDY: ${{ secrets.STRAVA_TOKEN_FREDDY }}
-          STRAVA_TOKEN_FRIEND7: ${{ secrets.STRAVA_TOKEN_FRIEND7 }}
-          STRAVA_TOKEN_FRIEND8: ${{ secrets.STRAVA_TOKEN_FRIEND8 }}
-          STRAVA_TOKEN_FRIEND9: ${{ secrets.STRAVA_TOKEN_FRIEND9 }}
-          STRAVA_TOKEN_FRIEND10: ${{ secrets.STRAVA_TOKEN_FRIEND10 }}
-          STRAVA_TOKEN_FRIEND11: ${{ secrets.STRAVA_TOKEN_FRIEND11 }}
-          STRAVA_TOKEN_FRIEND12: ${{ secrets.STRAVA_TOKEN_FRIEND12 }}
-          STRAVA_TOKEN_FRIEND13: ${{ secrets.STRAVA_TOKEN_FRIEND13 }}
+          # Each runner has their own personal Strava app, so we need 3
+          # secrets per runner: their client_id, client_secret, and
+          # refresh_token. Runners without all 3 secrets set are shown as
+          # "Not connected" on the dashboard — no error, just skipped.
+          LOUIS_CLIENT_ID:        ${{ secrets.LOUIS_CLIENT_ID }}
+          LOUIS_CLIENT_SECRET:    ${{ secrets.LOUIS_CLIENT_SECRET }}
+          LOUIS_REFRESH_TOKEN:    ${{ secrets.LOUIS_REFRESH_TOKEN }}
+          BROTHER1_CLIENT_ID:     ${{ secrets.BROTHER1_CLIENT_ID }}
+          BROTHER1_CLIENT_SECRET: ${{ secrets.BROTHER1_CLIENT_SECRET }}
+          BROTHER1_REFRESH_TOKEN: ${{ secrets.BROTHER1_REFRESH_TOKEN }}
+          BROTHER2_CLIENT_ID:     ${{ secrets.BROTHER2_CLIENT_ID }}
+          BROTHER2_CLIENT_SECRET: ${{ secrets.BROTHER2_CLIENT_SECRET }}
+          BROTHER2_REFRESH_TOKEN: ${{ secrets.BROTHER2_REFRESH_TOKEN }}
+          MATT_CLIENT_ID:         ${{ secrets.MATT_CLIENT_ID }}
+          MATT_CLIENT_SECRET:     ${{ secrets.MATT_CLIENT_SECRET }}
+          MATT_REFRESH_TOKEN:     ${{ secrets.MATT_REFRESH_TOKEN }}
+          WILL_CLIENT_ID:         ${{ secrets.WILL_CLIENT_ID }}
+          WILL_CLIENT_SECRET:     ${{ secrets.WILL_CLIENT_SECRET }}
+          WILL_REFRESH_TOKEN:     ${{ secrets.WILL_REFRESH_TOKEN }}
+          FREDDY_CLIENT_ID:       ${{ secrets.FREDDY_CLIENT_ID }}
+          FREDDY_CLIENT_SECRET:   ${{ secrets.FREDDY_CLIENT_SECRET }}
+          FREDDY_REFRESH_TOKEN:   ${{ secrets.FREDDY_REFRESH_TOKEN }}
+          FRIEND7_CLIENT_ID:      ${{ secrets.FRIEND7_CLIENT_ID }}
+          FRIEND7_CLIENT_SECRET:  ${{ secrets.FRIEND7_CLIENT_SECRET }}
+          FRIEND7_REFRESH_TOKEN:  ${{ secrets.FRIEND7_REFRESH_TOKEN }}
+          FRIEND8_CLIENT_ID:      ${{ secrets.FRIEND8_CLIENT_ID }}
+          FRIEND8_CLIENT_SECRET:  ${{ secrets.FRIEND8_CLIENT_SECRET }}
+          FRIEND8_REFRESH_TOKEN:  ${{ secrets.FRIEND8_REFRESH_TOKEN }}
+          FRIEND9_CLIENT_ID:      ${{ secrets.FRIEND9_CLIENT_ID }}
+          FRIEND9_CLIENT_SECRET:  ${{ secrets.FRIEND9_CLIENT_SECRET }}
+          FRIEND9_REFRESH_TOKEN:  ${{ secrets.FRIEND9_REFRESH_TOKEN }}
+          FRIEND10_CLIENT_ID:     ${{ secrets.FRIEND10_CLIENT_ID }}
+          FRIEND10_CLIENT_SECRET: ${{ secrets.FRIEND10_CLIENT_SECRET }}
+          FRIEND10_REFRESH_TOKEN: ${{ secrets.FRIEND10_REFRESH_TOKEN }}
+          FRIEND11_CLIENT_ID:     ${{ secrets.FRIEND11_CLIENT_ID }}
+          FRIEND11_CLIENT_SECRET: ${{ secrets.FRIEND11_CLIENT_SECRET }}
+          FRIEND11_REFRESH_TOKEN: ${{ secrets.FRIEND11_REFRESH_TOKEN }}
+          FRIEND12_CLIENT_ID:     ${{ secrets.FRIEND12_CLIENT_ID }}
+          FRIEND12_CLIENT_SECRET: ${{ secrets.FRIEND12_CLIENT_SECRET }}
+          FRIEND12_REFRESH_TOKEN: ${{ secrets.FRIEND12_REFRESH_TOKEN }}
+          FRIEND13_CLIENT_ID:     ${{ secrets.FRIEND13_CLIENT_ID }}
+          FRIEND13_CLIENT_SECRET: ${{ secrets.FRIEND13_CLIENT_SECRET }}
+          FRIEND13_REFRESH_TOKEN: ${{ secrets.FRIEND13_REFRESH_TOKEN }}
         run: python scripts/build_dashboard.py
 
       - name: Commit refreshed HTML if changed
@@ -81,9 +110,9 @@ jobs:
             git push
           fi
 
-      # No credentials injection needed — connect.html now calls the
-      # Cloudflare Worker's /exchange endpoint, which holds the client_secret
-      # server-side. client_id (243802) is public and safely hardcoded.
+      # connect.html is purely static — it walks each runner through creating
+      # their own Strava app and exchanges the OAuth code via the worker.
+      # No build-time credential injection needed.
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

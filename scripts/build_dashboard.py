@@ -50,8 +50,9 @@ MEDOC_PENALTY      = 1.10                    # Médoc time = marathon × this (w
 GROUP_TARGET_RATIO = 0.75                    # "good week" = 75% of full plan total
 WEEK_DAYS          = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
-STRAVA_CLIENT_ID     = os.environ.get("STRAVA_CLIENT_ID", "")
-STRAVA_CLIENT_SECRET = os.environ.get("STRAVA_CLIENT_SECRET", "")
+# Strava's free tier caps shared apps at 1 connected athlete, so each runner
+# brings their own personal Strava app. Three secrets per runner: client_id,
+# client_secret, refresh_token. There is no shared app credential anymore.
 
 # Non-Strava bits the dashboard wants. Edit these to taste — they don't
 # come from any API and the templates expect them in this shape.
@@ -141,16 +142,20 @@ def save_token_cache(cache: dict) -> None:
         print(f"  token cache save failed: {e}", file=sys.stderr)
 
 
-def _exchange_refresh_token(refresh: str) -> dict | None:
-    """POST to Strava's /oauth/token. Returns the full JSON response or None."""
-    if not (STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET and refresh):
+def _exchange_refresh_token(client_id: str, client_secret: str, refresh: str) -> dict | None:
+    """POST to Strava's /oauth/token. Returns the full JSON response or None.
+
+    Each runner has their own personal Strava app, so client_id/client_secret
+    are per-runner — they're not module-level constants anymore.
+    """
+    if not (client_id and client_secret and refresh):
         return None
     try:
         r = requests.post(
             "https://www.strava.com/oauth/token",
             data={
-                "client_id": STRAVA_CLIENT_ID,
-                "client_secret": STRAVA_CLIENT_SECRET,
+                "client_id": client_id,
+                "client_secret": client_secret,
                 "grant_type": "refresh_token",
                 "refresh_token": refresh,
             },
@@ -163,12 +168,16 @@ def _exchange_refresh_token(refresh: str) -> dict | None:
         return None
 
 
-def get_access_token(runner_id: str, secret_refresh: str, cache: dict) -> str | None:
+def get_access_token(runner_id: str, client_id: str, client_secret: str,
+                     secret_refresh: str, cache: dict) -> str | None:
     """
     Get a working access token for the runner, using the cache to avoid
     unnecessary refreshes. Strava rotates refresh tokens, so we cache the
     latest one and prefer it; the GitHub-Secret refresh_token is a fallback
     for cold-cache cases.
+
+    Each runner has their own Strava app — client_id and client_secret are
+    per-runner credentials, not shared.
     """
     now = int(time_module.time())
     entry = cache.get(runner_id, {})
@@ -182,12 +191,12 @@ def get_access_token(runner_id: str, secret_refresh: str, cache: dict) -> str | 
     if not refresh_to_use:
         return None
 
-    new_tokens = _exchange_refresh_token(refresh_to_use)
+    new_tokens = _exchange_refresh_token(client_id, client_secret, refresh_to_use)
 
     # 3. Cached refresh_token failed (rotated/revoked)? Fall back to the secret.
     if not new_tokens and entry.get("refresh_token") and entry["refresh_token"] != secret_refresh:
         print(f"  cached refresh token invalid, falling back to secret", file=sys.stderr)
-        new_tokens = _exchange_refresh_token(secret_refresh)
+        new_tokens = _exchange_refresh_token(client_id, client_secret, secret_refresh)
 
     if not new_tokens:
         return None
@@ -317,13 +326,22 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
     """Compute every stat the dashboard needs for one runner."""
     rs = RunnerStats(cfg=cfg)
 
-    secret_name = cfg["secret"]
-    refresh = os.environ.get(secret_name, "").strip()
-    if not refresh:
-        print(f"[{cfg['id']}] no secret — marking disconnected")
+    # Each runner has their own Strava app: 3 secrets per runner.
+    # Any one missing → mark as Not connected, skip API calls.
+    client_id     = os.environ.get(cfg["client_id_secret"], "").strip()
+    client_secret = os.environ.get(cfg["client_secret_secret"], "").strip()
+    refresh       = os.environ.get(cfg["refresh_token_secret"], "").strip()
+
+    missing = [k for k, v in (
+        ("client_id",     client_id),
+        ("client_secret", client_secret),
+        ("refresh_token", refresh),
+    ) if not v]
+    if missing:
+        print(f"[{cfg['id']}] missing {', '.join(missing)} — marking disconnected")
         return rs
 
-    access = get_access_token(cfg["id"], refresh, token_cache)
+    access = get_access_token(cfg["id"], client_id, client_secret, refresh, token_cache)
     if not access:
         print(f"[{cfg['id']}] token refresh failed — marking disconnected")
         return rs

@@ -1,23 +1,33 @@
 /**
- * Le Marathon Du Médoc 26 — Strava webhook receiver + OAuth exchange
+ * Le Marathon Du Médoc 26 — OAuth proxy + access-code gate
  *
- * This Worker serves three routes:
+ * Each runner brings their own personal Strava app (because Strava's free
+ * tier caps shared apps at 1 connected athlete). This Worker exists for two
+ * reasons in the per-runner-app world:
  *
- *   1. GET  /  (or any path) with ?hub.mode=subscribe&hub.challenge=…
- *      — Strava's one-off subscription handshake. Echo back the challenge.
+ *   1. POST /check-code     — validates the shared friend-group access code
+ *                             before connect.html shows any Strava UI, so
+ *                             random visitors can't even start the flow.
  *
- *   2. POST /  with Strava webhook payload
- *      — fired on activity/athlete events. Triggers a GitHub Actions rebuild.
+ *   2. POST /exchange-personal
+ *                           — proxies the runner's OAuth code → refresh_token
+ *                             exchange. The client_secret IS the runner's own
+ *                             personal one (sent in the request); the Worker
+ *                             just relays to Strava because the Strava token
+ *                             endpoint doesn't speak CORS to browsers.
  *
- *   3. POST /exchange  with {code: "..."}
- *      — connect.html calls this server-side to exchange an OAuth code for
- *      a refresh_token. The client_secret never leaves this Worker.
+ * The Worker also still answers Strava's webhook subscription handshake (GET
+ * with hub.* params) — left in place in case we ever pivot back to a shared
+ * app or one runner wants to set up their own webhook subscription pointed
+ * here. The activity-event POST path triggers a GitHub repository_dispatch
+ * if invoked, but with per-runner apps no one is subscribed to it by default.
  *
  * Required environment bindings:
- *   STRAVA_CLIENT_ID    — plain var, the app's public client ID
- *   STRAVA_CLIENT_SECRET — secret, used for OAuth exchange server-side
- *   STRAVA_VERIFY_TOKEN — secret, random string for subscription handshake
+ *   ACCESS_CODE         — secret, the shared friend-group code (e.g. medoc26)
+ *   STRAVA_VERIFY_TOKEN — secret, random string for webhook handshake (unused
+ *                         under per-runner-app architecture; safe to leave set)
  *   GITHUB_PAT          — secret, PAT with Actions:write on the dashboard repo
+ *                         (only used if the webhook POST path is ever invoked)
  *   GITHUB_REPO         — plain var, "owner/repo"
  *   ALLOWED_ORIGIN      — plain var, the dashboard's origin for CORS
  */
@@ -39,7 +49,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // ─── Access-code check (called before Strava authorise) ─────
+    // ─── Access-code check (called before any Strava UI is shown) ──
     if (url.pathname === "/check-code") {
       if (request.method === "OPTIONS") {
         return new Response(null, { status: 204, headers: corsHeaders(env) });
@@ -50,18 +60,18 @@ export default {
       return new Response("Method not allowed", { status: 405 });
     }
 
-    // ─── OAuth code exchange (server-side, keeps client_secret hidden) ─
-    if (url.pathname === "/exchange") {
+    // ─── Per-runner OAuth exchange (CORS-proxy to Strava) ───────────
+    if (url.pathname === "/exchange-personal") {
       if (request.method === "OPTIONS") {
         return new Response(null, { status: 204, headers: corsHeaders(env) });
       }
       if (request.method === "POST") {
-        return handleOAuthExchange(request, env);
+        return handlePersonalExchange(request, env);
       }
       return new Response("Method not allowed", { status: 405 });
     }
 
-    // ─── Strava subscription verification ────────────────────────
+    // ─── Strava webhook subscription handshake (vestigial) ─────────
     if (request.method === "GET") {
       const mode      = url.searchParams.get("hub.mode");
       const token     = url.searchParams.get("hub.verify_token");
@@ -71,15 +81,15 @@ export default {
         return Response.json({ "hub.challenge": challenge });
       }
 
-      // A bare GET (no params) is also useful for "is this Worker alive?" checks.
+      // Bare GET = liveness probe.
       if (!mode && !token && !challenge) {
-        return new Response("Le Médoc 26 webhook receiver — online.", { status: 200 });
+        return new Response("Le Médoc 26 Worker — online (per-runner-app mode).", { status: 200 });
       }
 
       return new Response("Verification failed", { status: 403 });
     }
 
-    // ─── Activity event ──────────────────────────────────────────
+    // ─── Strava webhook event (vestigial) ──────────────────────────
     if (request.method === "POST") {
       let body;
       try {
@@ -87,19 +97,10 @@ export default {
       } catch {
         return new Response("Malformed JSON", { status: 400 });
       }
-
-      // Basic shape check — Strava always sends these fields.
       if (!body.object_type || !body.aspect_type || !body.owner_id) {
         return new Response("Bad request", { status: 400 });
       }
 
-      // We trigger a rebuild on TWO kinds of events:
-      //   1. Any activity create / update / delete (object_type === "activity")
-      //   2. An athlete deauthorising the app
-      //      (object_type === "athlete" AND updates.authorized === "false")
-      // The rebuild script's existing logic handles both — a deauthorised
-      // athlete's token refresh will fail and they'll be marked disconnected
-      // on the dashboard within ~60s.
       const isActivity = body.object_type === "activity";
       const isDeauth   = body.object_type === "athlete"
                       && body.aspect_type === "update"
@@ -109,9 +110,6 @@ export default {
       if (!isActivity && !isDeauth) {
         return new Response(`OK (ignored: ${body.object_type}/${body.aspect_type})`, { status: 200 });
       }
-
-      // Strava expects sub-2-second responses. Fire the GitHub dispatch in
-      // the background and acknowledge immediately.
       ctx.waitUntil(triggerRebuild(env, body));
       return new Response("OK", { status: 200 });
     }
@@ -121,9 +119,8 @@ export default {
 };
 
 /**
- * Validate the shared access code without performing any Strava action.
- * Used by connect.html before showing the Connect-with-Strava button, so
- * we don't burn Strava athlete-limit slots on people who don't have the code.
+ * Validate the shared access code. No Strava action — purely a gate to
+ * stop random visitors progressing to the rest of connect.html.
  */
 async function handleAccessCodeCheck(request, env) {
   const cors = corsHeaders(env);
@@ -137,7 +134,7 @@ async function handleAccessCodeCheck(request, env) {
   }
 
   const supplied = (body.access_code || "").toString().trim().toLowerCase();
-  const expected = (env.ACCESS_CODE || "").toString().trim().toLowerCase();
+  const expected = (env.ACCESS_CODE   || "").toString().trim().toLowerCase();
 
   if (expected && supplied === expected) {
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: jsonHeaders });
@@ -146,14 +143,19 @@ async function handleAccessCodeCheck(request, env) {
 }
 
 /**
- * Server-side OAuth code → refresh_token exchange. The browser sends just the
- * Strava authorisation code; the Worker adds the client_secret (held here only)
- * and forwards to Strava. Returns the refresh_token plus a friendly athlete name.
+ * Proxy the OAuth `code` → `refresh_token` exchange for a runner using
+ * their OWN personal Strava app credentials.
  *
- * Also requires the shared access_code as defence-in-depth — even if someone
- * bypasses the client-side gate, they can't get a token without it.
+ * Why this exists: Strava's /oauth/token endpoint doesn't include CORS
+ * headers, so a browser can't POST to it directly. This Worker stands in
+ * the middle and forwards the call. The Worker doesn't store the runner's
+ * client_secret anywhere — it just passes it through to Strava.
+ *
+ * Defence-in-depth: also requires the shared access_code, so even if
+ * someone bypasses the client-side gate they can't burn through this
+ * endpoint.
  */
-async function handleOAuthExchange(request, env) {
+async function handlePersonalExchange(request, env) {
   const cors = corsHeaders(env);
   const jsonHeaders = { "Content-Type": "application/json", ...cors };
 
@@ -164,19 +166,31 @@ async function handleOAuthExchange(request, env) {
     return new Response(JSON.stringify({ error: "Malformed JSON body" }), { status: 400, headers: jsonHeaders });
   }
 
-  // Defence-in-depth: also require the access code here.
+  // Access code gate (defence-in-depth).
   const supplied = (body.access_code || "").toString().trim().toLowerCase();
-  const expected = (env.ACCESS_CODE || "").toString().trim().toLowerCase();
+  const expected = (env.ACCESS_CODE   || "").toString().trim().toLowerCase();
   if (!expected || supplied !== expected) {
     return new Response(JSON.stringify({ error: "Wrong or missing access code" }), { status: 401, headers: jsonHeaders });
   }
 
-  if (!body.code || typeof body.code !== "string") {
-    return new Response(JSON.stringify({ error: "Missing or invalid `code` field" }), { status: 400, headers: jsonHeaders });
+  // Required runner-supplied fields.
+  const code          = (body.code          || "").toString().trim();
+  const clientId      = (body.client_id     || "").toString().trim();
+  const clientSecret  = (body.client_secret || "").toString().trim();
+
+  if (!code || !clientId || !clientSecret) {
+    return new Response(JSON.stringify({
+      error: "Missing one of: code, client_id, client_secret",
+    }), { status: 400, headers: jsonHeaders });
   }
 
-  if (!env.STRAVA_CLIENT_ID || !env.STRAVA_CLIENT_SECRET) {
-    return new Response(JSON.stringify({ error: "Worker not configured: missing Strava credentials" }), { status: 500, headers: jsonHeaders });
+  // Light shape check on the credentials — Strava client_ids are numeric,
+  // client_secrets are 40-char hex.
+  if (!/^\d+$/.test(clientId)) {
+    return new Response(JSON.stringify({ error: "client_id should be all digits" }), { status: 400, headers: jsonHeaders });
+  }
+  if (clientSecret.length < 20) {
+    return new Response(JSON.stringify({ error: "client_secret looks too short — copy it again from Strava" }), { status: 400, headers: jsonHeaders });
   }
 
   try {
@@ -184,10 +198,10 @@ async function handleOAuthExchange(request, env) {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        client_id: env.STRAVA_CLIENT_ID,
-        client_secret: env.STRAVA_CLIENT_SECRET,
-        code: body.code,
-        grant_type: "authorization_code",
+        client_id:     clientId,
+        client_secret: clientSecret,
+        code:          code,
+        grant_type:    "authorization_code",
       }).toString(),
     });
 
@@ -196,20 +210,21 @@ async function handleOAuthExchange(request, env) {
     if (!stravaResp.ok || !data.refresh_token) {
       console.error(`Strava exchange failed: ${stravaResp.status}`, data);
       return new Response(JSON.stringify({
-        error: data.message || `Strava exchange failed (HTTP ${stravaResp.status})`,
+        error: data.message || `Strava exchange failed (HTTP ${stravaResp.status}). ` +
+               `Most common cause: client_id / client_secret don't match the Strava ` +
+               `app you authorised, or the code has already been used — start the ` +
+               `Strava authorisation again from Step 2.`,
         details: data,
       }), { status: stravaResp.status >= 500 ? 502 : 400, headers: jsonHeaders });
     }
 
-    // Return only what the browser needs — never expose the access_token,
-    // which the dashboard build will derive itself from the refresh_token.
     const athleteName = data.athlete
       ? `${data.athlete.firstname || ""} ${data.athlete.lastname || ""}`.trim()
       : null;
 
     return new Response(JSON.stringify({
       refresh_token: data.refresh_token,
-      athlete_name: athleteName,
+      athlete_name:  athleteName,
     }), { status: 200, headers: jsonHeaders });
   } catch (err) {
     console.error(`OAuth exchange error: ${err.message}`);
@@ -218,8 +233,8 @@ async function handleOAuthExchange(request, env) {
 }
 
 /**
- * Call GitHub's repository_dispatch endpoint to kick off the dashboard rebuild.
- * The workflow listens for `event_type: "strava-webhook"`.
+ * Vestigial — fires a GitHub repository_dispatch to rebuild the dashboard.
+ * Kept in case someone wires up a personal-app webhook to this Worker.
  */
 async function triggerRebuild(env, payload) {
   const url = `https://api.github.com/repos/${env.GITHUB_REPO}/dispatches`;

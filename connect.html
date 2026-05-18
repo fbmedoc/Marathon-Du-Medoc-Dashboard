@@ -2,18 +2,24 @@
 <!--
   Le Marathon Du Médoc 26 — Strava connect page.
 
-  OAuth flow:
-    1. User clicks "Connect with Strava" — redirected to Strava with our
-       public client_id, scope, and redirect_uri.
-    2. After they authorise, Strava sends them back here with ?code=...
-    3. User clicks "Get my refresh token". The page POSTs the code to our
-       Cloudflare Worker's /exchange endpoint, which holds the client_secret
-       and forwards the call to Strava server-side.
-    4. The Worker returns the refresh_token; this page displays it for the
-       user to copy + WhatsApp to Freddy.
+  Strava's free tier caps a single app at 1 connected athlete, so each runner
+  creates their OWN personal Strava app. This page walks them through it:
 
-  The client_secret is never present in this page or in the browser —
-  it lives only as a Cloudflare Worker secret.
+    Step 0 — access code gate (shared friend-group code)
+    Step 1 — open Strava API settings, create a personal app with the exact
+             field values shown
+    Step 2 — paste Client ID + Client Secret here, click Connect with Strava
+             (the page stores both in localStorage, redirects to Strava with
+             the runner's own client_id, scope=activity:read_all)
+    Step 3 — Strava redirects back with ?code=…; the page POSTs the code +
+             the stored client_id/client_secret + the access code to the
+             Cloudflare Worker's /exchange-personal endpoint, which proxies
+             to Strava (token endpoint has no CORS) and returns the
+             refresh_token. The page displays all three credentials and a
+             pre-filled WhatsApp message to Freddy.
+
+  The Worker doesn't store the runner's client_secret — it passes it
+  straight through. localStorage is wiped at the end so nothing lingers.
 -->
 <html lang="en">
 <head>
@@ -62,7 +68,7 @@
   .wrap{
     position: relative;
     z-index: 2;
-    max-width: 520px;
+    max-width: 560px;
     margin: 0 auto;
     padding: 40px 24px 80px;
     text-align: center;
@@ -138,6 +144,21 @@
   }
   .card p{ font-size: 16px; }
   .card p + p{ margin-top: 12px; }
+  .hint{
+    font-size: 14px;
+    color: var(--wine-deep);
+    margin-top: 14px !important;
+    padding: 12px 14px;
+    background: rgba(201,169,97,0.12);
+    border-left: 3px solid var(--gold);
+  }
+  .hint code{
+    background: var(--paper);
+    padding: 1px 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    border: 1px solid rgba(74,14,31,0.18);
+  }
 
   .step{
     font-family: 'DM Mono', monospace;
@@ -146,6 +167,114 @@
     text-transform: uppercase;
     color: var(--gold);
     margin-bottom: 4px;
+  }
+
+  /* ─── Strava-app field reference table ───────────────────── */
+  .form-table{
+    margin-top: 16px;
+    border-top: 1px solid rgba(74,14,31,0.18);
+  }
+  .ft-row{
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(74,14,31,0.10);
+    font-size: 14px;
+  }
+  .ft-label{
+    flex: 0 0 130px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    padding-top: 3px;
+  }
+  .ft-val{
+    flex: 1;
+    background: var(--paper);
+    padding: 6px 10px;
+    border: 1px solid rgba(74,14,31,0.22);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--ink);
+    word-break: break-all;
+    user-select: all;
+    line-height: 1.4;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .ft-val:hover{ background: #fff8e2; }
+  .ft-val.copied::after{
+    content: 'copied';
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    background: var(--moss);
+    color: var(--cream);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    padding: 2px 6px;
+  }
+  .ft-row.ft-emphasis .ft-label{ color: var(--rust); }
+  .ft-row.ft-emphasis .ft-val{ border-color: var(--rust); border-width: 1.5px; }
+
+  /* ─── Credential input fields ────────────────────────────── */
+  .lbl{
+    display: block;
+    margin-top: 16px;
+    margin-bottom: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+  .cred-input{
+    width: 100%;
+    padding: 12px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--wine);
+    border-radius: 0;
+    outline: none;
+  }
+  .cred-input:focus{
+    border-color: var(--gold);
+    box-shadow: inset 0 0 0 1px var(--gold);
+  }
+
+  /* ─── Output credentials block ───────────────────────────── */
+  .creds-out{
+    margin-top: 16px;
+    margin-bottom: 14px;
+  }
+  .cred-row{
+    margin-bottom: 10px;
+  }
+  .cred-label{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin-bottom: 4px;
+  }
+  .cred-val{
+    padding: 10px 12px;
+    background: var(--paper);
+    border: 1px dashed var(--wine);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    word-break: break-all;
+    color: var(--ink);
+    user-select: all;
+    line-height: 1.4;
   }
 
   .btn{
@@ -179,18 +308,6 @@
     letter-spacing: 0.1em;
   }
 
-  .token-box{
-    margin-top: 14px;
-    padding: 14px;
-    background: var(--paper);
-    border: 1px dashed var(--wine);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    word-break: break-all;
-    color: var(--ink);
-    user-select: all;
-    line-height: 1.4;
-  }
   .row{
     display: flex;
     gap: 10px;
@@ -229,6 +346,7 @@
     border-left: 3px solid var(--rust);
     display: none;
     text-align: left;
+    line-height: 1.5;
   }
 
   .footer{
@@ -254,7 +372,7 @@
 
   .hidden{ display: none; }
 
-  /* Step 0 — access code input */
+  /* Step 0 — access code input (preserved from earlier version) */
   .code-input{
     width: 100%;
     padding: 14px 16px;
@@ -274,6 +392,21 @@
     border-color: var(--gold);
     box-shadow: inset 0 0 0 1px var(--gold);
   }
+
+  /* Screenshot placeholders — swap the src for real shots later. */
+  .shot{
+    margin-top: 14px;
+    border: 1px solid rgba(74,14,31,0.22);
+    background: var(--paper);
+    padding: 60px 20px;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+  .shot img{ max-width: 100%; height: auto; display: block; margin: 0 auto; }
 </style>
 </head>
 <body>
@@ -298,66 +431,148 @@
   <div class="sub">Strava Connection · Médoc MMXXVI</div>
 
   <p class="prologue">
-    Welcome, runner. Two taps and you're on the leaderboard. Authorise Strava,
-    copy the token it gives you, send it to Freddy on WhatsApp.
+    Three short steps to the leaderboard. You'll set up a tiny personal
+    Strava app, copy two values out of it, and send everything to Freddy.
+    Around five minutes — the only fiddly bit is the form, which is
+    spelled out here word-for-word.
   </p>
 
-  <!-- STEP 0: Access code gate -->
+  <!-- ═══════════════════════════════════════════════════════════
+       STEP 0 — Access code
+       ═══════════════════════════════════════════════════════════ -->
   <div class="card" id="step-0">
-    <div class="step">Step 0</div>
-    <h2>Access code</h2>
+    <div class="step">Step 0 · Access code</div>
+    <h2>Friends only</h2>
     <p>
-      This dossier is for invited runners only. Ask Freddy if you weren't given
-      the code. It's a short word, all lowercase.
+      This dossier is for invited runners only. Ask Freddy in the group chat
+      if you weren't given the code — short word, all lowercase.
     </p>
     <input id="code-input" class="code-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="access code">
     <button id="code-btn" class="btn">Continue</button>
     <div class="err" id="code-err"></div>
   </div>
 
-  <!-- STEP 1: Send to Strava OAuth -->
+  <!-- ═══════════════════════════════════════════════════════════
+       STEP 1 — Create your personal Strava app
+       ═══════════════════════════════════════════════════════════ -->
   <div class="card hidden" id="step-1">
-    <div class="step">Step 1</div>
-    <h2>Authorise Strava</h2>
+    <div class="step">Step 1 of 3</div>
+    <h2>Create your personal Strava app</h2>
     <p>
-      You'll be sent to Strava to grant read-only access to your running
-      activities. Nothing else. No posting, no writing, no surprises.
+      Strava caps a shared app at one connected athlete, so we sidestep that
+      by each having our own — it's free, takes a minute, and only you ever
+      see the credentials.
     </p>
-    <a href="#" id="auth-btn" class="btn">
-      Connect with <span class="strava">STRAVA</span>
+    <p>
+      Open Strava's API settings (log in with the Strava account you use for
+      running), then create an app with the exact values shown below. Tap any
+      value to copy it.
+    </p>
+    <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener" class="btn">
+      Open Strava API settings ↗
     </a>
-  </div>
 
-  <!-- STEP 2: Exchange code for token (after Strava redirects back) -->
-  <div class="card hidden" id="step-2">
-    <div class="step">Step 2</div>
-    <h2>Get your refresh token</h2>
-    <p>
-      Strava sent you back with an authorisation code. One more tap exchanges
-      it for a long-lived refresh token that the dashboard uses to read your
-      runs each morning.
-    </p>
-    <button id="exchange-btn" class="btn">Get my refresh token</button>
-    <div class="err" id="exchange-err"></div>
-  </div>
-
-  <!-- STEP 3: Display refresh token -->
-  <div class="card hidden" id="step-3">
-    <div class="step">Step 3</div>
-    <h2>Send this to Freddy</h2>
-    <p>
-      Copy the token below and send it to Freddy on WhatsApp. He'll add it as
-      a GitHub Secret and you'll appear on the leaderboard within 24 hours.
-    </p>
-    <div class="token-box" id="token-display"></div>
-    <div class="row">
-      <button class="btn copy" id="copy-btn">Copy token</button>
-      <a class="btn whatsapp" id="whatsapp-btn" target="_blank" rel="noopener">WhatsApp Freddy</a>
+    <div class="form-table">
+      <div class="ft-row"><span class="ft-label">App name</span>          <code class="ft-val" data-copy>My Médoc 26 Dashboard</code></div>
+      <div class="ft-row"><span class="ft-label">Category</span>          <code class="ft-val" data-copy>Visualizer</code></div>
+      <div class="ft-row"><span class="ft-label">Club</span>              <code class="ft-val">(leave blank)</code></div>
+      <div class="ft-row"><span class="ft-label">Website</span>           <code class="ft-val" data-copy>https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/</code></div>
+      <div class="ft-row"><span class="ft-label">Description</span>       <code class="ft-val" data-copy>Personal tracker for the 2026 Médoc training</code></div>
+      <div class="ft-row ft-emphasis"><span class="ft-label">Auth Callback Domain</span><code class="ft-val" data-copy>fbmedoc.github.io</code></div>
     </div>
-    <div class="ok" id="copy-ok">✓ Copied — now send it on</div>
+    <p class="hint">
+      The one that matters: <strong>Authorization Callback Domain</strong> must
+      be exactly <code>fbmedoc.github.io</code> — no <code>https://</code>, no
+      trailing slash, no path. Get this wrong and the redirect at Step 2 will
+      fail. After you hit <em>Create</em>, Strava will ask for an app icon —
+      upload anything (a wine bottle, your face, whatever). It's required but
+      we never see it.
+    </p>
+
+    <!-- Screenshot placeholder — replace src with a real screenshot later -->
+    <div class="shot">
+      <img src="assets/screenshots/01-strava-api-form.png" alt="" onerror="this.style.display='none'">
+      <span>Screenshot · Strava API form filled in</span>
+    </div>
+
+    <button class="btn" id="created-btn">Done — app is created</button>
   </div>
 
-  <!-- Generic error display -->
+  <!-- ═══════════════════════════════════════════════════════════
+       STEP 2 — Paste credentials, authorise
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="card hidden" id="step-2">
+    <div class="step">Step 2 of 3</div>
+    <h2>Paste your two credentials</h2>
+    <p>
+      On the Strava API page right after you create the app, you'll see
+      <strong>Client ID</strong> (a 6-digit number) and a hidden
+      <strong>Client Secret</strong>. Click <em>Show</em> next to the secret to
+      reveal it, then paste both here.
+    </p>
+
+    <!-- Screenshot placeholder -->
+    <div class="shot">
+      <img src="assets/screenshots/02-strava-credentials.png" alt="" onerror="this.style.display='none'">
+      <span>Screenshot · Client ID + Client Secret on Strava</span>
+    </div>
+
+    <label class="lbl" for="client-id">Client ID</label>
+    <input id="client-id" class="cred-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="e.g. 243802">
+
+    <label class="lbl" for="client-secret">Client Secret</label>
+    <input id="client-secret" class="cred-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="40-character string">
+
+    <button id="auth-btn" class="btn">
+      Connect with <span class="strava">STRAVA</span>
+    </button>
+    <p class="hint" style="font-size:13px">
+      The button sends you to Strava, where you click <em>Authorize</em> to
+      grant read-only access to your runs. Strava then redirects you back to
+      this page — Step 3 happens automatically.
+    </p>
+    <div class="err" id="auth-err"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       STEP 3 — Exchange code, display credentials, send to Freddy
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="card hidden" id="step-3">
+    <div class="step">Step 3 of 3</div>
+    <h2 id="exchange-heading">Just a moment…</h2>
+    <p id="exchange-status">Converting Strava's one-time code into a long-lived refresh token.</p>
+    <div class="err" id="exchange-err"></div>
+
+    <div class="hidden" id="exchange-success">
+      <p>
+        Tap <strong>WhatsApp Freddy</strong> below — the message is pre-filled
+        with all three values. Just hit send. Freddy adds them as GitHub
+        Secrets and you appear on the leaderboard within an hour.
+      </p>
+
+      <div class="creds-out">
+        <div class="cred-row">
+          <div class="cred-label">Client ID</div>
+          <div class="cred-val" id="out-cid"></div>
+        </div>
+        <div class="cred-row">
+          <div class="cred-label">Client Secret</div>
+          <div class="cred-val" id="out-cs"></div>
+        </div>
+        <div class="cred-row">
+          <div class="cred-label">Refresh Token</div>
+          <div class="cred-val" id="out-rt"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn copy" id="copy-btn">Copy all three</button>
+        <a class="btn whatsapp" id="whatsapp-btn" target="_blank" rel="noopener">WhatsApp Freddy</a>
+      </div>
+      <div class="ok" id="copy-ok">✓ Copied — now send it on WhatsApp</div>
+    </div>
+  </div>
+
   <div class="err" id="page-err"></div>
 
   <footer class="footer">
@@ -370,55 +585,59 @@
 
 <script>
   // ─── Configuration ────────────────────────────────────────────────
-  // STRAVA_CLIENT_ID is public per Strava docs — safe to hardcode.
-  // The client_secret is NEVER in this page; the Cloudflare Worker holds
-  // it and does the OAuth exchange server-side.
-  const STRAVA_CLIENT_ID = "243802";
   const REDIRECT_URI     = "https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/connect.html";
   const SCOPE            = "activity:read_all";
   const WORKER_BASE      = "https://medoc-26-webhook.bloem-fred.workers.dev";
-  const EXCHANGE_URL     = WORKER_BASE + "/exchange";
+  const EXCHANGE_URL     = WORKER_BASE + "/exchange-personal";
   const CHECK_CODE_URL   = WORKER_BASE + "/check-code";
-  const CODE_STORAGE_KEY = "medoc26.accessCode";
+
+  const LS_CODE = "medoc26.accessCode";
+  const LS_CID  = "medoc26.runnerClientId";
+  const LS_CS   = "medoc26.runnerClientSecret";
+  const LS_APP  = "medoc26.appCreated";
 
   // ─── Helpers ──────────────────────────────────────────────────────
   const $ = (id) => document.getElementById(id);
 
   function showStep(n) {
-    $("step-0").classList.toggle("hidden", n !== 0);
-    $("step-1").classList.toggle("hidden", n !== 1);
-    $("step-2").classList.toggle("hidden", n !== 2);
-    $("step-3").classList.toggle("hidden", n !== 3);
+    for (let i = 0; i <= 3; i++) {
+      $("step-" + i).classList.toggle("hidden", i !== n);
+    }
   }
 
-  function getStoredCode() {
-    try { return localStorage.getItem(CODE_STORAGE_KEY) || ""; } catch { return ""; }
-  }
-  function setStoredCode(c) {
-    try { localStorage.setItem(CODE_STORAGE_KEY, c); } catch {}
-  }
+  function lsGet(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
+  function lsDel(k) { try { localStorage.removeItem(k); } catch {} }
 
   function showError(el, msg) {
     el.textContent = msg;
     el.style.display = "block";
   }
+  function hideError(el) {
+    el.style.display = "none";
+  }
 
-  // ─── Step 1: build & launch the Strava authorise URL ──────────────
-  $("auth-btn").addEventListener("click", (e) => {
-    e.preventDefault();
-    const url = new URL("https://www.strava.com/oauth/authorize");
-    url.searchParams.set("client_id", STRAVA_CLIENT_ID);
-    url.searchParams.set("redirect_uri", REDIRECT_URI);
-    url.searchParams.set("response_type", "code");
-    url.searchParams.set("approval_prompt", "auto");
-    url.searchParams.set("scope", SCOPE);
-    window.location.href = url.toString();
+  // ─── Tap-to-copy on the field-reference table ─────────────────────
+  document.querySelectorAll(".ft-val[data-copy]").forEach((el) => {
+    el.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(el.textContent);
+      } catch {
+        const r = document.createRange();
+        r.selectNodeContents(el);
+        const s = window.getSelection();
+        s.removeAllRanges(); s.addRange(r);
+        document.execCommand("copy");
+      }
+      el.classList.add("copied");
+      setTimeout(() => el.classList.remove("copied"), 1200);
+    });
   });
 
-  // ─── Step 0: access code gate ────────────────────────────────────
+  // ─── Step 0: access code gate ─────────────────────────────────────
   $("code-btn").addEventListener("click", async () => {
     const code = $("code-input").value.trim().toLowerCase();
-    $("code-err").style.display = "none";
+    hideError($("code-err"));
     if (!code) {
       showError($("code-err"), "Type the code first.");
       return;
@@ -439,7 +658,7 @@
         btn.textContent = "Continue";
         return;
       }
-      setStoredCode(code);
+      lsSet(LS_CODE, code);
       enterApp();
     } catch (err) {
       showError($("code-err"), "Couldn't reach the server: " + err.message);
@@ -447,87 +666,165 @@
       btn.textContent = "Continue";
     }
   });
-
-  // Enter is the same as clicking Continue
   $("code-input").addEventListener("keydown", (e) => {
     if (e.key === "Enter") { e.preventDefault(); $("code-btn").click(); }
   });
 
-  // ─── Decide which step to show on load ────────────────────────────
-  const params = new URLSearchParams(window.location.search);
-  const code   = params.get("code");
-  const error  = params.get("error");
+  // ─── Step 1: mark the app as created, advance to Step 2 ──────────
+  $("created-btn").addEventListener("click", () => {
+    lsSet(LS_APP, "1");
+    showStep(2);
+    setTimeout(() => $("client-id").focus(), 50);
+  });
 
+  // ─── Step 2: save credentials, redirect to Strava ─────────────────
+  $("auth-btn").addEventListener("click", () => {
+    hideError($("auth-err"));
+    const cid = $("client-id").value.trim();
+    const cs  = $("client-secret").value.trim();
+
+    if (!/^\d+$/.test(cid)) {
+      showError($("auth-err"), "Client ID should be all digits — copy it from Strava again.");
+      return;
+    }
+    if (cs.length < 20) {
+      showError($("auth-err"), "Client Secret looks too short. Click 'Show' on Strava, copy the whole 40-char string.");
+      return;
+    }
+
+    lsSet(LS_CID, cid);
+    lsSet(LS_CS,  cs);
+
+    const url = new URL("https://www.strava.com/oauth/authorize");
+    url.searchParams.set("client_id",       cid);
+    url.searchParams.set("redirect_uri",    REDIRECT_URI);
+    url.searchParams.set("response_type",   "code");
+    url.searchParams.set("approval_prompt", "auto");
+    url.searchParams.set("scope",           SCOPE);
+    window.location.href = url.toString();
+  });
+
+  // ─── Step 3: exchange the OAuth code via the Worker ──────────────
+  async function runExchange() {
+    showStep(3);
+    const params = new URLSearchParams(window.location.search);
+    const code   = params.get("code");
+    const cid    = lsGet(LS_CID);
+    const cs     = lsGet(LS_CS);
+    const access = lsGet(LS_CODE);
+
+    if (!code) {
+      showError($("exchange-err"), "No authorisation code in the URL. Refresh and try Step 2 again.");
+      return;
+    }
+    if (!cid || !cs) {
+      showError($("exchange-err"),
+        "We've lost your Client ID / Secret from this browser. Go back to Step 2 and paste them again.");
+      return;
+    }
+
+    try {
+      const res = await fetch(EXCHANGE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code:          code,
+          client_id:     cid,
+          client_secret: cs,
+          access_code:   access,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.refresh_token) {
+        throw new Error(data.error || "No refresh_token in response — try Step 2 again.");
+      }
+
+      // Display all three credentials
+      $("out-cid").textContent = cid;
+      $("out-cs").textContent  = cs;
+      $("out-rt").textContent  = data.refresh_token;
+
+      // WhatsApp prefill — sends everything Freddy needs in one message.
+      const lines = [
+        "Strava credentials for the Médoc dashboard:",
+        "",
+        "Client ID: "     + cid,
+        "Client Secret: " + cs,
+        "Refresh Token: " + data.refresh_token,
+      ];
+      if (data.athlete_name) lines.unshift("(From " + data.athlete_name + ")", "");
+      const msg = lines.join("\n");
+      $("whatsapp-btn").href = "https://wa.me/447511750773?text=" + encodeURIComponent(msg);
+
+      // Swap the loading copy for the success copy.
+      $("exchange-heading").textContent = "Send these to Freddy";
+      $("exchange-status").classList.add("hidden");
+      $("exchange-success").classList.remove("hidden");
+
+      // Clean the URL of the code (don't leave it sitting in the address bar)
+      // so a refresh doesn't try to redeem an already-used code.
+      try {
+        window.history.replaceState({}, document.title, REDIRECT_URI);
+      } catch {}
+
+      // Wipe the client_secret from localStorage now that we have what we
+      // need — keep accessCode + appCreated flag for return visits.
+      lsDel(LS_CID);
+      lsDel(LS_CS);
+    } catch (err) {
+      showError($("exchange-err"),
+        "Exchange failed: " + err.message + "\n\n" +
+        "Most common cause: the code has already been used. " +
+        "Refresh the page, then re-do Step 2.");
+    }
+  }
+
+  // ─── Step 3 copy-all-three ───────────────────────────────────────
+  $("copy-btn").addEventListener("click", async () => {
+    const text =
+      "Client ID: "     + $("out-cid").textContent + "\n" +
+      "Client Secret: " + $("out-cs").textContent  + "\n" +
+      "Refresh Token: " + $("out-rt").textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {}
+    const ok = $("copy-ok");
+    ok.style.display = "block";
+    setTimeout(() => { ok.style.display = "none"; }, 3000);
+  });
+
+  // ─── Routing on page load ────────────────────────────────────────
   function enterApp() {
+    const params = new URLSearchParams(window.location.search);
+    const code   = params.get("code");
+    const error  = params.get("error");
+
     if (error) {
-      showStep(1);
+      // Most likely: user tapped "Cancel" on Strava's authorise screen.
+      showStep(2);
       showError($("page-err"),
-        "Strava said: " + error + ". You probably tapped 'Cancel'. Refresh and try again.");
-    } else if (code) {
+        "Strava said: " + error + ". Probably tapped 'Cancel'. " +
+        "Refresh and try Step 2 again.");
+      return;
+    }
+    if (code) {
+      // Returning from Strava with an OAuth code — exchange immediately.
+      runExchange();
+      return;
+    }
+    // First visit (or returning later) — pick up where we left off.
+    if (lsGet(LS_APP)) {
       showStep(2);
     } else {
       showStep(1);
     }
   }
 
-  if (getStoredCode()) {
-    // Code already validated previously — skip Step 0
+  if (lsGet(LS_CODE)) {
     enterApp();
   } else {
     showStep(0);
   }
-
-  // ─── Step 2: exchange the code for a refresh token ────────────────
-  $("exchange-btn").addEventListener("click", async () => {
-    const btn = $("exchange-btn");
-    btn.disabled = true;
-    btn.textContent = "Exchanging…";
-    $("exchange-err").style.display = "none";
-
-    try {
-      const res = await fetch(EXCHANGE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code, access_code: getStoredCode() })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.refresh_token) {
-        throw new Error(data.error || "No refresh_token in response — try again");
-      }
-      $("token-display").textContent = data.refresh_token;
-
-      // WhatsApp prefill — sends straight to Freddy's number.
-      // wa.me format is country code + number, no "+" and no leading zero.
-      const msg = "Strava refresh token for the Médoc dashboard:\n\n" + data.refresh_token;
-      $("whatsapp-btn").href = "https://wa.me/447511750773?text=" + encodeURIComponent(msg);
-
-      showStep(3);
-    } catch (err) {
-      showError($("exchange-err"),
-        "Something went wrong: " + err.message + ". " +
-        "Refresh the page and try Step 1 again.");
-      btn.disabled = false;
-      btn.textContent = "Get my refresh token";
-    }
-  });
-
-  // ─── Step 3: copy to clipboard ────────────────────────────────────
-  $("copy-btn").addEventListener("click", async () => {
-    const token = $("token-display").textContent;
-    try {
-      await navigator.clipboard.writeText(token);
-    } catch {
-      // Fallback for older browsers / file:// contexts
-      const r = document.createRange();
-      r.selectNodeContents($("token-display"));
-      const s = window.getSelection();
-      s.removeAllRanges(); s.addRange(r);
-      document.execCommand("copy");
-    }
-    const ok = $("copy-ok");
-    ok.style.display = "block";
-    setTimeout(() => { ok.style.display = "none"; }, 3000);
-  });
 </script>
 
 </body>

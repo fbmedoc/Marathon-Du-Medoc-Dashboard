@@ -5,19 +5,23 @@
 #   wrangler deploy
 #
 # Set secrets (one-time, only needed once per worker):
-#   wrangler secret put STRAVA_VERIFY_TOKEN
-#   wrangler secret put GITHUB_PAT
+#   wrangler secret put ACCESS_CODE          # friend-group gate (e.g. medoc26)
+#   wrangler secret put STRAVA_VERIFY_TOKEN  # vestigial (kept for webhook handshake)
+#   wrangler secret put GITHUB_PAT           # vestigial (kept for webhook dispatch)
+#
+# Under the per-runner-app architecture, the Worker no longer needs a shared
+# STRAVA_CLIENT_SECRET — runners' personal client_secrets pass through the
+# /exchange-personal endpoint at exchange time and are never stored.
 
 name = "medoc-26-webhook"
 main = "worker.js"
 compatibility_date = "2026-05-12"
 
-# Non-secret variables. None of these are sensitive — client_id is public per
-# Strava docs, repo name is public, origin is the public Pages URL.
+# Non-secret variables. None of these are sensitive — repo name is public,
+# origin is the public Pages URL.
 [vars]
-GITHUB_REPO      = "fbmedoc/Marathon-Du-Medoc-Dashboard"
-STRAVA_CLIENT_ID = "243802"
-ALLOWED_ORIGIN   = "https://fbmedoc.github.io"
+GITHUB_REPO    = "fbmedoc/Marathon-Du-Medoc-Dashboard"
+ALLOWED_ORIGIN = "https://fbmedoc.github.io"
 
 # The Worker will be reachable at:
 #   https://medoc-26-webhook.<your-cloudflare-account>.workers.dev
