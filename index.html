@@ -561,6 +561,29 @@
     font-size: 16px;
     color: var(--wine);
   }
+  .award .scope{
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 7px;
+    font-family: 'DM Mono', monospace;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid rgba(201, 169, 97, 0.55);
+    vertical-align: 2px;
+    white-space: nowrap;
+  }
+  .award.featured .scope{
+    color: var(--gold-bright);
+    border-color: var(--gold-bright);
+  }
+  .award.shame .scope{
+    color: var(--rust);
+    border-color: rgba(168, 78, 46, 0.6);
+  }
   .award .winner{
     font-family: 'DM Mono', monospace;
     font-size: 10px;
@@ -1435,70 +1458,70 @@
           <div class="award featured">
             <div class="icon">🤵</div>
             <div>
-              <div class="title">Le Groom</div>
+              <div class="title">Le Groom<span class="scope">always</span></div>
               <div class="winner">The whole reason we&#x27;re here — <b>Louis</b>. Looking glorious at every château.</div>
             </div>
           </div>
           <div class="award">
             <div class="icon">👯</div>
             <div>
-              <div class="title">The Sibling Rivalry</div>
+              <div class="title">The Sibling Rivalry<span class="scope">since 1 May</span></div>
               <div class="winner">Top Illig — <b>Fred Illig</b> (133km). The other Illigs haven&#x27;t shown up yet.</div>
             </div>
           </div>
           <div class="award">
             <div class="icon">👑</div>
             <div>
-              <div class="title">Top Dog</div>
+              <div class="title">Top Dog<span class="scope">this week</span></div>
               <div class="winner">Up for grabs — first to log a run wins it.</div>
             </div>
           </div>
           <div class="award">
             <div class="icon">📊</div>
             <div>
-              <div class="title">Biggest Shift</div>
+              <div class="title">Biggest Shift<span class="scope">wk on wk</span></div>
               <div class="winner">Squad holding steady — no week-on-week jumps yet.</div>
             </div>
           </div>
           <div class="award">
             <div class="icon">📈</div>
             <div>
-              <div class="title">Biggest Glow-Up</div>
+              <div class="title">Biggest Glow-Up<span class="scope">last 30d</span></div>
               <div class="winner">Nobody's improving yet — keep showing up.</div>
             </div>
           </div>
           <div class="award">
             <div class="icon">🔥</div>
             <div>
-              <div class="title">La Flamme</div>
+              <div class="title">La Flamme<span class="scope">right now</span></div>
               <div class="winner">No active streaks. Embarrassing.</div>
             </div>
           </div>
           <div class="award">
             <div class="icon">🌅</div>
             <div>
-              <div class="title">L'Aurore</div>
+              <div class="title">L'Aurore<span class="scope">this week</span></div>
               <div class="winner">Everyone's allergic to mornings this week.</div>
             </div>
           </div>
           <div class="award">
             <div class="icon">🌡️</div>
             <div>
-              <div class="title">The Sufferer</div>
+              <div class="title">The Sufferer<span class="scope">this week</span></div>
               <div class="winner">Not enough HR data yet — strap on the monitors.</div>
             </div>
           </div>
           <div class="award shame">
             <div class="icon">👻</div>
             <div>
-              <div class="title">The Ghost</div>
+              <div class="title">The Ghost<span class="scope">right now</span></div>
               <div class="winner">Most days since last run — <b>Freddy B.</b>, 3 days. &#x27;Starts Monday.&#x27;</div>
             </div>
           </div>
           <div class="award shame">
             <div class="icon">🍷</div>
             <div>
-              <div class="title">The Hangover Hero</div>
+              <div class="title">The Hangover Hero<span class="scope">last Sun</span></div>
               <div class="winner">Highest Sunday HR — <b>Fred Illig</b>, 140bpm. Suspicious.</div>
             </div>
           </div>
@@ -1744,7 +1767,7 @@
 
   <!-- FOOTER -->
   <footer class="footer">
-    <div><a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:14px;vertical-align:middle"></a> · Updated 00:04 BST</div>
+    <div><a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:14px;vertical-align:middle"></a> · Updated 00:11 BST</div>
     <div><em>« On y va, doucement. »</em></div>
     <div>Le Domaine · MMXXVI</div>
   </footer>
