@@ -318,8 +318,8 @@ class RunnerStats:
     days_since_last_run: int = 999
     hangover_score: float | None = None       # weekend (Sat/Sun) HR / speed; higher = more hungover
     wow_shift_km: float | None = None         # trailing 7 days' km minus the 7 days before that
-    avg_hr_this_week: float | None = None     # duration-weighted, requires ≥3 HR runs
-    hr_runs_this_week: int = 0
+    avg_hr_trailing_7d: float | None = None   # duration-weighted across last 7d, requires ≥3 HR runs
+    hr_runs_trailing_7d: int = 0
 
 
 def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
@@ -497,14 +497,23 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
     if wknd_scores:
         rs.hangover_score = max(wknd_scores)
 
-    # ─── This-week avg HR (duration-weighted) for The Sufferer ─────
-    hr_week_runs = [a for a in week_runs if a.get("average_heartrate")]
-    rs.hr_runs_this_week = len(hr_week_runs)
-    if len(hr_week_runs) >= 3:
-        num = sum((a["average_heartrate"] * ((a.get("moving_time") or 0))) for a in hr_week_runs)
-        den = sum(((a.get("moving_time") or 0)) for a in hr_week_runs)
+    # ─── Trailing-7-day avg HR (duration-weighted) for The Sufferer ──
+    # Reuses the trailing_start/trailing_end window defined for Biggest
+    # Shift. The ≥3 HR runs requirement stays — stops a single brutal
+    # session deciding the award — but using a rolling 7-day window
+    # instead of "this calendar week" means it's reachable from Monday
+    # onward, not just by Thursday-Friday.
+    hr_7d_runs = [
+        a for a in activities
+        if a.get("average_heartrate")
+        and trailing_start <= utc_to_uk(a["start_date"]).date() <= trailing_end
+    ]
+    rs.hr_runs_trailing_7d = len(hr_7d_runs)
+    if len(hr_7d_runs) >= 3:
+        num = sum((a["average_heartrate"] * ((a.get("moving_time") or 0))) for a in hr_7d_runs)
+        den = sum(((a.get("moving_time") or 0)) for a in hr_7d_runs)
         if den > 0:
-            rs.avg_hr_this_week = num / den
+            rs.avg_hr_trailing_7d = num / den
 
     return rs
 
@@ -790,16 +799,16 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     else:
         awards["laurore"] = {"title": "L'Aurore", "icon": "🌅", "detail": "Everyone's allergic to mornings this week."}
 
-    # The Sufferer — highest weekly avg HR (≥3 HR runs required per runner)
+    # The Sufferer — highest 7-day avg HR (≥3 HR runs required per runner)
     sufferer, hr_val = first(
-        lambda r: r.connected and r.avg_hr_this_week is not None,
-        lambda r: r.avg_hr_this_week,
+        lambda r: r.connected and r.avg_hr_trailing_7d is not None,
+        lambda r: r.avg_hr_trailing_7d,
     )
     if sufferer and hr_val:
         awards["the_sufferer"] = {
             "title":  "The Sufferer",
             "icon":   "🌡️",
-            "detail": winner_html("Highest avg HR this week — ", sufferer.cfg["name"], f", {int(round(hr_val))}bpm. Either training hard or chasing buses."),
+            "detail": winner_html("Highest avg HR over 7 days — ", sufferer.cfg["name"], f", {int(round(hr_val))}bpm. Either training hard or chasing buses."),
         }
     else:
         awards["the_sufferer"] = {"title": "The Sufferer", "icon": "🌡️", "detail": "Not enough HR data yet — strap on the monitors."}
