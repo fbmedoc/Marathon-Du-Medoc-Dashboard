@@ -464,9 +464,11 @@
       see the credentials.
     </p>
     <p>
-      Open Strava's API settings (log in with the Strava account you use for
-      running), then create an app with the exact values shown below. Tap any
-      value to copy it.
+      Tap the button below to open Strava's API settings page in a new tab.
+      Log in with your usual Strava account, then fill in the form using
+      the exact values listed (tap any value here to copy it).
+      <strong>Keep that Strava tab open after you create the app</strong> —
+      Step 2 reads your Client ID and Secret from it.
     </p>
     <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener" class="btn">
       Open Strava API settings ↗
@@ -489,12 +491,6 @@
       we never see it.
     </p>
 
-    <!-- Screenshot placeholder — replace src with a real screenshot later -->
-    <div class="shot">
-      <img src="assets/screenshots/01-strava-api-form.png" alt="" onerror="this.style.display='none'">
-      <span>Screenshot · Strava API form filled in</span>
-    </div>
-
     <button class="btn" id="created-btn">Done — app is created</button>
   </div>
 
@@ -505,17 +501,18 @@
     <div class="step">Step 2 of 3</div>
     <h2>Paste your two credentials</h2>
     <p>
-      On the Strava API page right after you create the app, you'll see
-      <strong>Client ID</strong> (a 6-digit number) and a hidden
-      <strong>Client Secret</strong>. Click <em>Show</em> next to the secret to
-      reveal it, then paste both here.
+      Switch back to the Strava API tab you opened in Step 1. Right at the
+      top of that page, under <strong>"My API Application"</strong>, you'll
+      see your <strong>Client ID</strong> (a 6-digit number) and a hidden
+      <strong>Client Secret</strong>. Click <em>Show</em> next to the secret
+      to reveal the 40-character string, then paste both into the fields
+      below.
     </p>
-
-    <!-- Screenshot placeholder -->
-    <div class="shot">
-      <img src="assets/screenshots/02-strava-credentials.png" alt="" onerror="this.style.display='none'">
-      <span>Screenshot · Client ID + Client Secret on Strava</span>
-    </div>
+    <p class="hint" style="font-size:13px">
+      Lost the Strava tab?
+      <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener" style="color:var(--wine); text-decoration:underline; font-weight:600">Reopen Strava API settings ↗</a>
+      — your app is still there, you don't need to recreate it.
+    </p>
 
     <label class="lbl" for="client-id">Client ID</label>
     <input id="client-id" class="cred-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="e.g. 243802">
