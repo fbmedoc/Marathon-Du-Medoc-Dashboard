@@ -222,6 +222,73 @@
   .ft-row.ft-emphasis .ft-label{ color: var(--rust); }
   .ft-row.ft-emphasis .ft-val{ border-color: var(--rust); border-width: 1.5px; }
 
+  /* ─── Critical-field callout (Auth Callback Domain) ──────── */
+  .critical-field{
+    margin-top: 22px;
+    padding: 18px 16px 14px;
+    background: var(--cream);
+    border: 2px solid var(--rust);
+    position: relative;
+  }
+  .critical-field::before{
+    content: '⚠ READ THIS';
+    position: absolute;
+    top: -10px;
+    left: 12px;
+    background: var(--rust);
+    color: var(--cream);
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    padding: 2px 8px;
+  }
+  .cf-label{
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin-bottom: 10px;
+  }
+  .cf-val{
+    display: block;
+    padding: 12px 14px;
+    background: var(--paper);
+    border: 1.5px solid var(--rust);
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    color: var(--ink);
+    user-select: all;
+    cursor: pointer;
+    text-align: center;
+    margin-bottom: 12px;
+    letter-spacing: 0.02em;
+    transition: background 0.15s;
+  }
+  .cf-val:hover{ background: #fff8e2; }
+  .cf-val.copied{
+    background: rgba(90, 107, 63, 0.12);
+    border-color: var(--moss);
+  }
+  .cf-examples{ margin: 4px 0 10px; }
+  .cf-examples .ex{
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 3px 0;
+    letter-spacing: 0.01em;
+  }
+  .cf-examples .ex.ok{ color: var(--moss); }
+  .cf-examples .ex.bad{ color: var(--rust); text-decoration: line-through; opacity: 0.85; }
+  .cf-note{
+    font-size: 14px;
+    color: var(--wine-deep);
+    line-height: 1.5;
+    margin-top: 6px;
+  }
+  .cf-note strong{ color: var(--rust); }
+
   /* ─── Credential input fields ────────────────────────────── */
   .lbl{
     display: block;
@@ -480,15 +547,30 @@
       <div class="ft-row"><span class="ft-label">Club</span>              <code class="ft-val">(leave blank)</code></div>
       <div class="ft-row"><span class="ft-label">Website</span>           <code class="ft-val" data-copy>https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/</code></div>
       <div class="ft-row"><span class="ft-label">Description</span>       <code class="ft-val" data-copy>Personal tracker for the 2026 Médoc training</code></div>
-      <div class="ft-row ft-emphasis"><span class="ft-label">Auth Callback Domain</span><code class="ft-val" data-copy>fbmedoc.github.io</code></div>
     </div>
-    <p class="hint">
-      The one that matters: <strong>Authorization Callback Domain</strong> must
-      be exactly <code>fbmedoc.github.io</code> — no <code>https://</code>, no
-      trailing slash, no path. Get this wrong and the redirect at Step 2 will
-      fail. After you hit <em>Create</em>, Strava will ask for an app icon —
-      upload anything (a wine bottle, your face, whatever). It's required but
-      we never see it.
+
+    <!-- Pulled out of the form table because everyone gets this one wrong. -->
+    <div class="critical-field">
+      <div class="cf-label">Authorization Callback Domain — last field</div>
+      <code class="cf-val" data-copy>fbmedoc.github.io</code>
+      <div class="cf-examples">
+        <div class="ex ok">✓ fbmedoc.github.io</div>
+        <div class="ex bad">✗ https://fbmedoc.github.io</div>
+        <div class="ex bad">✗ fbmedoc.github.io/</div>
+        <div class="ex bad">✗ fbmedoc.github.io/Marathon-Du-Medoc-Dashboard</div>
+      </div>
+      <div class="cf-note">
+        <strong>Just the domain.</strong> No <code>https://</code>, no slash,
+        no path — Strava adds the rest itself. Different from the Website
+        field above. If you put anything else, Step 2 will fail with a
+        "redirect_uri mismatch" error.
+      </div>
+    </div>
+
+    <p class="hint" style="font-size:13px">
+      After you hit <em>Create</em>, Strava asks for an app icon. Any
+      square image works — a screenshot of your phone home screen, your
+      face, a wine bottle — we never see it.
     </p>
 
     <button class="btn" id="created-btn">Done — app is created</button>
@@ -614,8 +696,9 @@
     el.style.display = "none";
   }
 
-  // ─── Tap-to-copy on the field-reference table ─────────────────────
-  document.querySelectorAll(".ft-val[data-copy]").forEach((el) => {
+  // ─── Tap-to-copy on any field-reference element with data-copy ───
+  // (used by both .ft-val rows and the .cf-val critical-field callout)
+  document.querySelectorAll("[data-copy]").forEach((el) => {
     el.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(el.textContent);
