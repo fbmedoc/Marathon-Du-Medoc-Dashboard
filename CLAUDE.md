@@ -168,7 +168,8 @@ Per-runner-app pivot **landed and live**. Cadence: cron every 5 minutes
 apps would each need their own webhook subscription).
 
 **Connected so far:** Freddy B. (the maintainer), Fred Illig (brother1
-slot), Louis Illig (groom). 10 runners still pending onboarding.
+slot), Louis Illig (groom), Matt Monk (matt slot), Dan Christie (friend7),
+Blaise Bacquet (friend8). 7 runners still pending onboarding.
 
 **Onboarding ops cadence:** runner sends 3 credentials via WhatsApp →
 Fred adds three GitHub Secrets (`<NAME>_CLIENT_ID`, `_CLIENT_SECRET`,
