@@ -436,7 +436,11 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
     rs.form_dots = dots
 
     # ─── Predicted marathon time (Riegel) ──────────────────────────
-    if rs.longest_km >= 5 and rs.longest_seconds > 0:
+    # Threshold raised from 5km to 10km — short runs (warm-ups, recovery
+    # shake-outs, sprint sessions) are excluded from the prediction input.
+    # Riegel extrapolation from a short, fast workout is unreliable; runners
+    # without a 10km+ run yet show "—" for predicted marathon time.
+    if rs.longest_km >= 10 and rs.longest_seconds > 0:
         rs.predicted_marathon_s = rs.longest_seconds * (42.2 / rs.longest_km) ** 1.06
         rs.predicted_medoc_s    = rs.predicted_marathon_s * MEDOC_PENALTY
 
