@@ -316,6 +316,8 @@ class RunnerStats:
     predicted_medoc_s: float | None = None
     pace_improvement_s: float | None = None   # negative = faster · median pace on ≥5km runs, last 14d vs prior 14d
     pre7am_runs_week: int = 0
+    trailing_7d_km: float = 0.0               # km in last 7 days (rolling), for Top Dog
+    pre7am_runs_trailing_7d: int = 0          # pre-7am runs in last 7 days, for L'Aurore
     days_since_last_run: int = 999
     hangover_score: float | None = None       # weekend (Sat/Sun) HR / speed; higher = more hungover
     wow_shift_km: float | None = None         # trailing 7 days' km minus the 7 days before that
@@ -497,7 +499,15 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
         (a.get("distance", 0) / 1000.0) for a in activities
         if prior_start <= utc_to_uk(a["start_date"]).date() <= prior_end
     )
-    rs.wow_shift_km = trailing_7_km - prior_7_km
+    rs.wow_shift_km    = trailing_7_km - prior_7_km
+    rs.trailing_7d_km  = trailing_7_km   # also used by Top Dog
+
+    # Pre-7am runs in the trailing 7 days (for L'Aurore)
+    rs.pre7am_runs_trailing_7d = sum(
+        1 for a in activities
+        if utc_to_uk(a["start_date"]).hour < 7
+        and trailing_start <= utc_to_uk(a["start_date"]).date() <= trailing_end
+    )
 
     # ─── Hangover Hero: highest avg HR per m/s on weekend runs ─────
     # Saturday or Sunday — catches the people who go big on Fri night too.
@@ -747,16 +757,16 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     else:
         awards["sibling_rivalry"] = {"title": "The Sibling Rivalry", "icon": "👯", "detail": "Waiting on the Illigs to lace up."}
 
-    # Top Dog — most km this week (Mon→today), anyone eligible.
+    # Top Dog — most km in the last 7 days (rolling), anyone eligible.
     top, top_km = first(
         lambda r: r.connected,
-        lambda r: r.week_km,
+        lambda r: r.trailing_7d_km,
     )
     if top and top_km and top_km > 0:
         awards["top_dog"] = {
             "title":  "Top Dog",
             "icon":   "👑",
-            "detail": winner_html("Most km this week — ", top.cfg["name"], f" at {top_km:.0f}km. King of the leaderboard."),
+            "detail": winner_html("Most km in the last 7 days — ", top.cfg["name"], f" at {top_km:.0f}km. King of the leaderboard."),
         }
     else:
         awards["top_dog"] = {"title": "Top Dog", "icon": "👑", "detail": "Up for grabs — first to log a run wins it."}
@@ -806,16 +816,17 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     else:
         awards["la_flamme"] = {"title": "La Flamme", "icon": "🔥", "detail": "No active streaks. Embarrassing."}
 
-    # L'Aurore — most pre-7am runs this week
-    aurore, aurore_d = first(lambda r: r.connected, lambda r: r.pre7am_runs_week)
+    # L'Aurore — most pre-7am runs in the last 7 days (rolling)
+    aurore, aurore_d = first(lambda r: r.connected, lambda r: r.pre7am_runs_trailing_7d)
     if aurore and aurore_d and aurore_d > 0:
+        run_s = "run" if aurore_d == 1 else "runs"
         awards["laurore"] = {
             "title":  "L'Aurore",
             "icon":   "🌅",
-            "detail": winner_html("Most pre-7am runs — ", aurore.cfg["name"], f", {aurore_d} this week"),
+            "detail": winner_html("Most pre-7am runs — ", aurore.cfg["name"], f", {aurore_d} {run_s} in last 7d"),
         }
     else:
-        awards["laurore"] = {"title": "L'Aurore", "icon": "🌅", "detail": "Everyone's allergic to mornings this week."}
+        awards["laurore"] = {"title": "L'Aurore", "icon": "🌅", "detail": "Everyone's allergic to mornings — no pre-7am runs in 7d."}
 
     # The Sufferer — highest 7-day avg HR (≥3 HR runs required per runner)
     sufferer, hr_val = first(
@@ -1010,11 +1021,11 @@ def build_newsflash(
         items.append({"label": "MILESTONE", "text": f"{group['total_km']}km in the bank · keep stacking"})
 
     # ── EARLY BIRDS ─────────────────────────────────────────────
-    early = sorted([r for r in connected if r.pre7am_runs_week > 0], key=lambda r: r.pre7am_runs_week, reverse=True)
+    early = sorted([r for r in connected if r.pre7am_runs_trailing_7d > 0], key=lambda r: r.pre7am_runs_trailing_7d, reverse=True)
     if early:
         e = early[0]
-        run_s = "run" if e.pre7am_runs_week == 1 else "runs"
-        items.append({"label": "DAWN PATROL", "text": f"{e.cfg['name']} clocked {e.pre7am_runs_week} pre-7am {run_s} this week · respect, fear, slight concern"})
+        run_s = "run" if e.pre7am_runs_trailing_7d == 1 else "runs"
+        items.append({"label": "DAWN PATROL", "text": f"{e.cfg['name']} clocked {e.pre7am_runs_trailing_7d} pre-7am {run_s} in 7d · respect, fear, slight concern"})
 
     # ── GHOST WATCH ─────────────────────────────────────────────
     ghosts = [r for r in connected if r.days_since_last_run >= 5]
