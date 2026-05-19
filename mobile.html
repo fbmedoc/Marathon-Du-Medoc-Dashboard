@@ -714,14 +714,20 @@
     white-space: nowrap;
   }
 
-  /* Shared day-label row above the mobile form mini-board rows. */
+  /* Form mini-board: fixed-width column 3 so the day-label header lines
+     up with the dot rows beneath (auto-sized columns would resolve to
+     different widths per row otherwise). */
+  .form-board .mini-row,
+  .form-board .form-header-row{
+    grid-template-columns: 20px 1fr 215px;
+  }
   .form-header-row{
     display: grid;
-    grid-template-columns: 20px 1fr auto;
     gap: 10px;
     padding: 5px 0 3px;
     border-bottom: 1px solid rgba(74,14,31,0.12);
     margin-bottom: 2px;
+    align-items: center;
   }
   .form-header-row .form-day-labels{
     grid-column: 3;
@@ -1551,7 +1557,7 @@
           <div class="mini-row"><span class="pos">iii</span><span class="name">Louis Illig</span><span class="v good">149 bpm</span></div>
       </div>
 
-      <div class="mini-board">
+      <div class="mini-board form-board">
         <h3>Form <span class="meta">Last 14d · most consistent</span></h3>
         <div class="form-header-row">
           <span class="form-day-labels">
@@ -1694,7 +1700,7 @@
 
   <footer class="footer">
     <em>« On y va, doucement. »</em>
-    <a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:12px;vertical-align:middle"></a> · 01:31 BST
+    <a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:12px;vertical-align:middle"></a> · 01:36 BST
   </footer>
 
 </div>
