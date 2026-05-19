@@ -453,6 +453,16 @@
     font-weight: 600;
     color: var(--ink);
   }
+  .runner .name img.avatar{
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 10px;
+    object-fit: cover;
+    border: 1px solid var(--wine);
+  }
+  .runner.top .name img.avatar{ border-color: var(--gold); }
   .runner .info .meta{
     font-family: 'DM Mono', monospace;
     font-size: 9px;
@@ -553,6 +563,13 @@
     justify-content: center;
     background: var(--cream);
     font-size: 20px;
+    overflow: hidden;
+  }
+  .award .icon img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
   }
   .award .title{
     font-family: 'Fraunces', serif;
@@ -1233,7 +1250,7 @@
         <div class="runner{% if r.rank == 1 %} top{% endif %}">
           <div class="rank">{{ r.rank_roman }}</div>
           <div class="info">
-            <div class="name">{{ r.name }}
+            <div class="name">{% if r.avatar %}<img class="avatar" src="{{ r.avatar }}" alt="">{% endif %}{{ r.name }}
               {% if r.tag %}
                 <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;color:{% if r.is_groom %}var(--gold){% elif r.is_brother %}var(--rust){% else %}var(--wine-light){% endif %};margin-left:8px;text-transform:uppercase;">{{ r.tag }}</span>
               {% endif %}
@@ -1273,7 +1290,7 @@
         {% for key in ['le_groom', 'sibling_rivalry', 'top_dog', 'biggest_shift', 'glow_up', 'la_flamme', 'laurore', 'the_sufferer', 'ghost', 'hangover_hero'] %}
           {% set a = awards[key] %}
           <div class="award{% if a.featured %} featured{% endif %}{% if a.shame %} shame{% endif %}">
-            <div class="icon">{{ a.icon }}</div>
+            <div class="icon">{% if a.image %}<img src="{{ a.image }}" alt="">{% else %}{{ a.icon }}{% endif %}</div>
             <div>
               <div class="title">{{ a.title }}<span class="scope">{{ award_scopes[key] }}</span></div>
               <div class="winner">{{ a.detail|safe }}</div>

@@ -715,6 +715,7 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
         awards["le_groom"] = {
             "title":   "Le Groom",
             "icon":    "🤵",
+            "image":   groom.cfg.get("avatar"),  # optional — falls back to the icon emoji
             "detail":  winner_html("The whole reason we're here — ", first_name, ". Looking glorious at every château."),
             "featured": True,
         }
@@ -1207,6 +1208,7 @@ def make_runner_rows(runners: list[RunnerStats]) -> list[dict]:
             "rank":             i,
             "rank_roman":       to_roman(i),
             "name":             r.cfg["name"],
+            "avatar":           r.cfg.get("avatar"),   # optional path to runner photo
             "tag":              r.cfg.get("tag"),
             "is_groom":         bool(r.cfg.get("is_groom")),
             "is_brother":       bool(r.cfg.get("is_brother")),

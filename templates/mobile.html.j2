@@ -439,6 +439,15 @@
     flex-wrap: wrap;
   }
   .runner-card.top .info .name{ color: var(--cream); }
+  .runner-card .name img.avatar{
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--wine);
+    flex-shrink: 0;
+  }
+  .runner-card.top .name img.avatar{ border-color: var(--gold); }
   .runner-card .info .badge{
     font-family: 'DM Mono', monospace;
     font-size: 8px;
@@ -545,6 +554,13 @@
     justify-content: center;
     background: var(--cream);
     font-size: 18px;
+    overflow: hidden;
+  }
+  .award .icon img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
   }
   .award .title{
     font-family: 'Fraunces', serif;
@@ -1140,7 +1156,7 @@
       <div class="runner-card{% if r.rank == 1 %} top{% endif %}">
         <div class="rank">{{ r.rank_roman }}</div>
         <div class="info">
-          <div class="name">{{ r.name }}
+          <div class="name">{% if r.avatar %}<img class="avatar" src="{{ r.avatar }}" alt="">{% endif %}{{ r.name }}
             {% if r.tag %}
               <span class="badge{% if r.is_brother %} rust{% endif %}">{{ r.tag }}</span>
             {% endif %}
@@ -1184,7 +1200,7 @@
         {% for key in ['le_groom', 'sibling_rivalry', 'top_dog', 'biggest_shift', 'glow_up', 'la_flamme', 'laurore', 'the_sufferer', 'ghost', 'hangover_hero'] %}
           {% set a = awards[key] %}
           <div class="award{% if a.featured %} featured{% endif %}{% if a.shame %} shame{% endif %}">
-            <div class="icon">{{ a.icon }}</div>
+            <div class="icon">{% if a.image %}<img src="{{ a.image }}" alt="">{% else %}{{ a.icon }}{% endif %}</div>
             <div>
               <div class="title">{{ a.title }}<span class="scope">{{ award_scopes[key] }}</span></div>
               <div class="winner">{{ a.detail|safe }}</div>
