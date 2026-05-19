@@ -938,18 +938,22 @@ def build_newsflash(
     plan_status: dict,
 ) -> list[dict]:
     """
-    A mix of data-driven highlights and evergreen Médoc lore. Designed to feel
-    alive even with sparse data — the marquee always has something to say.
+    A marquee biased toward people-driven banter — rivalries, heroes, ghosts.
+    Roughly half the items call out connected runners by first name. Evergreen
+    Médoc lore is kept thin so the data does most of the talking.
     """
     items: list[dict] = []
     connected = [r for r in runners if r.connected]
     not_connected_n = sum(1 for r in runners if not r.connected)
 
+    def first_name(r: RunnerStats) -> str:
+        return r.cfg["name"].split()[0]
+
     # ── COUNTDOWN ─────────────────────────────────────────────────
     if days_until > 84:
-        items.append({"label": "COUNTDOWN", "text": f"{days_until} days till the start gun · {days_until // 7} long Sundays to fill"})
+        items.append({"label": "COUNTDOWN", "text": f"{days_until} days till Pauillac · {days_until // 7} long Sundays to suffer through"})
     elif days_until > 28:
-        items.append({"label": "COUNTDOWN", "text": f"{days_until} days till Pauillac · the months are getting smaller"})
+        items.append({"label": "COUNTDOWN", "text": f"{days_until} days till the start gun · stop scrolling, start running"})
     elif days_until > 14:
         items.append({"label": "COUNTDOWN", "text": f"{days_until} days · taper season approaches, try not to peak too early"})
     elif days_until > 0:
@@ -960,96 +964,128 @@ def build_newsflash(
     # ── PHASE ───────────────────────────────────────────────────
     items.append({"label": "PHASE", "text": f"Week {this_week['week_num']} of 18 — {this_week['phase']} · {this_week['focus']}"})
 
-    # ── SQUAD TARGET PROGRESS ───────────────────────────────────
-    if plan_status["connected_n"] > 0 and plan_status["total_target"] > 0:
-        if plan_status["pct"] >= 100:
-            items.append({"label": "TARGET", "text": f"Squad smashed this week's {plan_status['total_target']}km target — {plan_status['actual']}km logged. Order more electrolytes."})
-        elif plan_status["pct"] >= 70:
-            items.append({"label": "TARGET", "text": f"Squad at {plan_status['actual']}/{plan_status['total_target']}km · close, but the lads on Strava silent mode need a nudge"})
-        elif plan_status["pct"] >= 30:
-            items.append({"label": "TARGET", "text": f"Squad at {plan_status['pct']}% of weekly target · recover Sunday, ramp Monday"})
-
-    # ── ROLL CALL ───────────────────────────────────────────────
+    # ── ROLL CALL — sharper ─────────────────────────────────────
     if not_connected_n > 0:
-        items.append({"label": "ROLL CALL", "text": f"{not_connected_n} of 13 still off the grid · they know who they are"})
+        items.append({"label": "ROLL CALL", "text": f"{not_connected_n} of 13 still ghosting the dashboard · we see you, lads"})
+
+    # Pre-sort by total km — used by several leaderboard-driven items below.
+    by_km = sorted(connected, key=lambda r: -r.total_km)
+
+    # ── LEADERBOARD TOP 3 ───────────────────────────────────────
+    if len(by_km) >= 3:
+        names = " > ".join(first_name(r) for r in by_km[:3])
+        items.append({"label": "LEADERBOARD", "text": f"Top three this season: {names} · everyone below has months to do something about it"})
+
+    # ── GAP TO LEADER — bottom of connected pile gets called out ─
+    if len(by_km) >= 3:
+        leader = by_km[0]
+        bottom = by_km[-1]
+        gap = leader.total_km - bottom.total_km
+        if gap > 15:
+            items.append({"label": "GAP", "text": f"{first_name(bottom)} sits {int(round(gap))}km behind {first_name(leader)} · the gap is now a chasm"})
+
+    # ── HEAD TO HEAD — closest pair on the leaderboard ──────────
+    if len(by_km) >= 3:
+        smallest_gap = None
+        pair = None
+        for i in range(len(by_km) - 1):
+            g = by_km[i].total_km - by_km[i+1].total_km
+            if g > 0 and (smallest_gap is None or g < smallest_gap):
+                smallest_gap = g
+                pair = (by_km[i], by_km[i+1])
+        if pair and smallest_gap is not None and smallest_gap < 5:
+            items.append({"label": "HEAD TO HEAD", "text": f"{first_name(pair[0])} only {smallest_gap:.1f}km ahead of {first_name(pair[1])} · this is the rivalry to watch"})
 
     # ── LOUIS LONG RUN ──────────────────────────────────────────
     louis = next((r for r in runners if r.cfg.get("is_groom")), None)
-    if louis and louis.longest_km > 0:
-        items.append({"label": "BREAKING", "text": f"Louis logs {louis.longest_km:.1f}km long run — the groom is cooking"})
+    if louis and louis.connected and louis.longest_km > 0:
+        items.append({"label": "BREAKING", "text": f"Louis just clocked a {louis.longest_km:.1f}km long run · the groom is putting in the work — what's everyone else's excuse?"})
 
     # ── SIBLING RIVALRY ─────────────────────────────────────────
     bros = [r for r in connected if r.cfg.get("is_brother")]
-    if bros and louis and louis.total_km > 0:
+    if bros and louis and louis.connected and louis.total_km > 0:
         best_bro = max(bros, key=lambda r: r.total_km)
         gap = louis.total_km - best_bro.total_km
         if gap > 0.5:
-            items.append({"label": "RIVALRY", "text": f"{best_bro.cfg['name']} sitting {int(round(gap))}km behind the groom · the family Christmas is going to be awkward"})
+            items.append({"label": "RIVALRY", "text": f"{first_name(best_bro)} {int(round(gap))}km behind the groom · Christmas dinner is going to be tense"})
         elif gap < -0.5:
-            items.append({"label": "RIVALRY", "text": f"{best_bro.cfg['name']} {int(round(-gap))}km AHEAD of Louis · the groom may need a quiet word"})
+            items.append({"label": "RIVALRY", "text": f"{first_name(best_bro)} OUTRUNNING the groom by {int(round(-gap))}km · Louis, where's the alpha energy?"})
         else:
-            items.append({"label": "RIVALRY", "text": f"Illig brothers within a km of each other · this is anyone's race"})
+            items.append({"label": "RIVALRY", "text": f"Illig brothers within a km of each other · the family WhatsApp is presumably on fire"})
 
-    # ── DARK HORSE: who's quietly putting in the work ──────────
+    # ── DARK HORSE: non-Illig stacking quietly ──────────────────
     non_illig = [r for r in connected if not r.cfg.get("is_brother") and not r.cfg.get("is_groom")]
     if non_illig:
         dh = max(non_illig, key=lambda r: r.total_km)
         if dh.total_km >= 30:
-            items.append({"label": "DARK HORSE", "text": f"{dh.cfg['name']} quietly stacking {int(round(dh.total_km))}km · the non-Illigs are coming"})
+            items.append({"label": "DARK HORSE", "text": f"{first_name(dh)} quietly stacking {int(round(dh.total_km))}km · the non-Illigs have arrived"})
 
     # ── PACE GLOW-UP ────────────────────────────────────────────
     glow_cand = [r for r in connected if r.pace_improvement_s is not None and r.pace_improvement_s < -10]
     if glow_cand:
         g = min(glow_cand, key=lambda r: r.pace_improvement_s)
-        items.append({"label": "PB", "text": f"{g.cfg['name']} drops {fmt_pace_delta(g.pace_improvement_s)}/km on long runs · the engine is warming up"})
+        items.append({"label": "PB", "text": f"{first_name(g)} drops {fmt_pace_delta(g.pace_improvement_s)}/km on long runs · the engine is warming up"})
 
-    # ── GROUP PROJECTION ────────────────────────────────────────
-    if group["predicted"] != "—":
-        if "on for sub-4" in group["predicted_delta"]:
-            items.append({"label": "PROJECTION", "text": f"Group prediction {group['predicted']} · sub-4 is on the table, lads"})
-        else:
-            items.append({"label": "PROJECTION", "text": f"Group prediction {group['predicted']} · {group['predicted_delta']}, but we have months"})
+    # ── PACE WATCH: roast the slowest established runner ────────
+    pace_cand = [r for r in connected if r.avg_pace_s is not None and r.total_km >= 15]
+    if len(pace_cand) >= 2:
+        slowest = max(pace_cand, key=lambda r: r.avg_pace_s)
+        items.append({"label": "PACE WATCH", "text": f"{first_name(slowest)} averaging {fmt_pace(slowest.avg_pace_s)}/km · brisk if you're carrying the shopping"})
 
-    # ── KM MILESTONES ───────────────────────────────────────────
-    if group["total_km"] >= 1000:
-        items.append({"label": "MILESTONE", "text": f"Squad crosses {group['total_km']}km combined · that's London to Bordeaux on foot, ironically"})
-    elif group["total_km"] >= 500:
-        items.append({"label": "MILESTONE", "text": f"{group['total_km']}km logged · over halfway to Paris if anyone fancied a detour"})
-    elif group["total_km"] >= 200:
-        items.append({"label": "MILESTONE", "text": f"{group['total_km']}km combined · {int(group['total_km'] / 42.2)} marathons' worth between us"})
-    elif group["total_km"] >= 50:
-        items.append({"label": "MILESTONE", "text": f"{group['total_km']}km in the bank · keep stacking"})
-
-    # ── EARLY BIRDS ─────────────────────────────────────────────
-    early = sorted([r for r in connected if r.pre7am_runs_trailing_7d > 0], key=lambda r: r.pre7am_runs_trailing_7d, reverse=True)
-    if early:
-        e = early[0]
-        run_s = "run" if e.pre7am_runs_trailing_7d == 1 else "runs"
-        items.append({"label": "DAWN PATROL", "text": f"{e.cfg['name']} clocked {e.pre7am_runs_trailing_7d} pre-7am {run_s} in 7d · respect, fear, slight concern"})
+    # ── STRUGGLE: lowest-km connected runner gets a nudge ───────
+    if len(by_km) >= 3:
+        weakest = by_km[-1]
+        if 0 < weakest.total_km < 15:
+            items.append({"label": "STRUGGLE", "text": f"{first_name(weakest)} at {weakest.total_km:.1f}km since 1 May · 'starts Monday' has become a season"})
 
     # ── GHOST WATCH ─────────────────────────────────────────────
     ghosts = [r for r in connected if r.days_since_last_run >= 5]
     if ghosts:
         g = max(ghosts, key=lambda r: r.days_since_last_run)
-        items.append({"label": "GHOST WATCH", "text": f"{g.cfg['name']} hasn't logged a run in {g.days_since_last_run} days · 'starts Monday' (week 4 of starting Monday)"})
+        items.append({"label": "GHOST", "text": f"{first_name(g)} hasn't logged a run in {g.days_since_last_run} days · the dashboard has a long memory"})
 
     # ── STREAK ──────────────────────────────────────────────────
     streakers = sorted([r for r in connected if r.streak >= 3], key=lambda r: r.streak, reverse=True)
     if streakers:
         s = streakers[0]
-        items.append({"label": "ON FIRE", "text": f"{s.cfg['name']} on a {s.streak}-day streak · the gas is on"})
+        items.append({"label": "ON FIRE", "text": f"{first_name(s)} on a {s.streak}-day streak · is now the time to mention rest days?"})
 
-    # ── ALWAYS-ON EVERGREEN BITS ────────────────────────────────
+    # ── DAWN PATROL ─────────────────────────────────────────────
+    early = sorted([r for r in connected if r.pre7am_runs_trailing_7d > 0], key=lambda r: r.pre7am_runs_trailing_7d, reverse=True)
+    if early:
+        e = early[0]
+        run_s = "run" if e.pre7am_runs_trailing_7d == 1 else "runs"
+        items.append({"label": "DAWN PATROL", "text": f"{first_name(e)} clocked {e.pre7am_runs_trailing_7d} pre-7am {run_s} in 7d · the rest of you were horizontal"})
+
+    # ── SQUAD TARGET PROGRESS ───────────────────────────────────
+    if plan_status["connected_n"] > 0 and plan_status["total_target"] > 0:
+        if plan_status["pct"] >= 100:
+            items.append({"label": "TARGET", "text": f"Squad smashed this week's {plan_status['total_target']}km target — {plan_status['actual']}km logged · the oysters are earned"})
+        elif plan_status["pct"] >= 70:
+            items.append({"label": "TARGET", "text": f"Squad at {plan_status['actual']}/{plan_status['total_target']}km · the silent runners are letting the team down"})
+        elif plan_status["pct"] >= 30:
+            items.append({"label": "TARGET", "text": f"Squad at {plan_status['pct']}% of this week's target · respectable for amateurs, embarrassing for trainees"})
+        else:
+            items.append({"label": "TARGET", "text": f"Squad at {plan_status['pct']}% of target this week · the wine isn't going anywhere, but neither are you"})
+
+    # ── GROUP PROJECTION ────────────────────────────────────────
+    if group["predicted"] != "—":
+        if "on for sub-4" in group["predicted_delta"]:
+            items.append({"label": "PROJECTION", "text": f"Group on for sub-4 at {group['predicted']} · don't blow it now"})
+        else:
+            items.append({"label": "PROJECTION", "text": f"Group projection {group['predicted']} · {group['predicted_delta']} — but we still have months"})
+
+    # ── KM MILESTONE ────────────────────────────────────────────
+    if group["total_km"] >= 1000:
+        items.append({"label": "MILESTONE", "text": f"Squad past {group['total_km']}km combined · London to Bordeaux on foot, ironically"})
+    elif group["total_km"] >= 200:
+        items.append({"label": "MILESTONE", "text": f"{group['total_km']}km combined · {int(group['total_km'] / 42.2)} marathons' worth between the squad"})
+
+    # ── Evergreen Médoc lore — trimmed to the punchiest 3 ───────
     items.extend([
-        {"label": "FACT",       "text": "Médoc has 23 wine stops along the course · 1.77 châteaux per runner if shared evenly"},
-        {"label": "REMINDER",   "text": "Oysters are served at km 38 · plan your stomach accordingly"},
-        {"label": "DISCLAIMER", "text": "Predictions use Riegel's formula, not your hangover history"},
-        {"label": "TERROIR",    "text": "Pauillac is mostly gravel · wear shoes that won't murder your feet"},
-        {"label": "CUTOFF",     "text": "6h30m race cutoff · after that they pack up the oysters and you walk home"},
-        {"label": "HOT TAKE",   "text": "The Médoc isn't a wine tour, it's a marathon with optional refreshments"},
-        {"label": "RUMOUR",     "text": "One château allegedly pours grand cru · look for the queue, join it, lose 12 minutes"},
-        {"label": "DRESS CODE", "text": "Costumes are mandatory · this is non-negotiable and yes, it'll chafe"},
-        {"label": "PSA",        "text": "If you can hold a conversation on your long run, the pace is right · if you're explaining politics, you're going too easy"},
+        {"label": "DRESS CODE", "text": "Costumes are mandatory · this is non-negotiable, yes it'll chafe"},
+        {"label": "RUMOUR",     "text": "One château allegedly pours grand cru · find the queue, join it, lose 12 minutes"},
+        {"label": "PSA",        "text": "If you can hold a conversation on your long run the pace is right · if you're explaining politics, you're going too easy"},
     ])
 
     # Defensive fallback (shouldn't fire — we always have countdown + phase)
