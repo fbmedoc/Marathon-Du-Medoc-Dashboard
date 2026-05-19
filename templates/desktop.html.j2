@@ -700,8 +700,14 @@
 
   .form-mini{
     display: inline-flex;
-    gap: 4px;
+    gap: 3px;
+    align-items: flex-end;
+  }
+  .form-mini .d-col{
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    gap: 3px;
   }
   .form-mini .d{
     display: inline-block;
@@ -713,6 +719,25 @@
   .form-mini .d.on{ background: var(--moss); border-color: var(--moss); }
   .form-mini .d.partial{ background: var(--gold); border-color: var(--gold); }
   .form-mini .d.skip{ background: var(--rust); border-color: var(--rust); }
+  .form-mini .lbl{
+    font-family: 'DM Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    line-height: 1;
+  }
+  .form-mini .total{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--wine);
+    font-weight: 500;
+    margin-left: 10px;
+    margin-bottom: 1px;
+    white-space: nowrap;
+  }
 
   .form-legend .legend-row{
     display: flex;
@@ -1347,16 +1372,16 @@
       </div>
 
       <div class="mini-board">
-        <h3>Form <span class="meta">Last 7 days · most consistent</span></h3>
+        <h3>Form <span class="meta">Last 14 days · most consistent</span></h3>
         {% for row in mini_boards.form %}
-          <div class="mini-row"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for d in row.dots %}<i class="d {{ d }}"></i>{% endfor %}</span></span></div>
+          <div class="mini-row"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for d in row.days %}<span class="d-col"><i class="d {{ d.cls }}"></i><span class="lbl">{{ d.label }}</span></span>{% endfor %}<span class="total">{{ row.run_count }} run{% if row.run_count != 1 %}s{% endif %}</span></span></span></div>
         {% else %}
           <div class="mini-row"><span class="pos">—</span><span class="name">Waiting on runs</span><span class="v">—</span></div>
         {% endfor %}
       </div>
 
       <div class="mini-board form-legend">
-        <h3>How to Read <span class="meta">Form dots · 7 days</span></h3>
+        <h3>How to Read <span class="meta">Form dots · 14 days</span></h3>
         <div class="legend-row"><span class="form-mini"><i class="d on"></i></span><span class="lbl">Solid run — at least 5 km</span></div>
         <div class="legend-row"><span class="form-mini"><i class="d partial"></i></span><span class="lbl">Short or shake-out — under 5 km</span></div>
         <div class="legend-row"><span class="form-mini"><i class="d"></i></span><span class="lbl">Rest day or no run logged</span></div>

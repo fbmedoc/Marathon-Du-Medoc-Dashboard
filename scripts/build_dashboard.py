@@ -358,7 +358,7 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
     rs.activities = activities
 
     if not activities:
-        rs.form_dots = [""] * 7   # neutral dots — no judgement on inactivity
+        rs.form_dots = [""] * 14   # neutral dots — no judgement on inactivity
         return rs
 
     # ─── Distances, elevation ──────────────────────────────────────
@@ -413,18 +413,18 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
         cursor -= timedelta(days=1)
     rs.streak = streak
 
-    # ─── Form: rolling last 7 days ─────────────────────────────────
+    # ─── Form: rolling last 14 days ────────────────────────────────
     # Honest activity dots — no judgement of rest days.
     #   "on"      = solid run, day total >= 5km   (dark green)
     #   "partial" = short / shake-out, ran > 0    (light green / gold)
     #   ""        = rest day or no log            (neutral grey, default css)
-    # Oldest (6 days ago) on the left, today on the right.
+    # Oldest (13 days ago) on the left, today on the right.
     by_day = defaultdict(float)
     for a in activities:
         d = utc_to_uk(a["start_date"]).date()
         by_day[d] += a.get("distance", 0) / 1000.0
     dots = []
-    for i in range(6, -1, -1):
+    for i in range(13, -1, -1):
         d = today_uk - timedelta(days=i)
         km = by_day.get(d, 0.0)
         if km >= 5:
@@ -875,7 +875,7 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     return awards
 
 
-def build_mini_boards(runners: list[RunnerStats]) -> dict:
+def build_mini_boards(runners: list[RunnerStats], today_uk: date) -> dict:
     """Top-5 lists for the 'detail' section."""
     connected = [r for r in runners if r.connected]
 
@@ -924,7 +924,18 @@ def build_mini_boards(runners: list[RunnerStats]) -> dict:
         return (on_count, partial_count)
 
     form_runners = sorted(connected, key=form_score, reverse=True)[:5]
-    form = [{"name": r.cfg["name"], "dots": r.form_dots or [""]*7} for r in form_runners]
+    form = []
+    for r in form_runners:
+        dots = r.form_dots or [""] * 14
+        # Build a labelled column for each day so the template can render
+        # day-of-week initials below each dot. dots[0] is 13 days ago, last
+        # entry is today (oldest on left, newest on right).
+        days = []
+        for idx, cls in enumerate(dots):
+            day_date = today_uk - timedelta(days=(len(dots) - 1 - idx))
+            days.append({"cls": cls, "label": day_date.strftime("%a")[0]})
+        run_count = sum(1 for c in dots if c in ("on", "partial"))
+        form.append({"name": r.cfg["name"], "days": days, "run_count": run_count})
 
     return {"longest": longest, "pace_imp": pace_imp, "elevation": elevation, "hr": hr, "form": form}
 
@@ -1307,7 +1318,7 @@ def main() -> None:
     trailing_7d  = build_trailing_7d(runners, today_uk)
     week_grid, week_summary = build_week_grid(runners, today_uk)
     awards       = build_awards(runners, by_total)
-    mini_boards  = build_mini_boards(runners)
+    mini_boards  = build_mini_boards(runners, today_uk)
     phases       = phases_with_current(today_uk)
     this_week    = current_week_plan(today_uk)
     plan_status  = group_plan_status(runners, this_week)
