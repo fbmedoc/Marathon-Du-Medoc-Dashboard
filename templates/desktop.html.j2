@@ -701,13 +701,13 @@
   .form-mini{
     display: inline-flex;
     gap: 3px;
-    align-items: flex-end;
-  }
-  .form-mini .d-col{
-    display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 3px;
+  }
+  .form-mini .d-slot{
+    width: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
   .form-mini .d{
     display: inline-block;
@@ -719,14 +719,6 @@
   .form-mini .d.on{ background: var(--moss); border-color: var(--moss); }
   .form-mini .d.partial{ background: var(--gold); border-color: var(--gold); }
   .form-mini .d.skip{ background: var(--rust); border-color: var(--rust); }
-  .form-mini .lbl{
-    font-family: 'DM Mono', monospace;
-    font-size: 7px;
-    letter-spacing: 0;
-    text-transform: uppercase;
-    color: var(--wine-light);
-    line-height: 1;
-  }
   .form-mini .total{
     font-family: 'DM Mono', monospace;
     font-size: 9px;
@@ -735,8 +727,33 @@
     color: var(--wine);
     font-weight: 500;
     margin-left: 10px;
-    margin-bottom: 1px;
     white-space: nowrap;
+  }
+
+  /* Shared day-label row above the form mini-board rows. Matches the
+     .mini-row grid so the labels line up with the dots beneath. */
+  .form-header-row{
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    gap: 12px;
+    padding: 6px 0 4px;
+    border-bottom: 1px solid rgba(74,14,31,0.12);
+    margin-bottom: 2px;
+  }
+  .form-header-row .form-day-labels{
+    grid-column: 3;
+    display: inline-flex;
+    gap: 3px;
+  }
+  .form-header-row .lbl{
+    width: 11px;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    line-height: 1;
   }
 
   .form-legend .legend-row{
@@ -1373,8 +1390,13 @@
 
       <div class="mini-board">
         <h3>Form <span class="meta">Last 14 days · most consistent</span></h3>
-        {% for row in mini_boards.form %}
-          <div class="mini-row"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for d in row.days %}<span class="d-col"><i class="d {{ d.cls }}"></i><span class="lbl">{{ d.label }}</span></span>{% endfor %}<span class="total">{{ row.run_count }} run{% if row.run_count != 1 %}s{% endif %}</span></span></span></div>
+        <div class="form-header-row">
+          <span class="form-day-labels">
+            {% for lbl in mini_boards.form.day_labels %}<span class="lbl">{{ lbl }}</span>{% endfor %}
+          </span>
+        </div>
+        {% for row in mini_boards.form.rows %}
+          <div class="mini-row"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for cls in row.dots %}<span class="d-slot"><i class="d {{ cls }}"></i></span>{% endfor %}<span class="total">{{ row.run_count }} run{% if row.run_count != 1 %}s{% endif %}</span></span></span></div>
         {% else %}
           <div class="mini-row"><span class="pos">—</span><span class="name">Waiting on runs</span><span class="v">—</span></div>
         {% endfor %}

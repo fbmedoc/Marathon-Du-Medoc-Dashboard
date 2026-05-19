@@ -924,18 +924,19 @@ def build_mini_boards(runners: list[RunnerStats], today_uk: date) -> dict:
         return (on_count, partial_count)
 
     form_runners = sorted(connected, key=form_score, reverse=True)[:5]
-    form = []
+    # Shared day-of-week labels for the form mini-board — same window for
+    # every runner, so we render the header once at the top of the board.
+    # dots[0] = 13 days ago, dots[13] = today.
+    day_labels = [
+        (today_uk - timedelta(days=13 - i)).strftime("%a")[:2]
+        for i in range(14)
+    ]
+    form_rows = []
     for r in form_runners:
         dots = r.form_dots or [""] * 14
-        # Build a labelled column for each day so the template can render
-        # day-of-week initials below each dot. dots[0] is 13 days ago, last
-        # entry is today (oldest on left, newest on right).
-        days = []
-        for idx, cls in enumerate(dots):
-            day_date = today_uk - timedelta(days=(len(dots) - 1 - idx))
-            days.append({"cls": cls, "label": day_date.strftime("%a")[0]})
         run_count = sum(1 for c in dots if c in ("on", "partial"))
-        form.append({"name": r.cfg["name"], "days": days, "run_count": run_count})
+        form_rows.append({"name": r.cfg["name"], "dots": dots, "run_count": run_count})
+    form = {"day_labels": day_labels, "rows": form_rows}
 
     return {"longest": longest, "pace_imp": pace_imp, "elevation": elevation, "hr": hr, "form": form}
 
