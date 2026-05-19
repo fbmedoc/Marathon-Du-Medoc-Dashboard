@@ -730,15 +730,22 @@
     white-space: nowrap;
   }
 
-  /* Shared day-label row above the form mini-board rows. Matches the
-     .mini-row grid so the labels line up with the dots beneath. */
+  /* Form mini-board uses a fixed-width column 3 so the day-label header
+     and the dot rows below it use the same X-position for column 3. With
+     the default 'auto' sizing each grid row resolves column widths
+     independently, so the header (just labels) and the body rows (dots +
+     total) end up offset — fixed width pins them together. */
+  .form-board .mini-row,
+  .form-board .form-header-row{
+    grid-template-columns: 24px 1fr 270px;
+  }
   .form-header-row{
     display: grid;
-    grid-template-columns: 24px 1fr auto;
     gap: 12px;
     padding: 6px 0 4px;
     border-bottom: 1px solid rgba(74,14,31,0.12);
     margin-bottom: 2px;
+    align-items: center;
   }
   .form-header-row .form-day-labels{
     grid-column: 3;
@@ -1388,7 +1395,7 @@
         {% endfor %}
       </div>
 
-      <div class="mini-board">
+      <div class="mini-board form-board">
         <h3>Form <span class="meta">Last 14 days · most consistent</span></h3>
         <div class="form-header-row">
           <span class="form-day-labels">
