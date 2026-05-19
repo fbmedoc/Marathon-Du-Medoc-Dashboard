@@ -439,6 +439,15 @@
     flex-wrap: wrap;
   }
   .runner-card.top .info .name{ color: var(--cream); }
+  .runner-card .name img.avatar{
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--wine);
+    flex-shrink: 0;
+  }
+  .runner-card.top .name img.avatar{ border-color: var(--gold); }
   .runner-card .info .badge{
     font-family: 'DM Mono', monospace;
     font-size: 8px;
@@ -545,6 +554,13 @@
     justify-content: center;
     background: var(--cream);
     font-size: 18px;
+    overflow: hidden;
+  }
+  .award .icon img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
   }
   .award .title{
     font-family: 'Fraunces', serif;
@@ -1175,7 +1191,7 @@
       <div class="runner-card">
         <div class="rank">II</div>
         <div class="info">
-          <div class="name">Louis Illig
+          <div class="name"><img class="avatar" src="assets/runners/louis.png" alt="">Louis Illig
               <span class="badge">★ The Groom</span>
           </div>
           <div class="meta">127km total · 1-day streak</div>
@@ -1390,7 +1406,7 @@
 
       <div class="awards-list">
           <div class="award featured">
-            <div class="icon">🤵</div>
+            <div class="icon"><img src="assets/runners/louis.png" alt=""></div>
             <div>
               <div class="title">Le Groom<span class="scope">always</span></div>
               <div class="winner">The whole reason we&#x27;re here — <b>Louis</b>. Looking glorious at every château.</div>
@@ -1637,7 +1653,7 @@
 
   <footer class="footer">
     <em>« On y va, doucement. »</em>
-    <a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:12px;vertical-align:middle"></a> · 00:53 BST
+    <a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:12px;vertical-align:middle"></a> · 01:02 BST
   </footer>
 
 </div>
