@@ -684,12 +684,18 @@
 
   .form-mini{
     display: inline-flex;
-    gap: 3px;
+    gap: 2px;
+    align-items: flex-end;
+  }
+  .form-mini .d-col{
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    gap: 2px;
   }
   .form-mini .d{
     display: inline-block;
-    width: 8px; height: 8px;
+    width: 7px; height: 7px;
     border-radius: 50%;
     background: rgba(74,14,31,0.15);
     border: 1px solid rgba(74,14,31,0.3);
@@ -697,6 +703,25 @@
   .form-mini .d.on{ background: var(--moss); border-color: var(--moss); }
   .form-mini .d.partial{ background: var(--gold); border-color: var(--gold); }
   .form-mini .d.skip{ background: var(--rust); border-color: var(--rust); }
+  .form-mini .lbl{
+    font-family: 'DM Mono', monospace;
+    font-size: 6px;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    line-height: 1;
+  }
+  .form-mini .total{
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--wine);
+    font-weight: 500;
+    margin-left: 6px;
+    margin-bottom: 1px;
+    white-space: nowrap;
+  }
 
   .plan-card{
     background: var(--wine);
@@ -1511,10 +1536,10 @@
       </div>
 
       <div class="mini-board">
-        <h3>Form <span class="meta">Last 7d · most consistent</span></h3>
-          <div class="mini-row"><span class="pos">i</span><span class="name">Louis Illig</span><span class="v"><span class="form-mini"><i class="d "></i><i class="d on"></i><i class="d "></i><i class="d on"></i><i class="d "></i><i class="d on"></i><i class="d "></i></span></span></div>
-          <div class="mini-row"><span class="pos">ii</span><span class="name">Fred Illig</span><span class="v"><span class="form-mini"><i class="d "></i><i class="d on"></i><i class="d "></i><i class="d on"></i><i class="d on"></i><i class="d "></i><i class="d "></i></span></span></div>
-          <div class="mini-row"><span class="pos">iii</span><span class="name">Freddy B.</span><span class="v"><span class="form-mini"><i class="d "></i><i class="d on"></i><i class="d "></i><i class="d on"></i><i class="d "></i><i class="d "></i><i class="d "></i></span></span></div>
+        <h3>Form <span class="meta">Last 14d · most consistent</span></h3>
+          <div class="mini-row"><span class="pos">i</span><span class="name">Louis Illig</span><span class="v"><span class="form-mini"><span class="d-col"><i class="d "></i><span class="lbl">W</span></span><span class="d-col"><i class="d on"></i><span class="lbl">T</span></span><span class="d-col"><i class="d "></i><span class="lbl">F</span></span><span class="d-col"><i class="d "></i><span class="lbl">S</span></span><span class="d-col"><i class="d on"></i><span class="lbl">S</span></span><span class="d-col"><i class="d on"></i><span class="lbl">M</span></span><span class="d-col"><i class="d on"></i><span class="lbl">T</span></span><span class="d-col"><i class="d "></i><span class="lbl">W</span></span><span class="d-col"><i class="d on"></i><span class="lbl">T</span></span><span class="d-col"><i class="d "></i><span class="lbl">F</span></span><span class="d-col"><i class="d on"></i><span class="lbl">S</span></span><span class="d-col"><i class="d "></i><span class="lbl">S</span></span><span class="d-col"><i class="d on"></i><span class="lbl">M</span></span><span class="d-col"><i class="d "></i><span class="lbl">T</span></span><span class="total">7 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">ii</span><span class="name">Fred Illig</span><span class="v"><span class="form-mini"><span class="d-col"><i class="d "></i><span class="lbl">W</span></span><span class="d-col"><i class="d on"></i><span class="lbl">T</span></span><span class="d-col"><i class="d "></i><span class="lbl">F</span></span><span class="d-col"><i class="d on"></i><span class="lbl">S</span></span><span class="d-col"><i class="d on"></i><span class="lbl">S</span></span><span class="d-col"><i class="d "></i><span class="lbl">M</span></span><span class="d-col"><i class="d on"></i><span class="lbl">T</span></span><span class="d-col"><i class="d "></i><span class="lbl">W</span></span><span class="d-col"><i class="d on"></i><span class="lbl">T</span></span><span class="d-col"><i class="d "></i><span class="lbl">F</span></span><span class="d-col"><i class="d on"></i><span class="lbl">S</span></span><span class="d-col"><i class="d on"></i><span class="lbl">S</span></span><span class="d-col"><i class="d "></i><span class="lbl">M</span></span><span class="d-col"><i class="d "></i><span class="lbl">T</span></span><span class="total">7 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">iii</span><span class="name">Freddy B.</span><span class="v"><span class="form-mini"><span class="d-col"><i class="d "></i><span class="lbl">W</span></span><span class="d-col"><i class="d on"></i><span class="lbl">T</span></span><span class="d-col"><i class="d "></i><span class="lbl">F</span></span><span class="d-col"><i class="d "></i><span class="lbl">S</span></span><span class="d-col"><i class="d "></i><span class="lbl">S</span></span><span class="d-col"><i class="d on"></i><span class="lbl">M</span></span><span class="d-col"><i class="d "></i><span class="lbl">T</span></span><span class="d-col"><i class="d "></i><span class="lbl">W</span></span><span class="d-col"><i class="d on"></i><span class="lbl">T</span></span><span class="d-col"><i class="d "></i><span class="lbl">F</span></span><span class="d-col"><i class="d on"></i><span class="lbl">S</span></span><span class="d-col"><i class="d "></i><span class="lbl">S</span></span><span class="d-col"><i class="d "></i><span class="lbl">M</span></span><span class="d-col"><i class="d "></i><span class="lbl">T</span></span><span class="total">4 runs</span></span></span></div>
       </div>
     </section>
 
@@ -1649,7 +1674,7 @@
 
   <footer class="footer">
     <em>« On y va, doucement. »</em>
-    <a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:12px;vertical-align:middle"></a> · 01:18 BST
+    <a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:12px;vertical-align:middle"></a> · 01:26 BST
   </footer>
 
 </div>
