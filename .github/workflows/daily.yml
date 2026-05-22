@@ -2,18 +2,19 @@ name: Daily dashboard rebuild
 
 on:
   schedule:
-    # Every 5 minutes — the lowest cadence GitHub Actions cron supports.
-    # Each runner has their own personal Strava app, so webhooks aren't
-    # practical (each runner would need to subscribe their own app), and
-    # this cadence gets us to ~5-min freshness without that complexity.
-    #
-    # API volume: 288 builds/day × ~1 call/runner (access tokens cached
-    # for 6h) ≈ 288 calls/day per runner — well under Strava's 2000/day
-    # per-app rate limit. Each runner has their own 2000/day bucket.
-    - cron: '*/5 * * * *'
+    # Hourly safety net. The *primary* refresh driver is the Cloudflare
+    # Worker — its scheduled() handler fires repository_dispatch every
+    # 5 minutes (GitHub's own */5 cron is delayed by 4-7 hours under load,
+    # which is no good for a near-real-time dashboard). This hourly schedule
+    # is a redundant backup in case Cloudflare cron has an outage.
+    - cron: '0 * * * *'
   workflow_dispatch:
   push:
     branches: [main]
+  # Triggered by the Cloudflare Worker every 5 minutes (cron-refresh) and
+  # by Strava webhook events if any runner ever subscribes (strava-webhook).
+  repository_dispatch:
+    types: [cron-refresh, strava-webhook]
 
 permissions:
   contents: write

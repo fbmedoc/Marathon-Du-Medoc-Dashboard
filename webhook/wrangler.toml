@@ -23,6 +23,13 @@ compatibility_date = "2026-05-12"
 GITHUB_REPO    = "fbmedoc/Marathon-Du-Medoc-Dashboard"
 ALLOWED_ORIGIN = "https://fbmedoc.github.io"
 
+# Scheduled trigger — Cloudflare honours this to the minute (unlike GitHub
+# Actions */5 cron, which gets throttled to 4-7 hour intervals on free tier).
+# The Worker's scheduled() handler fires repository_dispatch to GitHub so
+# the dashboard workflow rebuilds every 5 min reliably.
+[triggers]
+crons = ["*/5 * * * *"]
+
 # The Worker will be reachable at:
 #   https://medoc-26-webhook.<your-cloudflare-account>.workers.dev
 # Custom domain is optional and not needed for Strava webhooks.

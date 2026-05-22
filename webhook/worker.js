@@ -1,9 +1,9 @@
 /**
- * Le Marathon Du Médoc 26 — OAuth proxy + access-code gate
+ * Le Marathon Du Médoc 26 — OAuth proxy + access-code gate + cron pinger
  *
  * Each runner brings their own personal Strava app (because Strava's free
- * tier caps shared apps at 1 connected athlete). This Worker exists for two
- * reasons in the per-runner-app world:
+ * tier caps shared apps at 1 connected athlete). This Worker has three jobs
+ * in the per-runner-app world:
  *
  *   1. POST /check-code     — validates the shared friend-group access code
  *                             before connect.html shows any Strava UI, so
@@ -16,6 +16,14 @@
  *                             just relays to Strava because the Strava token
  *                             endpoint doesn't speak CORS to browsers.
  *
+ *   3. scheduled() handler  — Cloudflare cron fires this every 5 minutes.
+ *                             We POST to GitHub's repository_dispatch endpoint
+ *                             with event_type "cron-refresh", which the
+ *                             dashboard workflow listens for, so the dashboard
+ *                             actually rebuilds every 5 min. GitHub's own
+ *                             5-minute cron is throttled to 4-7 hour intervals
+ *                             on free tier, hence driving it from here.
+ *
  * The Worker also still answers Strava's webhook subscription handshake (GET
  * with hub.* params) — left in place in case we ever pivot back to a shared
  * app or one runner wants to set up their own webhook subscription pointed
@@ -27,7 +35,7 @@
  *   STRAVA_VERIFY_TOKEN — secret, random string for webhook handshake (unused
  *                         under per-runner-app architecture; safe to leave set)
  *   GITHUB_PAT          — secret, PAT with Actions:write on the dashboard repo
- *                         (only used if the webhook POST path is ever invoked)
+ *                         (used by both the webhook POST path AND the cron)
  *   GITHUB_REPO         — plain var, "owner/repo"
  *   ALLOWED_ORIGIN      — plain var, the dashboard's origin for CORS
  */
@@ -46,6 +54,21 @@ function corsHeaders(env) {
 }
 
 export default {
+  /**
+   * Scheduled trigger — fires per the cron in wrangler.toml ([triggers]).
+   * Pings GitHub repository_dispatch so the dashboard workflow rebuilds.
+   * GitHub Actions' own 5-minute cron is unreliable (delayed by hours under
+   * load); Cloudflare's cron is honoured to the minute, so we drive the
+   * refresh cadence from here instead.
+   */
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(triggerRebuild(env, "cron-refresh", {
+      cron:     event.cron,
+      fired_at: new Date(event.scheduledTime).toISOString(),
+      source:   "cloudflare-cron",
+    }));
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
@@ -110,7 +133,13 @@ export default {
       if (!isActivity && !isDeauth) {
         return new Response(`OK (ignored: ${body.object_type}/${body.aspect_type})`, { status: 200 });
       }
-      ctx.waitUntil(triggerRebuild(env, body));
+      ctx.waitUntil(triggerRebuild(env, "strava-webhook", {
+        athlete_id:   body.owner_id,
+        object_type:  body.object_type,
+        object_id:    body.object_id,
+        aspect_type:  body.aspect_type,
+        event_time:   body.event_time,
+      }));
       return new Response("OK", { status: 200 });
     }
 
@@ -233,20 +262,19 @@ async function handlePersonalExchange(request, env) {
 }
 
 /**
- * Vestigial — fires a GitHub repository_dispatch to rebuild the dashboard.
- * Kept in case someone wires up a personal-app webhook to this Worker.
+ * Fire a GitHub repository_dispatch to rebuild the dashboard.
+ *
+ * Called from two paths:
+ *   - scheduled() — every 5 min via Cloudflare cron, event_type "cron-refresh"
+ *   - fetch()/webhook POST — on Strava activity events, event_type "strava-webhook"
+ *
+ * The workflow (daily.yml) is configured to listen for both types.
  */
-async function triggerRebuild(env, payload) {
+async function triggerRebuild(env, eventType, payload) {
   const url = `https://api.github.com/repos/${env.GITHUB_REPO}/dispatches`;
   const body = {
-    event_type: "strava-webhook",
-    client_payload: {
-      athlete_id:   payload.owner_id,
-      object_type:  payload.object_type,
-      object_id:    payload.object_id,
-      aspect_type:  payload.aspect_type,
-      event_time:   payload.event_time,
-    },
+    event_type:     eventType,
+    client_payload: payload || {},
   };
 
   try {
@@ -263,11 +291,11 @@ async function triggerRebuild(env, payload) {
 
     if (!resp.ok) {
       const text = await resp.text();
-      console.error(`GitHub dispatch failed: ${resp.status} ${text}`);
+      console.error(`GitHub dispatch (${eventType}) failed: ${resp.status} ${text}`);
     } else {
-      console.log(`Triggered rebuild for athlete ${payload.owner_id}, activity ${payload.object_id} (${payload.aspect_type})`);
+      console.log(`Triggered rebuild (${eventType})`);
     }
   } catch (err) {
-    console.error(`Trigger error: ${err.message}`);
+    console.error(`Trigger error (${eventType}): ${err.message}`);
   }
 }
