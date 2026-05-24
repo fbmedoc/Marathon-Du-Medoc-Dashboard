@@ -195,6 +195,162 @@
     to{ transform: translateX(-50%); }
   }
 
+  /* LIVE ACTIVITY TICKER */
+  .ticker{
+    background: var(--cream);
+    border: 1px solid var(--wine);
+    margin: 0 12px 16px;
+    padding: 12px 0 10px;
+  }
+  .tk-header{
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 0 14px;
+  }
+  .tk-title{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--wine);
+  }
+  .tk-pulse{
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--moss);
+    margin-right: 6px;
+    animation: tk-pulse 2.4s ease-in-out infinite;
+    vertical-align: 2px;
+  }
+  @keyframes tk-pulse{
+    0%, 100%{ opacity: 0.4; transform: scale(0.85); }
+    50%{ opacity: 1; transform: scale(1.1); }
+  }
+  .tk-meta{
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+  .tk-list{
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 14px 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tk-list::-webkit-scrollbar{ display: none; }
+  .tk-item{
+    flex: 0 0 auto;
+    width: 170px;
+    padding: 8px 10px;
+    background: var(--paper);
+    border: 1px solid rgba(74,14,31,0.22);
+    border-left: 3px solid var(--wine);
+  }
+  .tk-item.is-groom{ border-left-color: var(--gold); }
+  .tk-item.is-brother{ border-left-color: var(--rust); }
+  .tk-runner{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .tk-avatar{
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--wine);
+    flex-shrink: 0;
+  }
+  .tk-avatar-fallback{
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--cream);
+    border: 1px solid var(--wine);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 10px;
+    color: var(--wine);
+    flex-shrink: 0;
+  }
+  .tk-name{
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .tk-stats{
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 3px;
+  }
+  .tk-dist{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--wine);
+    line-height: 1;
+  }
+  .tk-u{
+    font-family: 'DM Mono', monospace;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 8px;
+    margin-left: 2px;
+    color: var(--wine-light);
+  }
+  .tk-pace{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--wine-light);
+  }
+  .tk-meta-line{
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .tk-title-text{
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 11px;
+    color: var(--ink);
+    opacity: 0.75;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .tk-time-ago{
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+  .tk-empty{
+    padding: 10px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+
   .tabs{
     position: sticky;
     top: 0;
@@ -1127,6 +1283,13 @@
         <span><b>TARGET:</b> Squad at 0% of target this week · the wine isn't going anywhere, but neither are you</span>
         <span><b>PROJECTION:</b> Group projection 4:14 · +14:29 to sub-4 — but we still have months</span>
         <span><b>MILESTONE:</b> 846km combined · 20 marathons' worth between the squad</span>
+        <span><b>MILESTONE WATCH:</b> Dan is 4.4km from 100km · go and grab it</span>
+        <span><b>MILESTONE WATCH:</b> Louis is 6.5km from 150km · go and grab it</span>
+        <span><b>PACE LEADER:</b> Matt averaging 5:05/km across the season · the gears are clean</span>
+        <span><b>BIG WEEK:</b> Fred stacked 45km in the last 7 days · the calves know</span>
+        <span><b>ASCENDED:</b> Fred climbed 1222m total · half a Snowdon and counting</span>
+        <span><b>LONG RUN OF THE WEEK:</b> Matt clocked 18.7km in a single session this week · respect</span>
+        <span><b>RACE-DAY:</b> If they ran Médoc today: 1. Matt · 2. Louis · 3. Fred · everyone else has weeks to fight for it</span>
         <span><b>DRESS CODE:</b> Costumes are mandatory · this is non-negotiable, yes it'll chafe</span>
         <span><b>RUMOUR:</b> One château allegedly pours grand cru · find the queue, join it, lose 12 minutes</span>
         <span><b>PSA:</b> If you can hold a conversation on your long run the pace is right · if you're explaining politics, you're going too easy</span>
@@ -1145,9 +1308,130 @@
         <span><b>TARGET:</b> Squad at 0% of target this week · the wine isn't going anywhere, but neither are you</span>
         <span><b>PROJECTION:</b> Group projection 4:14 · +14:29 to sub-4 — but we still have months</span>
         <span><b>MILESTONE:</b> 846km combined · 20 marathons' worth between the squad</span>
+        <span><b>MILESTONE WATCH:</b> Dan is 4.4km from 100km · go and grab it</span>
+        <span><b>MILESTONE WATCH:</b> Louis is 6.5km from 150km · go and grab it</span>
+        <span><b>PACE LEADER:</b> Matt averaging 5:05/km across the season · the gears are clean</span>
+        <span><b>BIG WEEK:</b> Fred stacked 45km in the last 7 days · the calves know</span>
+        <span><b>ASCENDED:</b> Fred climbed 1222m total · half a Snowdon and counting</span>
+        <span><b>LONG RUN OF THE WEEK:</b> Matt clocked 18.7km in a single session this week · respect</span>
+        <span><b>RACE-DAY:</b> If they ran Médoc today: 1. Matt · 2. Louis · 3. Fred · everyone else has weeks to fight for it</span>
         <span><b>DRESS CODE:</b> Costumes are mandatory · this is non-negotiable, yes it'll chafe</span>
         <span><b>RUMOUR:</b> One château allegedly pours grand cru · find the queue, join it, lose 12 minutes</span>
         <span><b>PSA:</b> If you can hold a conversation on your long run the pace is right · if you're explaining politics, you're going too easy</span>
+    </div>
+  </div>
+
+  <!-- LIVE ACTIVITY TICKER — latest runs across the squad -->
+  <div class="ticker">
+    <div class="tk-header">
+      <span class="tk-title"><span class="tk-pulse"></span>On the Trail</span>
+      <span class="tk-meta">Latest squad runs · auto-updates</span>
+    </div>
+    <div class="tk-list">
+        <div class="tk-item">
+          <div class="tk-runner">
+<span class="tk-avatar-fallback">D</span>            <span class="tk-name">Dan</span>
+          </div>
+          <div class="tk-stats">
+            <span class="tk-dist">12.0<span class="tk-u">km</span></span>
+            <span class="tk-pace">5:06/km</span>
+          </div>
+          <div class="tk-meta-line">
+            <span class="tk-title-text">Morning Run</span>
+            <span class="tk-time-ago">14h ago</span>
+          </div>
+        </div>
+        <div class="tk-item">
+          <div class="tk-runner">
+<span class="tk-avatar-fallback">D</span>            <span class="tk-name">Danny</span>
+          </div>
+          <div class="tk-stats">
+            <span class="tk-dist">2.1<span class="tk-u">km</span></span>
+            <span class="tk-pace">6:53/km</span>
+          </div>
+          <div class="tk-meta-line">
+            <span class="tk-title-text">Morning Run</span>
+            <span class="tk-time-ago">15h ago</span>
+          </div>
+        </div>
+        <div class="tk-item">
+          <div class="tk-runner">
+<span class="tk-avatar-fallback">B</span>            <span class="tk-name">Blaise</span>
+          </div>
+          <div class="tk-stats">
+            <span class="tk-dist">3.7<span class="tk-u">km</span></span>
+            <span class="tk-pace">6:01/km</span>
+          </div>
+          <div class="tk-meta-line">
+            <span class="tk-title-text">Lunch Run</span>
+            <span class="tk-time-ago">yesterday</span>
+          </div>
+        </div>
+        <div class="tk-item">
+          <div class="tk-runner">
+<span class="tk-avatar-fallback">M</span>            <span class="tk-name">Matt</span>
+          </div>
+          <div class="tk-stats">
+            <span class="tk-dist">13.5<span class="tk-u">km</span></span>
+            <span class="tk-pace">5:17/km</span>
+          </div>
+          <div class="tk-meta-line">
+            <span class="tk-title-text">Marathon Run 14</span>
+            <span class="tk-time-ago">yesterday</span>
+          </div>
+        </div>
+        <div class="tk-item">
+          <div class="tk-runner">
+<span class="tk-avatar-fallback">F</span>            <span class="tk-name">Freddy</span>
+          </div>
+          <div class="tk-stats">
+            <span class="tk-dist">12.6<span class="tk-u">km</span></span>
+            <span class="tk-pace">5:28/km</span>
+          </div>
+          <div class="tk-meta-line">
+            <span class="tk-title-text">Morning Trail Run</span>
+            <span class="tk-time-ago">yesterday</span>
+          </div>
+        </div>
+        <div class="tk-item is-brother">
+          <div class="tk-runner">
+<span class="tk-avatar-fallback">F</span>            <span class="tk-name">Fred</span>
+          </div>
+          <div class="tk-stats">
+            <span class="tk-dist">6.7<span class="tk-u">km</span></span>
+            <span class="tk-pace">5:01/km</span>
+          </div>
+          <div class="tk-meta-line">
+            <span class="tk-title-text">Sun 🌞🌞</span>
+            <span class="tk-time-ago">yesterday</span>
+          </div>
+        </div>
+        <div class="tk-item">
+          <div class="tk-runner">
+<span class="tk-avatar-fallback">D</span>            <span class="tk-name">Danny</span>
+          </div>
+          <div class="tk-stats">
+            <span class="tk-dist">8.1<span class="tk-u">km</span></span>
+            <span class="tk-pace">5:18/km</span>
+          </div>
+          <div class="tk-meta-line">
+            <span class="tk-title-text">Lunch Run</span>
+            <span class="tk-time-ago">2d ago</span>
+          </div>
+        </div>
+        <div class="tk-item">
+          <div class="tk-runner">
+<span class="tk-avatar-fallback">D</span>            <span class="tk-name">Dan</span>
+          </div>
+          <div class="tk-stats">
+            <span class="tk-dist">5.0<span class="tk-u">km</span></span>
+            <span class="tk-pace">5:35/km</span>
+          </div>
+          <div class="tk-meta-line">
+            <span class="tk-title-text">Lunch Run</span>
+            <span class="tk-time-ago">2d ago</span>
+          </div>
+        </div>
     </div>
   </div>
 
@@ -1716,7 +2000,7 @@
 
   <footer class="footer">
     <em>« On y va, doucement. »</em>
-    <a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:12px;vertical-align:middle"></a> · 00:10 BST
+    <a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:12px;vertical-align:middle"></a> · 00:14 BST
   </footer>
 
 </div>
