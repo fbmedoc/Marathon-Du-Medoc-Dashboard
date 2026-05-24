@@ -387,12 +387,11 @@
     color: var(--wine-light);
   }
 
-  /* WEEKLY RECAP CARD — auto-generated each build, share to WhatsApp in one tap */
+  /* WEEKLY RECAP CARD — collapsed by default; native <details> toggle */
   .recap{
     background: var(--wine);
     color: var(--cream);
     margin-bottom: 40px;
-    padding: 26px 30px 24px;
     border: 1px solid var(--gold);
     position: relative;
   }
@@ -403,45 +402,65 @@
     border: 1px solid rgba(201, 169, 97, 0.35);
     pointer-events: none;
   }
-  .recap-head{
+  .recap-summary{
+    list-style: none;                /* hide native triangle in most browsers */
+    cursor: pointer;
+    user-select: none;
+    padding: 18px 30px;
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 14px;
-    position: relative;
+    gap: 18px;
     flex-wrap: wrap;
+    position: relative;
+    outline: none;
   }
+  .recap-summary::-webkit-details-marker{ display: none; }
+  .recap-summary:hover .recap-chevron{ color: var(--cream); }
   .recap-label{
     font-family: 'DM Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.28em;
     text-transform: uppercase;
     color: var(--gold-bright);
+    flex-shrink: 0;
   }
   .recap-headline{
     font-family: 'Fraunces', serif;
     font-style: italic;
     font-weight: 700;
-    font-size: 26px;
+    font-size: 22px;
     color: var(--cream);
     letter-spacing: -0.01em;
+    flex: 1;
+    min-width: 200px;
+  }
+  .recap-chevron{
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--gold-bright);
+    transition: transform 0.2s ease;
+    margin-left: auto;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .recap[open] .recap-chevron{ transform: rotate(180deg); }
+  .recap-body{
+    padding: 0 30px 24px;
+    position: relative;
   }
   .recap-lead{
     font-family: 'Cormorant Garamond', serif;
     font-style: italic;
     font-size: 18px;
     color: var(--gold-bright);
-    margin-bottom: 16px;
+    margin: 6px 0 16px;
     padding-bottom: 14px;
     border-bottom: 1px dashed rgba(201, 169, 97, 0.35);
-    position: relative;
   }
   .recap-insights{
     list-style: none;
     padding: 0;
     margin: 0 0 16px;
-    position: relative;
   }
   .recap-insights li{
     display: flex;
@@ -473,44 +492,12 @@
     background: rgba(168, 78, 46, 0.18);
     border-left: 3px solid var(--rust);
     padding: 12px 14px;
-    margin-bottom: 18px;
     font-family: 'Cormorant Garamond', serif;
     font-style: italic;
     font-size: 16px;
     color: var(--cream);
-    position: relative;
   }
   .recap-missing strong{ color: var(--gold-bright); }
-  .recap-actions{
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: wrap;
-    position: relative;
-  }
-  .recap-share{
-    display: inline-block;
-    padding: 12px 22px;
-    background: #25D366;
-    color: white;
-    text-decoration: none;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    font-weight: 500;
-    border: 1px solid #128c7e;
-    transition: background 0.15s, transform 0.1s;
-  }
-  .recap-share:hover{ background: #1ebe5d; }
-  .recap-share:active{ transform: translateY(1px); }
-  .recap-hint{
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: rgba(244, 234, 213, 0.6);
-  }
 
   /* HERO STAT STRIP */
   .hero-strip{
@@ -1586,33 +1573,32 @@
     </div>
   </div>
 
-  <!-- WEEKLY RECAP CARD — auto-generated insights + one-tap WhatsApp share -->
+  <!-- WEEKLY RECAP CARD — collapsed by default, click to expand -->
   {% if weekly_recap %}
-  <div class="recap">
-    <div class="recap-head">
+  <details class="recap">
+    <summary class="recap-summary">
       <span class="recap-label">🍷 Weekly Recap</span>
       <span class="recap-headline">{{ weekly_recap.headline }}</span>
+      <span class="recap-chevron" aria-hidden="true">▾</span>
+    </summary>
+    <div class="recap-body">
+      {% if weekly_recap.squad_wow %}
+      <p class="recap-lead">{{ weekly_recap.squad_wow }}</p>
+      {% endif %}
+      {% if weekly_recap.insights %}
+      <ul class="recap-insights">
+        {% for insight in weekly_recap.insights %}
+          <li><span class="recap-tag">{{ insight.tag }}</span><span>{{ insight.html|safe }}</span></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if weekly_recap.missing_count > 0 %}
+      <div class="recap-missing">
+        🚧 Still <strong>{{ weekly_recap.missing_count }} of 13</strong> not connected. Pass the connect link on — every extra runner is more rivalry, less wooden-spoon risk.
+      </div>
+      {% endif %}
     </div>
-    {% if weekly_recap.squad_wow %}
-    <p class="recap-lead">{{ weekly_recap.squad_wow }}</p>
-    {% endif %}
-    {% if weekly_recap.insights %}
-    <ul class="recap-insights">
-      {% for insight in weekly_recap.insights %}
-        <li><span class="recap-tag">{{ insight.tag }}</span><span>{{ insight.html|safe }}</span></li>
-      {% endfor %}
-    </ul>
-    {% endif %}
-    {% if weekly_recap.missing_count > 0 %}
-    <div class="recap-missing">
-      🚧 Still <strong>{{ weekly_recap.missing_count }} of 13</strong> not connected. Pass the connect link on — every extra runner is more rivalry, less wooden-spoon risk.
-    </div>
-    {% endif %}
-    <div class="recap-actions">
-      <a href="{{ weekly_recap.share_url }}" target="_blank" rel="noopener" class="recap-share">📤 Send recap to WhatsApp</a>
-      <span class="recap-hint">Opens WhatsApp · pick the Médoc group · hit send</span>
-    </div>
-  </div>
+  </details>
   {% endif %}
 
   <!-- HERO STAT STRIP -->
