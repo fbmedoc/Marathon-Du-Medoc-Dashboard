@@ -210,6 +210,14 @@ def get_access_token(runner_id: str, client_id: str, client_secret: str,
     return new_tokens["access_token"]
 
 
+# Activity types that count as "a run" for dashboard purposes. Strava has
+# both a legacy `type` field ("Run", "TrailRun", etc.) and a newer
+# `sport_type` field with more granular values. Newer activities sometimes
+# only set sport_type correctly, so we check both. Includes treadmill and
+# trail running because those are still marathon training mileage.
+RUN_SPORT_TYPES = {"Run", "TrailRun", "VirtualRun"}
+
+
 def fetch_activities(access_token: str, after_ts: int) -> list[dict]:
     """Fetch activities since `after_ts` (unix). Paginates until exhausted."""
     activities: list[dict] = []
@@ -233,8 +241,13 @@ def fetch_activities(access_token: str, after_ts: int) -> list[dict]:
         if len(batch) < 200:
             break
         page += 1
-    # Runs only
-    return [a for a in activities if a.get("type") == "Run"]
+    # Runs only — checks both legacy `type` and newer `sport_type`. Strava
+    # is inconsistent about which field has the run designation depending on
+    # how/when the activity was recorded.
+    return [
+        a for a in activities
+        if a.get("type") in RUN_SPORT_TYPES or a.get("sport_type") in RUN_SPORT_TYPES
+    ]
 
 
 # ─── Helpers: time & formatting ────────────────────────────────────────
