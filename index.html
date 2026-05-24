@@ -387,12 +387,11 @@
     color: var(--wine-light);
   }
 
-  /* WEEKLY RECAP CARD — auto-generated each build, share to WhatsApp in one tap */
+  /* WEEKLY RECAP CARD — collapsed by default; native <details> toggle */
   .recap{
     background: var(--wine);
     color: var(--cream);
     margin-bottom: 40px;
-    padding: 26px 30px 24px;
     border: 1px solid var(--gold);
     position: relative;
   }
@@ -403,45 +402,65 @@
     border: 1px solid rgba(201, 169, 97, 0.35);
     pointer-events: none;
   }
-  .recap-head{
+  .recap-summary{
+    list-style: none;                /* hide native triangle in most browsers */
+    cursor: pointer;
+    user-select: none;
+    padding: 18px 30px;
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 14px;
-    position: relative;
+    gap: 18px;
     flex-wrap: wrap;
+    position: relative;
+    outline: none;
   }
+  .recap-summary::-webkit-details-marker{ display: none; }
+  .recap-summary:hover .recap-chevron{ color: var(--cream); }
   .recap-label{
     font-family: 'DM Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.28em;
     text-transform: uppercase;
     color: var(--gold-bright);
+    flex-shrink: 0;
   }
   .recap-headline{
     font-family: 'Fraunces', serif;
     font-style: italic;
     font-weight: 700;
-    font-size: 26px;
+    font-size: 22px;
     color: var(--cream);
     letter-spacing: -0.01em;
+    flex: 1;
+    min-width: 200px;
+  }
+  .recap-chevron{
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--gold-bright);
+    transition: transform 0.2s ease;
+    margin-left: auto;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .recap[open] .recap-chevron{ transform: rotate(180deg); }
+  .recap-body{
+    padding: 0 30px 24px;
+    position: relative;
   }
   .recap-lead{
     font-family: 'Cormorant Garamond', serif;
     font-style: italic;
     font-size: 18px;
     color: var(--gold-bright);
-    margin-bottom: 16px;
+    margin: 6px 0 16px;
     padding-bottom: 14px;
     border-bottom: 1px dashed rgba(201, 169, 97, 0.35);
-    position: relative;
   }
   .recap-insights{
     list-style: none;
     padding: 0;
     margin: 0 0 16px;
-    position: relative;
   }
   .recap-insights li{
     display: flex;
@@ -473,44 +492,12 @@
     background: rgba(168, 78, 46, 0.18);
     border-left: 3px solid var(--rust);
     padding: 12px 14px;
-    margin-bottom: 18px;
     font-family: 'Cormorant Garamond', serif;
     font-style: italic;
     font-size: 16px;
     color: var(--cream);
-    position: relative;
   }
   .recap-missing strong{ color: var(--gold-bright); }
-  .recap-actions{
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: wrap;
-    position: relative;
-  }
-  .recap-share{
-    display: inline-block;
-    padding: 12px 22px;
-    background: #25D366;
-    color: white;
-    text-decoration: none;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    font-weight: 500;
-    border: 1px solid #128c7e;
-    transition: background 0.15s, transform 0.1s;
-  }
-  .recap-share:hover{ background: #1ebe5d; }
-  .recap-share:active{ transform: translateY(1px); }
-  .recap-hint{
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: rgba(244, 234, 213, 0.6);
-  }
 
   /* HERO STAT STRIP */
   .hero-strip{
@@ -1717,28 +1704,27 @@
     </div>
   </div>
 
-  <!-- WEEKLY RECAP CARD — auto-generated insights + one-tap WhatsApp share -->
-  <div class="recap">
-    <div class="recap-head">
+  <!-- WEEKLY RECAP CARD — collapsed by default, click to expand -->
+  <details class="recap">
+    <summary class="recap-summary">
       <span class="recap-label">🍷 Weekly Recap</span>
       <span class="recap-headline">Médoc Week 4 · 18 May – 24 May</span>
+      <span class="recap-chevron" aria-hidden="true">▾</span>
+    </summary>
+    <div class="recap-body">
+      <p class="recap-lead">Squad clocked 221km — down 14% on the prior week. Taper or collective amnesia?</p>
+      <ul class="recap-insights">
+          <li><span class="recap-tag">🎉</span><span><strong>Danny</strong> logged their first runs this week — welcome aboard.</span></li>
+          <li><span class="recap-tag">🥇</span><span><strong>Matt</strong> set a personal-best long run: 18.7km. The engine is warming.</span></li>
+          <li><span class="recap-tag">🎖</span><span><strong>Fred</strong> crossed 150km total this week. Onwards.</span></li>
+          <li><span class="recap-tag">🎖</span><span><strong>Blaise</strong> crossed 100km total this week. Onwards.</span></li>
+          <li><span class="recap-tag">🎖</span><span><strong>Jack</strong> crossed 100km total this week. Onwards.</span></li>
+      </ul>
+      <div class="recap-missing">
+        🚧 Still <strong>4 of 13</strong> not connected. Pass the connect link on — every extra runner is more rivalry, less wooden-spoon risk.
+      </div>
     </div>
-    <p class="recap-lead">Squad clocked 221km — down 14% on the prior week. Taper or collective amnesia?</p>
-    <ul class="recap-insights">
-        <li><span class="recap-tag">🎉</span><span><strong>Danny</strong> logged their first runs this week — welcome aboard.</span></li>
-        <li><span class="recap-tag">🥇</span><span><strong>Matt</strong> set a personal-best long run: 18.7km. The engine is warming.</span></li>
-        <li><span class="recap-tag">🎖</span><span><strong>Fred</strong> crossed 150km total this week. Onwards.</span></li>
-        <li><span class="recap-tag">🎖</span><span><strong>Blaise</strong> crossed 100km total this week. Onwards.</span></li>
-        <li><span class="recap-tag">🎖</span><span><strong>Jack</strong> crossed 100km total this week. Onwards.</span></li>
-    </ul>
-    <div class="recap-missing">
-      🚧 Still <strong>4 of 13</strong> not connected. Pass the connect link on — every extra runner is more rivalry, less wooden-spoon risk.
-    </div>
-    <div class="recap-actions">
-      <a href="https://wa.me/?text=%F0%9F%8D%B7%20M%C3%A9doc%20Week%204%20%C2%B7%2018%20May%20%E2%80%93%2024%20May%0A%0ASquad%20clocked%20221km%20%E2%80%94%20down%2014%25%20on%20the%20prior%20week.%20Taper%20or%20collective%20amnesia%3F%0A%0A%F0%9F%8E%89%20%2ADanny%2A%20logged%20their%20first%20runs%20this%20week%20%E2%80%94%20welcome%20aboard.%0A%F0%9F%A5%87%20%2AMatt%2A%20set%20a%20personal-best%20long%20run%3A%2018.7km.%20The%20engine%20is%20warming.%0A%F0%9F%8E%96%20%2AFred%2A%20crossed%20150km%20total%20this%20week.%20Onwards.%0A%F0%9F%8E%96%20%2ABlaise%2A%20crossed%20100km%20total%20this%20week.%20Onwards.%0A%F0%9F%8E%96%20%2AJack%2A%20crossed%20100km%20total%20this%20week.%20Onwards.%0A%0A%F0%9F%9A%A7%20Still%204%20of%2013%20not%20connected%20%E2%80%94%20Brother%202%2C%20Will%20J.%2C%20Friend%2012%2C%20Friend%2013.%20Pass%20the%20connect%20link%20on%20%E2%80%94%20every%20extra%20runner%20is%20more%20rivalry%20and%20less%20wooden-spoon%20risk.%0A%0ADesktop%3A%20https%3A//fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/%0AMobile%3A%20%20https%3A//fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/mobile.html%0AConnect%3A%20https%3A//fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/connect.html%20%20%28code%3A%20medoc26%29%0A%0AOn%20y%20va%2C%20doucement." target="_blank" rel="noopener" class="recap-share">📤 Send recap to WhatsApp</a>
-      <span class="recap-hint">Opens WhatsApp · pick the Médoc group · hit send</span>
-    </div>
-  </div>
+  </details>
 
   <!-- HERO STAT STRIP -->
   <div class="hero-strip">
@@ -2540,7 +2526,7 @@
 
   <!-- FOOTER -->
   <footer class="footer">
-    <div><a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:14px;vertical-align:middle"></a> · Updated 00:50 BST</div>
+    <div><a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:14px;vertical-align:middle"></a> · Updated 00:53 BST</div>
     <div><em>« On y va, doucement. »</em></div>
     <div>Le Domaine · MMXXVI</div>
   </footer>
