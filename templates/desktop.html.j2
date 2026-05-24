@@ -578,7 +578,7 @@
 
   .lb-headers{
     display: grid;
-    grid-template-columns: 30px 1fr 70px 70px 70px 100px;
+    grid-template-columns: 32px 1fr 80px 80px 100px;
     gap: 12px;
     padding-bottom: 8px;
     border-bottom: 1px solid var(--wine);
@@ -597,7 +597,7 @@
 
   .runner{
     display: grid;
-    grid-template-columns: 30px 1fr 70px 70px 70px 100px;
+    grid-template-columns: 32px 1fr 80px 80px 100px;
     gap: 12px;
     align-items: center;
     padding: 14px 0 10px;
@@ -1528,8 +1528,7 @@
         <div class="lb-headers">
           <div></div>
           <div>Runner</div>
-          <div class="r hide-mob">Total</div>
-          <div class="r hide-mob">This Wk</div>
+          <div class="r hide-mob">Last 7d</div>
           <div class="r hide-mob">Longest</div>
           <div class="r">Predicted</div>
         </div>
@@ -1545,8 +1544,7 @@
             </div>
             <div class="meta">{{ r.meta }}</div>
           </div>
-          <div class="col-stat hide-mob"><div class="v">{{ r.total_km }}{% if r.total_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
-          <div class="col-stat hide-mob"><div class="v">{{ r.week_km }}{% if r.week_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
+          <div class="col-stat hide-mob"><div class="v">{{ r.trailing_7d_km }}{% if r.trailing_7d_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
           <div class="col-stat hide-mob"><div class="v">{{ r.longest_km }}{% if r.longest_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
           <div class="col-stat">
             <div class="v">{{ r.predicted }}</div>

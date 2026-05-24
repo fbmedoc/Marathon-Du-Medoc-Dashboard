@@ -1078,6 +1078,7 @@ def build_newsflash(
     this_week: dict,
     plan_status: dict,
     today_uk: date,
+    week_history: list[dict],
 ) -> list[dict]:
     """
     A marquee biased toward people-driven banter — rivalries, heroes, ghosts.
@@ -1279,6 +1280,27 @@ def build_newsflash(
         r, km = week_long_best
         items.append({"label": "LONG RUN OF THE WEEK", "text": f"{first_name(r)} clocked {km:.1f}km in a single session this week · respect"})
 
+    # ── GROUP WoW: last completed week vs the week before ─────
+    # Uses week_history (newest first). week_history[1] is last week
+    # (Mon-Sun, completed); its summary.wow_pct compares to the week
+    # before that. Banter-tier varies by magnitude — taper acknowledged,
+    # slacking implied where appropriate.
+    if len(week_history) >= 2:
+        last_wk = week_history[1]
+        pct = last_wk["summary"]["wow_pct"]
+        last_total = last_wk["summary"]["total_km"]
+        if pct is not None and last_total > 0:
+            if pct >= 25:
+                items.append({"label": "GROUP TREND", "text": f"Last week ({last_wk['date_range']}): {last_total}km, up {pct}% on the week before · the engine is firing"})
+            elif pct >= 8:
+                items.append({"label": "GROUP TREND", "text": f"Last week ({last_wk['date_range']}): {last_total}km, up {pct}% on the prior week · solid build"})
+            elif pct >= -8:
+                items.append({"label": "GROUP TREND", "text": f"Last week ({last_wk['date_range']}): {last_total}km, within a few percent of the prior week · consistency is also a flex"})
+            elif pct >= -25:
+                items.append({"label": "GROUP TREND", "text": f"Last week ({last_wk['date_range']}): {last_total}km, down {-pct}% · taper week, or some are slacking"})
+            else:
+                items.append({"label": "GROUP TREND", "text": f"Last week ({last_wk['date_range']}): {last_total}km, down {-pct}% on the prior week · either the plan said cutback or seven people are 'starting Monday'"})
+
     # ── PREDICTED FINISH ORDER preview ──────────────────────────
     finish_order = [r for r in connected if r.predicted_marathon_s]
     finish_order.sort(key=lambda r: r.predicted_marathon_s)
@@ -1419,12 +1441,15 @@ def group_plan_status(runners: list[RunnerStats], week_plan: dict) -> dict:
 def make_runner_rows(runners: list[RunnerStats]) -> list[dict]:
     """
     Everyone — including the groom — is ranked on the same scale: connected
-    runners first (sorted by total km descending), disconnected runners last.
+    runners first (sorted by rolling 7-day km descending — rewards current
+    activity, not a one-off massive week back in May), disconnected runners
+    last. Total km is still shown in each runner's meta line so the
+    cumulative number isn't lost. Tiebreaker on total km, then name.
     The groom keeps his ★ tag in the UI but earns his position like anyone else.
     """
     ordered = sorted(
         runners,
-        key=lambda r: (not r.connected, -r.total_km, r.cfg["name"]),
+        key=lambda r: (not r.connected, -r.trailing_7d_km, -r.total_km, r.cfg["name"]),
     )
 
     # Progress-bar fill: relative to top runner's predicted_medoc_s.
@@ -1467,6 +1492,7 @@ def make_runner_rows(runners: list[RunnerStats]) -> list[dict]:
             "connected":        r.connected,
             "meta":             meta,
             "week_km":          f"{r.week_km:.0f}" if r.connected and r.week_km > 0 else "—",
+            "trailing_7d_km":   f"{r.trailing_7d_km:.0f}" if r.connected and r.trailing_7d_km > 0 else "—",
             "total_km":         f"{int(round(r.total_km))}" if r.connected and r.total_km > 0 else "—",
             "longest_km":       f"{r.longest_km:.1f}" if r.connected and r.longest_km > 0 else "—",
             "predicted":        predicted,
@@ -1518,7 +1544,7 @@ def main() -> None:
     phases       = phases_with_current(today_uk)
     this_week    = current_week_plan(today_uk)
     plan_status  = group_plan_status(runners, this_week)
-    news_flash   = build_newsflash(runners, group, days_until, this_week, plan_status, today_uk)
+    news_flash   = build_newsflash(runners, group, days_until, this_week, plan_status, today_uk, week_history)
 
     synced_uk = datetime.now(UK_TZ).strftime("%H:%M %Z")
 
