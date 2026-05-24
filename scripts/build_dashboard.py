@@ -265,6 +265,26 @@ def fmt_pace(seconds_per_km: float | None) -> str:
     return f"{m}:{s:02d}"
 
 
+def fmt_time_ago(when_uk: datetime, now_uk: datetime) -> str:
+    """Render a human 'time ago' label for the activity ticker."""
+    seconds = (now_uk - when_uk).total_seconds()
+    if seconds < 60:
+        return "just now"
+    if seconds < 3600:
+        mins = int(seconds // 60)
+        return f"{mins}m ago"
+    if seconds < 86400:
+        hours = int(seconds // 3600)
+        return f"{hours}h ago"
+    if seconds < 86400 * 2:
+        return "yesterday"
+    days = int(seconds // 86400)
+    if days <= 7:
+        return f"{days}d ago"
+    # Past a week, show the date instead of "Nd ago" (Windows-safe formatting)
+    return f"{when_uk.day} {when_uk.strftime('%b')}"
+
+
 def fmt_hms(seconds: float | None) -> str:
     """Format duration as H:MM (drops seconds for marathon-time look)."""
     if seconds is None or seconds <= 0 or math.isnan(seconds):
@@ -653,6 +673,43 @@ def build_trailing_7d(runners: list[RunnerStats], today_uk: date) -> dict:
     }
 
 
+def build_activity_ticker(runners: list[RunnerStats], limit: int = 8) -> list[dict]:
+    """
+    Latest runs across the squad, newest first, for the "Live" activity
+    ticker at the top of the dashboard. Each entry includes runner name,
+    avatar, distance, pace, optional activity title, and a human time-ago.
+    """
+    now_uk = datetime.now(UK_TZ)
+    entries: list[dict] = []
+    for r in runners:
+        if not r.connected:
+            continue
+        for a in r.activities:
+            when_uk = utc_to_uk(a["start_date"])
+            dist_km = (a.get("distance", 0) or 0) / 1000.0
+            time_s  = a.get("moving_time", 0) or 0
+            if dist_km <= 0 or time_s <= 0:
+                continue
+            entries.append({
+                "runner_name":   r.cfg["name"],
+                "runner_first":  r.cfg["name"].split()[0],
+                "avatar":        r.cfg.get("avatar"),
+                "is_groom":      bool(r.cfg.get("is_groom")),
+                "is_brother":    bool(r.cfg.get("is_brother")),
+                "distance":      f"{dist_km:.1f}",
+                "pace":          fmt_pace(time_s / dist_km),
+                "elev":          int(round(a.get("total_elevation_gain", 0) or 0)),
+                "title":         (a.get("name") or "Run").strip()[:60],
+                "when_uk":       when_uk,
+                "time_ago":      fmt_time_ago(when_uk, now_uk),
+            })
+    entries.sort(key=lambda x: x["when_uk"], reverse=True)
+    # Strip the raw datetime before returning — the template only needs the string.
+    for e in entries[:limit]:
+        del e["when_uk"]
+    return entries[:limit]
+
+
 def build_week_grid(runners: list[RunnerStats], today_uk: date) -> tuple[list[dict], dict]:
     """Group km per weekday Mon→Sun + week summary."""
     monday_uk = today_uk - timedelta(days=today_uk.weekday())
@@ -965,6 +1022,7 @@ def build_newsflash(
     days_until: int,
     this_week: dict,
     plan_status: dict,
+    today_uk: date,
 ) -> list[dict]:
     """
     A marquee biased toward people-driven banter — rivalries, heroes, ghosts.
@@ -1109,6 +1167,69 @@ def build_newsflash(
         items.append({"label": "MILESTONE", "text": f"Squad past {group['total_km']}km combined · London to Bordeaux on foot, ironically"})
     elif group["total_km"] >= 200:
         items.append({"label": "MILESTONE", "text": f"{group['total_km']}km combined · {int(group['total_km'] / 42.2)} marathons' worth between the squad"})
+
+    # ── PERSONAL MILESTONE WATCH: who's nearest a round-number km total ─
+    # Calls out runners within striking distance of 50/100/150/etc. km.
+    # Picks up to two of these to avoid the marquee being all milestones.
+    personal_milestones = [50, 100, 150, 200, 250, 300, 400, 500, 750, 1000]
+    milestone_candidates = []
+    for r in connected:
+        if r.total_km <= 0:
+            continue
+        for m in personal_milestones:
+            if r.total_km < m and (m - r.total_km) <= 12:
+                milestone_candidates.append((m - r.total_km, r, m))
+                break  # one milestone per runner
+    milestone_candidates.sort(key=lambda x: x[0])  # closest first
+    for gap, r, m in milestone_candidates[:2]:
+        items.append({"label": "MILESTONE WATCH", "text": f"{first_name(r)} is {gap:.1f}km from {m}km · go and grab it"})
+
+    # ── PACE LEADER: fastest avg pace over connected pile (10km+ data) ─
+    pace_pool = [r for r in connected if r.avg_pace_s is not None and r.total_km >= 10]
+    if len(pace_pool) >= 2:
+        fastest = min(pace_pool, key=lambda r: r.avg_pace_s)
+        items.append({"label": "PACE LEADER", "text": f"{first_name(fastest)} averaging {fmt_pace(fastest.avg_pace_s)}/km across the season · the gears are clean"})
+
+    # ── BIG WEEK: who just had their biggest 7d block ──────────
+    # Uses trailing_7d_km — top of that pile gets the shout.
+    big_week_pool = [r for r in connected if r.trailing_7d_km > 0]
+    if big_week_pool:
+        bw = max(big_week_pool, key=lambda r: r.trailing_7d_km)
+        if bw.trailing_7d_km >= 25:
+            items.append({"label": "BIG WEEK", "text": f"{first_name(bw)} stacked {int(round(bw.trailing_7d_km))}km in the last 7 days · the calves know"})
+
+    # ── ELEVATION CALLOUT: anyone who's done serious climbing ──
+    if connected:
+        climber = max(connected, key=lambda r: r.elevation_m)
+        if climber.elevation_m >= 500:
+            items.append({"label": "ASCENDED", "text": f"{first_name(climber)} climbed {int(round(climber.elevation_m))}m total · half a Snowdon and counting"})
+
+    # ── LONGEST RUN OF THE WEEK ─────────────────────────────────
+    # Find the single longest run in the trailing 7 days across the squad.
+    week_long_best = None
+    for r in connected:
+        for a in r.activities:
+            try:
+                day = utc_to_uk(a["start_date"]).date()
+            except Exception:
+                continue
+            if (today_uk - day).days > 7 or (today_uk - day).days < 0:
+                continue
+            km = (a.get("distance", 0) or 0) / 1000.0
+            if km <= 0:
+                continue
+            if week_long_best is None or km > week_long_best[1]:
+                week_long_best = (r, km)
+    if week_long_best and week_long_best[1] >= 12:
+        r, km = week_long_best
+        items.append({"label": "LONG RUN OF THE WEEK", "text": f"{first_name(r)} clocked {km:.1f}km in a single session this week · respect"})
+
+    # ── PREDICTED FINISH ORDER preview ──────────────────────────
+    finish_order = [r for r in connected if r.predicted_marathon_s]
+    finish_order.sort(key=lambda r: r.predicted_marathon_s)
+    if len(finish_order) >= 3:
+        top3 = " · ".join(f"{i+1}. {first_name(r)}" for i, r in enumerate(finish_order[:3]))
+        items.append({"label": "RACE-DAY", "text": f"If they ran Médoc today: {top3} · everyone else has weeks to fight for it"})
 
     # ── Evergreen Médoc lore — trimmed to the punchiest 3 ───────
     items.extend([
@@ -1337,10 +1458,11 @@ def main() -> None:
     week_grid, week_summary = build_week_grid(runners, today_uk)
     awards       = build_awards(runners, by_total)
     mini_boards  = build_mini_boards(runners, today_uk)
+    activity_ticker = build_activity_ticker(runners, limit=8)
     phases       = phases_with_current(today_uk)
     this_week    = current_week_plan(today_uk)
     plan_status  = group_plan_status(runners, this_week)
-    news_flash   = build_newsflash(runners, group, days_until, this_week, plan_status)
+    news_flash   = build_newsflash(runners, group, days_until, this_week, plan_status, today_uk)
 
     synced_uk = datetime.now(UK_TZ).strftime("%H:%M %Z")
 
@@ -1355,17 +1477,18 @@ def main() -> None:
         "phases":         phases,
         "this_week":      this_week,
         "plan_status":    plan_status,
-        "news_flash":     news_flash,
-        "runners":        rows,
-        "groom_row":      groom_row,
-        "group":          group,
-        "trailing_7d":    trailing_7d,
-        "week_grid":      week_grid,
-        "week_summary":   week_summary,
-        "awards":         awards,
-        "mini_boards":    mini_boards,
-        "medoc_facts":    MEDOC_FACTS,
-        "plan_targets":   PLAN_TARGETS,
+        "news_flash":      news_flash,
+        "activity_ticker": activity_ticker,
+        "runners":         rows,
+        "groom_row":       groom_row,
+        "group":           group,
+        "trailing_7d":     trailing_7d,
+        "week_grid":       week_grid,
+        "week_summary":    week_summary,
+        "awards":          awards,
+        "mini_boards":     mini_boards,
+        "medoc_facts":     MEDOC_FACTS,
+        "plan_targets":    PLAN_TARGETS,
     }
 
     env = Environment(

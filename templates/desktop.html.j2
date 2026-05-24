@@ -217,6 +217,176 @@
     to{ transform: translateX(-50%); }
   }
 
+  /* LIVE ACTIVITY TICKER */
+  .ticker{
+    background: var(--cream);
+    border: 1px solid var(--wine);
+    margin-bottom: 40px;
+    padding: 16px 0 14px;
+    position: relative;
+  }
+  .ticker::before{
+    content:'';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(74,14,31,0.12);
+    pointer-events: none;
+  }
+  .tk-header{
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 12px;
+    padding: 0 22px;
+    position: relative;
+  }
+  .tk-title{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--wine);
+    letter-spacing: -0.01em;
+  }
+  .tk-pulse{
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--moss);
+    margin-right: 8px;
+    animation: tk-pulse 2.4s ease-in-out infinite;
+    vertical-align: 2px;
+  }
+  @keyframes tk-pulse{
+    0%, 100%{ opacity: 0.4; transform: scale(0.85); }
+    50%{ opacity: 1; transform: scale(1.1); }
+  }
+  .tk-meta{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+  .tk-list{
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 4px 22px 6px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--wine) var(--cream);
+    position: relative;
+  }
+  .tk-list::-webkit-scrollbar{ height: 6px; }
+  .tk-list::-webkit-scrollbar-thumb{ background: var(--wine); border-radius: 3px; }
+  .tk-item{
+    flex: 0 0 auto;
+    width: 200px;
+    padding: 10px 12px;
+    background: var(--paper);
+    border: 1px solid rgba(74,14,31,0.22);
+    border-left: 3px solid var(--wine);
+    position: relative;
+  }
+  .tk-item.is-groom{ border-left-color: var(--gold); background: linear-gradient(to right, rgba(201,169,97,0.10), var(--paper) 30%); }
+  .tk-item.is-brother{ border-left-color: var(--rust); }
+  .tk-runner{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .tk-avatar{
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--wine);
+    flex-shrink: 0;
+  }
+  .tk-avatar-fallback{
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--cream);
+    border: 1px solid var(--wine);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--wine);
+    flex-shrink: 0;
+  }
+  .tk-name{
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .tk-stats{
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .tk-dist{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--wine);
+    line-height: 1;
+  }
+  .tk-u{
+    font-family: 'DM Mono', monospace;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 9px;
+    margin-left: 2px;
+    color: var(--wine-light);
+  }
+  .tk-pace{
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--wine-light);
+  }
+  .tk-meta-line{
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 2px;
+  }
+  .tk-title-text{
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink);
+    opacity: 0.75;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .tk-time-ago{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+  .tk-empty{
+    padding: 12px 22px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+  }
+
   /* HERO STAT STRIP */
   .hero-strip{
     display: grid;
@@ -408,7 +578,7 @@
 
   .lb-headers{
     display: grid;
-    grid-template-columns: 32px 1fr 80px 80px 100px;
+    grid-template-columns: 30px 1fr 70px 70px 70px 100px;
     gap: 12px;
     padding-bottom: 8px;
     border-bottom: 1px solid var(--wine);
@@ -427,7 +597,7 @@
 
   .runner{
     display: grid;
-    grid-template-columns: 32px 1fr 80px 80px 100px;
+    grid-template-columns: 30px 1fr 70px 70px 70px 100px;
     gap: 12px;
     align-items: center;
     padding: 14px 0 10px;
@@ -1223,6 +1393,34 @@
     </div>
   </div>
 
+  <!-- LIVE ACTIVITY TICKER — latest runs across the squad -->
+  <div class="ticker">
+    <div class="tk-header">
+      <span class="tk-title"><span class="tk-pulse"></span>On the Trail</span>
+      <span class="tk-meta">Latest squad runs · auto-updates every 5 min</span>
+    </div>
+    <div class="tk-list">
+      {% for a in activity_ticker %}
+        <div class="tk-item{% if a.is_groom %} is-groom{% elif a.is_brother %} is-brother{% endif %}">
+          <div class="tk-runner">
+            {% if a.avatar %}<img class="tk-avatar" src="{{ a.avatar }}" alt="">{% else %}<span class="tk-avatar-fallback">{{ a.runner_first[0]|upper }}</span>{% endif %}
+            <span class="tk-name">{{ a.runner_first }}</span>
+          </div>
+          <div class="tk-stats">
+            <span class="tk-dist">{{ a.distance }}<span class="tk-u">km</span></span>
+            <span class="tk-pace">{{ a.pace }}/km</span>
+          </div>
+          <div class="tk-meta-line">
+            <span class="tk-title-text">{{ a.title }}</span>
+            <span class="tk-time-ago">{{ a.time_ago }}</span>
+          </div>
+        </div>
+      {% else %}
+        <div class="tk-empty">No runs logged yet — first one wins eternal glory.</div>
+      {% endfor %}
+    </div>
+  </div>
+
   <!-- HERO STAT STRIP -->
   <div class="hero-strip">
     <div class="hero-cell">
@@ -1290,6 +1488,7 @@
         <div class="lb-headers">
           <div></div>
           <div>Runner</div>
+          <div class="r hide-mob">Total</div>
           <div class="r hide-mob">This Wk</div>
           <div class="r hide-mob">Longest</div>
           <div class="r">Predicted</div>
@@ -1306,6 +1505,7 @@
             </div>
             <div class="meta">{{ r.meta }}</div>
           </div>
+          <div class="col-stat hide-mob"><div class="v">{{ r.total_km }}{% if r.total_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
           <div class="col-stat hide-mob"><div class="v">{{ r.week_km }}{% if r.week_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
           <div class="col-stat hide-mob"><div class="v">{{ r.longest_km }}{% if r.longest_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
           <div class="col-stat">
