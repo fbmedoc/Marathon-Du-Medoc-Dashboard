@@ -710,9 +710,11 @@ def build_activity_ticker(runners: list[RunnerStats], limit: int = 8) -> list[di
     return entries[:limit]
 
 
-def build_week_grid(runners: list[RunnerStats], today_uk: date) -> tuple[list[dict], dict]:
-    """Group km per weekday Mon→Sun + week summary."""
-    monday_uk = today_uk - timedelta(days=today_uk.weekday())
+def _build_week_view(runners: list[RunnerStats], monday_uk: date) -> tuple[list[dict], dict]:
+    """Build the bar-chart grid + summary stats for a single Mon→Sun week
+    starting on `monday_uk`. Pulled out so the same logic powers the
+    current-week view and the historical-week navigation. WoW % compares
+    against the week immediately before this one."""
     by_weekday: dict[date, float] = {monday_uk + timedelta(days=i): 0.0 for i in range(7)}
     total_sessions = 0
     total_time     = 0.0
@@ -739,24 +741,24 @@ def build_week_grid(runners: list[RunnerStats], today_uk: date) -> tuple[list[di
             "rest":       rest,
         })
 
-    week_total_km = sum(by_weekday.values())
-    connected_n   = max(1, sum(1 for r in runners if r.connected))
+    week_total_km  = sum(by_weekday.values())
+    connected_n    = max(1, sum(1 for r in runners if r.connected))
     avg_per_runner = week_total_km / connected_n
     pace_s = (total_time / week_total_km) if week_total_km > 0 else None
 
-    # WoW for the week strip
-    last_week_start = monday_uk - timedelta(days=7)
-    last_week_end   = monday_uk - timedelta(days=1)
-    last_week_km = 0.0
+    # WoW % against the immediately preceding Mon→Sun week.
+    prev_start = monday_uk - timedelta(days=7)
+    prev_end   = monday_uk - timedelta(days=1)
+    prev_km = 0.0
     for r in runners:
         if not r.connected:
             continue
         for a in r.activities:
             d = utc_to_uk(a["start_date"]).date()
-            if last_week_start <= d <= last_week_end:
-                last_week_km += a.get("distance", 0) / 1000.0
-    if last_week_km > 0:
-        wow_pct = ((week_total_km - last_week_km) / last_week_km) * 100
+            if prev_start <= d <= prev_end:
+                prev_km += a.get("distance", 0) / 1000.0
+    if prev_km > 0:
+        wow_pct = ((week_total_km - prev_km) / prev_km) * 100
     else:
         wow_pct = None
 
@@ -768,6 +770,42 @@ def build_week_grid(runners: list[RunnerStats], today_uk: date) -> tuple[list[di
         "wow_pct":         round(wow_pct) if wow_pct is not None else None,
     }
     return grid, summary
+
+
+def build_week_grid(runners: list[RunnerStats], today_uk: date) -> tuple[list[dict], dict]:
+    """Group km per weekday Mon→Sun + summary, for the *current* week."""
+    monday_uk = today_uk - timedelta(days=today_uk.weekday())
+    return _build_week_view(runners, monday_uk)
+
+
+def build_week_history(runners: list[RunnerStats], today_uk: date, num_weeks: int = 4) -> list[dict]:
+    """Build a list of week views, newest first. weeks[0] is the current
+    week; weeks[1] is last week; etc. Each entry carries its grid, summary,
+    a human label, and a date range, so the template can render all weeks
+    as siblings and a tiny JS toggle can switch which one is visible."""
+    monday_uk = today_uk - timedelta(days=today_uk.weekday())
+    history = []
+    for offset in range(num_weeks):
+        week_start = monday_uk - timedelta(days=offset * 7)
+        week_end   = week_start + timedelta(days=6)
+        grid, summary = _build_week_view(runners, week_start)
+        if offset == 0:
+            label = "This week"
+        elif offset == 1:
+            label = "Last week"
+        else:
+            label = f"{offset} weeks ago"
+        # "5 May – 11 May" — Windows-safe day formatting (no %-d)
+        date_range = f"{week_start.day} {week_start.strftime('%b')} – {week_end.day} {week_end.strftime('%b')}"
+        history.append({
+            "offset":     offset,
+            "is_current": offset == 0,
+            "label":      label,
+            "date_range": date_range,
+            "grid":       grid,
+            "summary":    summary,
+        })
+    return history
 
 
 def winner_html(before: str, name: str, after: str) -> str:
@@ -950,39 +988,48 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
 
 
 def build_mini_boards(runners: list[RunnerStats], today_uk: date) -> dict:
-    """Top-5 lists for the 'detail' section."""
+    """Per-metric leaderboards for the 'Detail' section. Each board ranks
+    every connected runner, not just top 5 — the template caps visible rows
+    via CSS max-height + scroll, so the data stays available."""
     connected = [r for r in runners if r.connected]
 
-    def top5(predicate, key, fmt, reverse=True, value_class=None):
+    def board(predicate, key, fmt, reverse=True, value_class=None):
         items = [(r, key(r)) for r in connected if predicate(r)]
         items = [(r, v) for r, v in items if v is not None]
         items.sort(key=lambda x: x[1], reverse=reverse)
         out = []
-        for r, v in items[:5]:
+        for r, v in items:                # all connected runners with valid data
             row = {"name": r.cfg["name"], "value": fmt(v)}
             if value_class:
                 row["class"] = value_class(v) if callable(value_class) else value_class
             out.append(row)
         return out
 
-    longest = top5(
+    # NEW: Most km since 1 May. Sits at the top of the mini-boards row as the
+    # primary "who's putting the work in" board.
+    most_km = board(
+        lambda r: r.total_km > 0,
+        lambda r: r.total_km,
+        lambda v: f"{int(round(v))} km",
+    )
+    longest = board(
         lambda r: r.longest_km > 0,
         lambda r: r.longest_km,
         lambda v: f"{v:.1f} km",
     )
-    pace_imp = top5(
+    pace_imp = board(
         lambda r: r.pace_improvement_s is not None,
         lambda r: r.pace_improvement_s,
         lambda v: fmt_pace_delta(v),
         reverse=False,
         value_class=lambda v: "good" if v < 0 else ("bad" if v > 0 else ""),
     )
-    elevation = top5(
+    elevation = board(
         lambda r: r.elevation_m > 0,
         lambda r: r.elevation_m,
         lambda v: f"{int(round(v)):,} m",
     )
-    hr = top5(
+    hr = board(
         lambda r: r.avg_hr is not None and r.avg_hr > 0,
         lambda r: r.avg_hr,
         lambda v: f"{int(round(v))} bpm",
@@ -991,7 +1038,8 @@ def build_mini_boards(runners: list[RunnerStats], today_uk: date) -> dict:
     )
 
     # Form: rank by count of solid-run days, ties broken by short-run days.
-    # Rewards consistency over the last 7 days, no penalty for rest.
+    # Rewards consistency over the last 14 days, no penalty for rest.
+    # Form keeps top-5 only because the dot grid is too dense for all rows.
     def form_score(r):
         on_count      = sum(1 for d in (r.form_dots or []) if d == "on")
         partial_count = sum(1 for d in (r.form_dots or []) if d == "partial")
@@ -1012,7 +1060,14 @@ def build_mini_boards(runners: list[RunnerStats], today_uk: date) -> dict:
         form_rows.append({"name": r.cfg["name"], "dots": dots, "run_count": run_count})
     form = {"day_labels": day_labels, "rows": form_rows}
 
-    return {"longest": longest, "pace_imp": pace_imp, "elevation": elevation, "hr": hr, "form": form}
+    return {
+        "most_km":   most_km,
+        "longest":   longest,
+        "pace_imp":  pace_imp,
+        "elevation": elevation,
+        "hr":        hr,
+        "form":      form,
+    }
 
 
 # ─── News flash auto-generator ─────────────────────────────────────────
@@ -1456,6 +1511,7 @@ def main() -> None:
     group        = build_group_stats(runners, today_uk)
     trailing_7d  = build_trailing_7d(runners, today_uk)
     week_grid, week_summary = build_week_grid(runners, today_uk)
+    week_history = build_week_history(runners, today_uk, num_weeks=4)
     awards       = build_awards(runners, by_total)
     mini_boards  = build_mini_boards(runners, today_uk)
     activity_ticker = build_activity_ticker(runners, limit=8)
@@ -1485,6 +1541,7 @@ def main() -> None:
         "trailing_7d":     trailing_7d,
         "week_grid":       week_grid,
         "week_summary":    week_summary,
+        "week_history":    week_history,
         "awards":          awards,
         "mini_boards":     mini_boards,
         "medoc_facts":     MEDOC_FACTS,

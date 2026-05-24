@@ -1446,31 +1446,42 @@
       <div class="sec-head">
         <span class="roman">III.</span>
         <h2>The Detail</h2>
-        <span class="meta">Top 5</span>
+        <span class="meta">Full squad</span>
+      </div>
+
+      {% set roman_ranks = ['i','ii','iii','iv','v','vi','vii','viii','ix','x','xi','xii','xiii'] %}
+
+      <div class="mini-board">
+        <h3>Most km <span class="meta">Since 1 May</span></h3>
+        {% for row in mini_boards.most_km %}
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
+        {% else %}
+          <div class="mini-row"><span class="pos">—</span><span class="name">No km logged yet</span><span class="v">—</span></div>
+        {% endfor %}
       </div>
 
       <div class="mini-board">
         <h3>Longest Run <span class="meta">All-time PB</span></h3>
         {% for row in mini_boards.longest %}
-          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
         {% else %}
           <div class="mini-row"><span class="pos">—</span><span class="name">No long runs yet</span><span class="v">—</span></div>
         {% endfor %}
       </div>
 
       <div class="mini-board">
-        <h3>Pace Improvement <span class="meta">Last 30d · /km</span></h3>
+        <h3>Pace Improvement <span class="meta">Rolling 14d · /km</span></h3>
         {% for row in mini_boards.pace_imp %}
-          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v {{ row.class|default('') }}">{{ row.value }}</span></div>
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v {{ row.class|default('') }}">{{ row.value }}</span></div>
         {% else %}
-          <div class="mini-row"><span class="pos">—</span><span class="name">Need 30+ days of data</span><span class="v">—</span></div>
+          <div class="mini-row"><span class="pos">—</span><span class="name">Need more 5km+ runs</span><span class="v">—</span></div>
         {% endfor %}
       </div>
 
       <div class="mini-board">
         <h3>Elevation <span class="meta">Since 1 May · m</span></h3>
         {% for row in mini_boards.elevation %}
-          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
         {% else %}
           <div class="mini-row"><span class="pos">—</span><span class="name">No elevation data</span><span class="v">—</span></div>
         {% endfor %}
@@ -1479,7 +1490,7 @@
       <div class="mini-board">
         <h3>Avg Heart Rate <span class="meta">Lower = aerobic</span></h3>
         {% for row in mini_boards.hr %}
-          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v {{ row.class|default('') }}">{{ row.value }}</span></div>
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v {{ row.class|default('') }}">{{ row.value }}</span></div>
         {% else %}
           <div class="mini-row"><span class="pos">—</span><span class="name">No HR data yet</span><span class="v">—</span></div>
         {% endfor %}

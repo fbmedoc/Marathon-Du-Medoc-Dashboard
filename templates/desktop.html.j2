@@ -954,6 +954,46 @@
     border: 1px solid rgba(74,14,31,0.2);
     padding: 24px;
   }
+  /* Week navigation — prev/next around the bar chart for historical weeks */
+  .week-nav{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 14px;
+  }
+  .week-nav-btn{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--wine);
+    background: var(--cream);
+    border: 1px solid var(--wine);
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, opacity 0.15s;
+    user-select: none;
+  }
+  .week-nav-btn:hover:not(:disabled){
+    background: var(--wine);
+    color: var(--cream);
+  }
+  .week-nav-btn:disabled{
+    opacity: 0.25;
+    cursor: not-allowed;
+  }
+  .week-label{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--wine);
+    flex: 1;
+    text-align: center;
+  }
+  .week-pane{ display: none; }
+  .week-pane.active{ display: block; }
   .week-grid{
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -1558,38 +1598,50 @@
       <span class="tag">A few private leagues</span>
     </div>
 
+    {# Roman numeral series for mini-board ranks. 13 covers the full squad. #}
+    {% set roman_ranks = ['i','ii','iii','iv','v','vi','vii','viii','ix','x','xi','xii','xiii'] %}
+
     <div class="mini-row-grid">
       <div class="mini-board">
-        <h3>Longest Single Run <span class="meta">All-time PB · top 5</span></h3>
+        <h3>Most km <span class="meta">Since 1 May · all runners</span></h3>
+        {% for row in mini_boards.most_km %}
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
+        {% else %}
+          <div class="mini-row"><span class="pos">—</span><span class="name">No km logged yet</span><span class="v">—</span></div>
+        {% endfor %}
+      </div>
+
+      <div class="mini-board">
+        <h3>Longest Single Run <span class="meta">All-time PB · all runners</span></h3>
         {% for row in mini_boards.longest %}
-          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
         {% else %}
           <div class="mini-row"><span class="pos">—</span><span class="name">No long runs yet</span><span class="v">—</span></div>
         {% endfor %}
       </div>
 
       <div class="mini-board">
-        <h3>Pace Improvement <span class="meta">Last 30 days · top 5 · /km</span></h3>
+        <h3>Pace Improvement <span class="meta">Rolling 14d · /km</span></h3>
         {% for row in mini_boards.pace_imp %}
-          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v {{ row.class|default('') }}">{{ row.value }}</span></div>
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v {{ row.class|default('') }}">{{ row.value }}</span></div>
         {% else %}
-          <div class="mini-row"><span class="pos">—</span><span class="name">Need 30+ days of data</span><span class="v">—</span></div>
+          <div class="mini-row"><span class="pos">—</span><span class="name">Need more 5km+ runs</span><span class="v">—</span></div>
         {% endfor %}
       </div>
 
       <div class="mini-board">
-        <h3>Elevation Gained <span class="meta">Since 1 May · top 5 · m</span></h3>
+        <h3>Elevation Gained <span class="meta">Since 1 May · m</span></h3>
         {% for row in mini_boards.elevation %}
-          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
         {% else %}
           <div class="mini-row"><span class="pos">—</span><span class="name">No elevation data</span><span class="v">—</span></div>
         {% endfor %}
       </div>
 
       <div class="mini-board">
-        <h3>Avg Heart Rate <span class="meta">Lower = more aerobic · top 5</span></h3>
+        <h3>Avg Heart Rate <span class="meta">Lower = more aerobic</span></h3>
         {% for row in mini_boards.hr %}
-          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v {{ row.class|default('') }}">{{ row.value }}</span></div>
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v {{ row.class|default('') }}">{{ row.value }}</span></div>
         {% else %}
           <div class="mini-row"><span class="pos">—</span><span class="name">No HR data yet</span><span class="v">—</span></div>
         {% endfor %}
@@ -1627,23 +1679,54 @@
     </div>
 
     <div class="week-strip">
-      <div class="week-grid">
-        {% for d in week_grid %}
-          <div class="day{% if d.rest %} rest{% endif %}">
-            <div class="km">{{ d.km }}</div>
-            <div class="bar"{% if not d.rest %} style="height:{{ d.height_pct }}%"{% endif %}></div>
-            <div class="lbl">{{ d.lbl }}</div>
+      <div class="week-nav">
+        <button type="button" class="week-nav-btn" id="week-prev" disabled>← Previous week</button>
+        <div class="week-label" id="week-label">This week</div>
+        <button type="button" class="week-nav-btn" id="week-next" disabled>Next week →</button>
+      </div>
+      {% for w in week_history %}
+        <div class="week-pane{% if w.is_current %} active{% endif %}" data-week-offset="{{ w.offset }}" data-week-label="{{ w.label }} · {{ w.date_range }}">
+          <div class="week-grid">
+            {% for d in w.grid %}
+              <div class="day{% if d.rest %} rest{% endif %}">
+                <div class="km">{{ d.km }}</div>
+                <div class="bar"{% if not d.rest %} style="height:{{ d.height_pct }}%"{% endif %}></div>
+                <div class="lbl">{{ d.lbl }}</div>
+              </div>
+            {% endfor %}
           </div>
-        {% endfor %}
-      </div>
-      <div class="week-summary">
-        <div class="stat"><div class="v">{{ week_summary.total_km }}<span style="font-size:14px">km</span></div><div class="l">Group total</div></div>
-        <div class="stat"><div class="v">{{ week_summary.avg_per_runner }}<span style="font-size:14px">km</span></div><div class="l">Avg per runner</div></div>
-        <div class="stat"><div class="v">{{ week_summary.combined_pace }}</div><div class="l">Combined pace</div></div>
-        <div class="stat"><div class="v">{{ week_summary.sessions }}</div><div class="l">Sessions</div></div>
-        <div class="stat"><div class="v">{% if week_summary.wow_pct is not none %}{{ week_summary.wow_pct|signed_pct }}%{% else %}—{% endif %}</div><div class="l">vs last week</div></div>
-      </div>
+          <div class="week-summary">
+            <div class="stat"><div class="v">{{ w.summary.total_km }}<span style="font-size:14px">km</span></div><div class="l">Group total</div></div>
+            <div class="stat"><div class="v">{{ w.summary.avg_per_runner }}<span style="font-size:14px">km</span></div><div class="l">Avg per runner</div></div>
+            <div class="stat"><div class="v">{{ w.summary.combined_pace }}</div><div class="l">Combined pace</div></div>
+            <div class="stat"><div class="v">{{ w.summary.sessions }}</div><div class="l">Sessions</div></div>
+            <div class="stat"><div class="v">{% if w.summary.wow_pct is not none %}{{ w.summary.wow_pct|signed_pct }}%{% else %}—{% endif %}</div><div class="l">vs prior week</div></div>
+          </div>
+        </div>
+      {% endfor %}
     </div>
+
+    <script>
+    (function(){
+      const panes = Array.from(document.querySelectorAll('.week-pane'));
+      const prev  = document.getElementById('week-prev');
+      const next  = document.getElementById('week-next');
+      const label = document.getElementById('week-label');
+      if (!panes.length || !prev || !next || !label) return;
+      const maxOffset = panes.length - 1;
+      let offset = 0;
+      function update(){
+        panes.forEach(p => p.classList.toggle('active', parseInt(p.dataset.weekOffset, 10) === offset));
+        const active = panes.find(p => parseInt(p.dataset.weekOffset, 10) === offset);
+        if (active) label.textContent = active.dataset.weekLabel;
+        prev.disabled = offset >= maxOffset;
+        next.disabled = offset <= 0;
+      }
+      prev.addEventListener('click', () => { if (offset < maxOffset) { offset++; update(); } });
+      next.addEventListener('click', () => { if (offset > 0)         { offset--; update(); } });
+      update();
+    })();
+    </script>
 
     <!-- SQUAD TRACKING vs realistic group target (75% of full plan total) -->
     <div class="week-detail" style="margin-top:24px;padding:18px 24px">
