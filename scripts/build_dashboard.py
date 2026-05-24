@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 import sys
 import time as time_module
 from collections import defaultdict
@@ -25,6 +26,7 @@ from html import escape as html_escape
 from pathlib import Path
 from statistics import median
 from typing import Any
+from urllib.parse import quote as url_quote
 
 import pytz
 import requests
@@ -1322,6 +1324,318 @@ def build_newsflash(
     return items
 
 
+# ─── Weekly Recap ──────────────────────────────────────────────────────
+def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], today_uk: date) -> dict | None:
+    """
+    Pick the most-recent completed Mon-Sun week (or the current week if
+    today is Sunday) and surface 4-6 *interesting* facts — biggest jumps,
+    personal bests, milestones crossed, dark horses, gaps, first-time
+    joiners — rather than a fixed template.
+
+    Each candidate insight gets a score; we take the top few. Each carries
+    both an HTML rendering (for the dashboard card) and a WhatsApp-friendly
+    plain-text rendering (with *asterisk bold* for native WA formatting).
+    Output includes a ready-built `share_url` that opens WhatsApp with the
+    full message pre-filled — one tap to send.
+    """
+    if not week_history:
+        return None
+    connected = [r for r in runners if r.connected]
+
+    # Pick the target week. If today is Sunday, the in-progress week IS
+    # "this past week" (it ends today). Otherwise the most-recent completed
+    # Mon-Sun is week_history[1].
+    monday_uk = today_uk - timedelta(days=today_uk.weekday())
+    is_sunday = today_uk.weekday() == 6
+    if is_sunday:
+        target = week_history[0]
+        prior  = week_history[1] if len(week_history) >= 2 else None
+        week_start = monday_uk
+    else:
+        if len(week_history) < 2:
+            return None
+        target = week_history[1]
+        prior  = week_history[2] if len(week_history) >= 3 else None
+        week_start = monday_uk - timedelta(days=7)
+    week_end = week_start + timedelta(days=6)
+    prior_start = week_start - timedelta(days=7)
+    prior_end   = week_start - timedelta(days=1)
+
+    def km_in_window(r: RunnerStats, start: date, end: date) -> float:
+        total = 0.0
+        for a in r.activities:
+            try:
+                d = utc_to_uk(a["start_date"]).date()
+            except Exception:
+                continue
+            if start <= d <= end:
+                total += (a.get("distance", 0) or 0) / 1000.0
+        return total
+
+    def longest_in_window(r: RunnerStats, start: date, end: date) -> float:
+        best = 0.0
+        for a in r.activities:
+            try:
+                d = utc_to_uk(a["start_date"]).date()
+            except Exception:
+                continue
+            if start <= d <= end:
+                km = (a.get("distance", 0) or 0) / 1000.0
+                if km > best:
+                    best = km
+        return best
+
+    def first_name(r): return r.cfg["name"].split()[0]
+
+    def emit(tag, name, rest, score):
+        """Build an insight dict with both HTML and plain (WhatsApp) text."""
+        safe_name = html_escape(name)
+        safe_rest = html_escape(rest)
+        return {
+            "tag":   tag,
+            "html":  f"<strong>{safe_name}</strong> {safe_rest}",
+            "plain": f"*{name}* {rest}",
+            "score": score,
+        }
+
+    last_wk_km = {r.cfg["id"]: km_in_window(r, week_start, week_end) for r in connected}
+    prior_wk_km = {r.cfg["id"]: km_in_window(r, prior_start, prior_end) for r in connected}
+
+    insights: list[dict] = []
+
+    # 1. NEW JOINER — anyone whose first ever logged run is inside this window.
+    for r in connected:
+        if not r.activities:
+            continue
+        try:
+            earliest = min(utc_to_uk(a["start_date"]).date() for a in r.activities)
+        except Exception:
+            continue
+        if week_start <= earliest <= week_end:
+            insights.append(emit("🎉", first_name(r),
+                "logged their first runs this week — welcome aboard.", 95))
+
+    # 2. PERSONAL BEST LONG RUN — runner's longest-ever single run was THIS WEEK.
+    pb_candidates = []
+    for r in connected:
+        wk_longest = longest_in_window(r, week_start, week_end)
+        if wk_longest >= 10 and abs(wk_longest - r.longest_km) < 0.05:
+            pb_candidates.append((r, wk_longest))
+    pb_candidates.sort(key=lambda x: -x[1])
+    for r, dist in pb_candidates[:1]:
+        insights.append(emit("🥇", first_name(r),
+            f"set a personal-best long run: {dist:.1f}km. The engine is warming.", 92))
+
+    # 3. MILESTONE CROSSED — anyone who passed a 50/100/etc. km total this week.
+    milestones = [50, 100, 150, 200, 250, 300, 400, 500, 750, 1000]
+    for r in connected:
+        last_km = last_wk_km[r.cfg["id"]]
+        pre_total = r.total_km - last_km
+        for m in milestones:
+            if pre_total < m and r.total_km >= m:
+                insights.append(emit("🎖", first_name(r),
+                    f"crossed {m}km total this week. Onwards.", 88))
+                break
+
+    # 4. TOP RUNNER of the week (only fires if they were also in the top of
+    #    last week's km — otherwise more interesting candidates already cover them).
+    top_pool = [(r, km) for r, km in [(r, last_wk_km[r.cfg["id"]]) for r in connected] if km > 0]
+    if top_pool:
+        top_pool.sort(key=lambda x: -x[1])
+        top_r, top_km = top_pool[0]
+        insights.append(emit("🏃", first_name(top_r),
+            f"topped the week with {top_km:.0f}km logged.", 80))
+
+    # 5. BIGGEST JUMP — runner whose week was meaningfully bigger than prior week.
+    jump_pool = []
+    for r in connected:
+        cur = last_wk_km[r.cfg["id"]]
+        pre = prior_wk_km[r.cfg["id"]]
+        if pre >= 3 and cur - pre >= 8:   # was running, now running noticeably more
+            jump_pool.append((r, cur, pre, cur - pre, cur / pre))
+    jump_pool.sort(key=lambda x: -x[3])
+    if jump_pool:
+        r, cur, pre, delta, ratio = jump_pool[0]
+        # Avoid duplicating "top runner" if it's the same person
+        if not insights or all(i["plain"].find(first_name(r)) == -1 for i in insights if i["tag"] == "🏃"):
+            insights.append(emit("📈", first_name(r),
+                f"stepped up — {cur:.0f}km this week vs {pre:.0f}km the week before. Momentum.", 86))
+        elif ratio > 1.5:
+            # Top runner also jumped big; mention that
+            insights.append(emit("📈", first_name(r),
+                f"didn't just lead — they {int(round((ratio-1)*100))}% upped their own prior week.", 86))
+
+    # 6. BIGGEST DROP — runner whose week was notably smaller than prior week.
+    drop_pool = []
+    for r in connected:
+        cur = last_wk_km[r.cfg["id"]]
+        pre = prior_wk_km[r.cfg["id"]]
+        if pre >= 15 and (pre - cur) >= 10:
+            drop_pool.append((r, cur, pre, pre - cur))
+    drop_pool.sort(key=lambda x: -x[3])
+    if drop_pool:
+        r, cur, pre, delta = drop_pool[0]
+        insights.append(emit("📉", first_name(r),
+            f"dropped to {cur:.0f}km from {pre:.0f}km the week before. Taper, illness, or selective memory?", 70))
+
+    # 7. GHOST WATCH — biggest gap among connected runners.
+    ghost_pool = [(r, r.days_since_last_run) for r in connected if r.days_since_last_run >= 5]
+    ghost_pool.sort(key=lambda x: -x[1])
+    if ghost_pool:
+        ghost_r, days = ghost_pool[0]
+        insights.append(emit("👻", first_name(ghost_r),
+            f"hasn't logged a run in {days} days. The dashboard remembers.", 72))
+
+    # 8. DARK HORSE — non-Illig outside the top 3 who still logged 20km+.
+    if top_pool:
+        top_three_ids = {r.cfg["id"] for r, _ in top_pool[:3]}
+        dark = [(r, km) for r, km in top_pool[3:] if km >= 20
+                and not r.cfg.get("is_groom") and not r.cfg.get("is_brother")
+                and r.cfg["id"] not in top_three_ids]
+        if dark:
+            r, km = dark[0]
+            insights.append(emit("🧱", first_name(r),
+                f"quietly stacking {km:.0f}km outside the top three · the engine you didn't see coming.", 60))
+
+    # 9. SIBLING RIVALRY — gap between top Illig and Louis (if separate).
+    illigs = [r for r in connected if r.cfg.get("is_groom") or r.cfg.get("is_brother")]
+    if len(illigs) >= 2:
+        illigs.sort(key=lambda r: -r.total_km)
+        top_illig = illigs[0]
+        louis = next((r for r in connected if r.cfg.get("is_groom")), None)
+        if louis and top_illig.cfg["id"] != louis.cfg["id"]:
+            gap = top_illig.total_km - louis.total_km
+            insights.append(emit("👯", first_name(top_illig),
+                f"leads the Illigs by {gap:.0f}km. Louis, the groom needs to defend his crown.", 68))
+
+    # 10. PACE GLOW-UP — biggest pace improvement on long runs.
+    glow = [r for r in connected
+            if r.pace_improvement_s is not None and r.pace_improvement_s < -5]
+    glow.sort(key=lambda r: r.pace_improvement_s)
+    if glow:
+        g = glow[0]
+        insights.append(emit("⚡", first_name(g),
+            f"dropped {fmt_pace_delta(g.pace_improvement_s)}/km on long runs. Proper progress.", 76))
+
+    # 11. EARLY BIRDS — pre-7am runs in last 7 days.
+    if connected:
+        early = max(connected, key=lambda r: r.pre7am_runs_trailing_7d)
+        if early.pre7am_runs_trailing_7d >= 2:
+            n = early.pre7am_runs_trailing_7d
+            run_s = "run" if n == 1 else "runs"
+            insights.append(emit("🌅", first_name(early),
+                f"clocked {n} pre-7am {run_s} this week. The rest of us were horizontal.", 50))
+
+    # 12. SQUAD ACTIVE DAYS — were there any days nobody ran?
+    active_days = 0
+    silent_days = []
+    for i in range(7):
+        d = week_start + timedelta(days=i)
+        any_run = False
+        for r in connected:
+            for a in r.activities:
+                try:
+                    if utc_to_uk(a["start_date"]).date() == d:
+                        any_run = True
+                        break
+                except Exception:
+                    continue
+            if any_run:
+                break
+        if any_run:
+            active_days += 1
+        else:
+            silent_days.append(d.strftime("%A"))
+    if silent_days and len(silent_days) <= 2:
+        silent_str = " and ".join(silent_days)
+        insights.append({
+            "tag":   "🤫",
+            "html":  f"Squad was silent on {html_escape(silent_str)} — no runs logged across the whole group.",
+            "plain": f"Squad was silent on {silent_str} — no runs logged across the whole group.",
+            "score": 55,
+        })
+
+    # Squad WoW one-liner (always rendered separately at the top of the recap).
+    squad_wow = None
+    last_total = target["summary"]["total_km"]
+    if prior and prior["summary"]["total_km"] > 0:
+        prior_total = prior["summary"]["total_km"]
+        pct = round((last_total - prior_total) / prior_total * 100)
+        if pct >= 25:
+            squad_wow = f"Squad clocked {last_total}km — up {pct}% on the prior week. The engine is firing."
+        elif pct >= 8:
+            squad_wow = f"Squad clocked {last_total}km — up {pct}% on the prior week. Solid build."
+        elif pct >= -8:
+            squad_wow = f"Squad clocked {last_total}km — within a few percent of the prior week. Steady."
+        elif pct >= -25:
+            squad_wow = f"Squad clocked {last_total}km — down {-pct}% on the prior week. Taper or collective amnesia?"
+        else:
+            squad_wow = f"Squad clocked {last_total}km — down {-pct}% on the prior week. Either the plan said cutback or seven people are 'starting Monday'."
+    elif last_total > 0:
+        squad_wow = f"Squad clocked {last_total}km this week across {target['summary']['sessions']} sessions."
+
+    # Score-sort, dedupe (one insight per runner max), keep top 5.
+    insights.sort(key=lambda x: -x["score"])
+    picked: list[dict] = []
+    seen_names: set[str] = set()
+    for insight in insights:
+        # Extract a rough "first word inside bold" to identify the runner
+        # — squad-level insights without a bolded name pass freely.
+        m = re.search(r"\*([^*]+)\*", insight["plain"])
+        runner_token = m.group(1) if m else None
+        if runner_token and runner_token in seen_names:
+            continue
+        picked.append(insight)
+        if runner_token:
+            seen_names.add(runner_token)
+        if len(picked) >= 5:
+            break
+
+    # Missing-runners callout.
+    not_connected = [r for r in runners if not r.connected]
+    missing_count = len(not_connected)
+    missing_names = [r.cfg["name"] for r in not_connected]
+    # Clean placeholder brackets for display: "[Brother 2]" -> "Brother 2"
+    missing_clean = [n.replace("[", "").replace("]", "") for n in missing_names]
+
+    # Week label.
+    date_range = f"{week_start.day} {week_start.strftime('%b')} – {week_end.day} {week_end.strftime('%b')}"
+    week_num = max(1, ((week_end - TRAINING_START).days // 7) + 1)
+    headline = f"Médoc Week {week_num} · {date_range}"
+
+    # Build the WhatsApp share text (plain, with *asterisk* bold).
+    share_lines: list[str] = [f"🍷 {headline}"]
+    if squad_wow:
+        share_lines += ["", squad_wow]
+    if picked:
+        share_lines.append("")
+        for insight in picked:
+            share_lines.append(f"{insight['tag']} {insight['plain']}")
+    if missing_count > 0:
+        share_lines += ["", f"🚧 Still {missing_count} of 13 not connected — {', '.join(missing_clean[:6])}{', +more' if missing_count > 6 else ''}. Pass the connect link on — every extra runner is more rivalry and less wooden-spoon risk."]
+    share_lines += [
+        "",
+        "Desktop: https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/",
+        "Mobile:  https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/mobile.html",
+        "Connect: https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/connect.html  (code: medoc26)",
+        "",
+        "On y va, doucement.",
+    ]
+    share_text = "\n".join(share_lines)
+    share_url  = "https://wa.me/?text=" + url_quote(share_text)
+
+    return {
+        "headline":      headline,
+        "date_range":    date_range,
+        "squad_wow":     squad_wow,
+        "insights":      picked,
+        "missing_count": missing_count,
+        "missing_names": missing_clean,
+        "share_text":    share_text,
+        "share_url":     share_url,
+    }
+
+
 # ─── Training plan: pick the current week & generate workouts ──────────
 def weeks_to_race(today_uk: date) -> int:
     """Whole weeks from today to race day. 0 = race week. Clamped to [0, 18]."""
@@ -1545,6 +1859,7 @@ def main() -> None:
     this_week    = current_week_plan(today_uk)
     plan_status  = group_plan_status(runners, this_week)
     news_flash   = build_newsflash(runners, group, days_until, this_week, plan_status, today_uk, week_history)
+    weekly_recap = build_weekly_recap(runners, week_history, today_uk)
 
     synced_uk = datetime.now(UK_TZ).strftime("%H:%M %Z")
 
@@ -1561,6 +1876,7 @@ def main() -> None:
         "plan_status":    plan_status,
         "news_flash":      news_flash,
         "activity_ticker": activity_ticker,
+        "weekly_recap":    weekly_recap,
         "runners":         rows,
         "groom_row":       groom_row,
         "group":           group,
