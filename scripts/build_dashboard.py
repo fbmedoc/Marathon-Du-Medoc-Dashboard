@@ -927,54 +927,37 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     else:
         awards["sibling_rivalry"] = {"title": "The Sibling Rivalry", "icon": "👯", "detail": "Waiting on the Illigs to lace up."}
 
-    # Top Dog — most km in the last 7 days (rolling), anyone eligible.
-    top, top_km = first(
-        lambda r: r.connected,
-        lambda r: r.trailing_7d_km,
-    )
-    if top and top_km and top_km > 0:
-        awards["top_dog"] = {
-            "title":  "Top Dog",
-            "icon":   "👑",
-            "detail": winner_html("Most km in the last 7 days — ", top.cfg["name"], f" at {top_km:.0f}km. King of the leaderboard."),
-        }
-    else:
-        awards["top_dog"] = {"title": "Top Dog", "icon": "👑", "detail": "Up for grabs — first to log a run wins it."}
-
-    # The Chase — positions #2 and #3 on rolling 7d km, with the gap behind
-    # the leader. Sits beside Top Dog so the chasers know how close they are.
+    # Top Dog — single tile: leader + 2 closest chasers. Order is by rolling
+    # 7-day km (the trailing window — calendar week comparisons are noisy on
+    # Mondays/Tuesdays). Each line shows two numbers: trailing 7d and the
+    # week-in-progress (Mon→today), so the squad can see how the current
+    # calendar week is shaping up against the rolling figure.
     chase_field = sorted(
         [r for r in runners if r.connected and r.trailing_7d_km > 0],
         key=lambda r: -r.trailing_7d_km,
     )
-    if len(chase_field) >= 2:
+    if chase_field:
         leader = chase_field[0]
         chasers = chase_field[1:3]
-        lines = []
+        lines = [
+            f"<b>{html_escape(leader.cfg['name'])}</b> · "
+            f"{leader.trailing_7d_km:.1f}km <small>(7d)</small> · "
+            f"{leader.week_km:.1f}km <small>(this wk)</small>"
+        ]
         for idx, c in enumerate(chasers, start=2):
             gap = leader.trailing_7d_km - c.trailing_7d_km
             gap_txt = "level" if gap < 0.05 else f"–{gap:.1f}km"
             lines.append(
                 f"#{idx} <b>{html_escape(c.cfg['name'])}</b> · "
-                f"{c.trailing_7d_km:.1f}km ({gap_txt})"
+                f"{c.trailing_7d_km:.1f} / {c.week_km:.1f} ({gap_txt})"
             )
-        awards["top_dog_chase"] = {
-            "title":  "The Chase",
-            "icon":   "🐾",
+        awards["top_dog"] = {
+            "title":  "Top Dog",
+            "icon":   "👑",
             "detail": "<br>".join(lines),
         }
-    elif len(chase_field) == 1:
-        awards["top_dog_chase"] = {
-            "title":  "The Chase",
-            "icon":   "🐾",
-            "detail": "Leader's running solo — chasers wanted.",
-        }
     else:
-        awards["top_dog_chase"] = {
-            "title":  "The Chase",
-            "icon":   "🐾",
-            "detail": "No runs this week — pack hasn't left the kennel.",
-        }
+        awards["top_dog"] = {"title": "Top Dog", "icon": "👑", "detail": "Up for grabs — first to log a run wins it."}
 
     # Biggest Shift — strictly the biggest positive week-on-week volume jump.
     # Pairs with Biggest Glow-Up: that's pace-change, this is volume-change.

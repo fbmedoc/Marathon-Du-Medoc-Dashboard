@@ -112,8 +112,7 @@ Ten awards in total, displayed in this order:
 | --- | --- | --- |
 | 🤵 | Le Groom | Always Louis Illig (constant) |
 | 👯 | The Sibling Rivalry | Pecking order of all three Illigs by total km |
-| 👑 | Top Dog | Most km this week, any runner |
-| 🐾 | The Chase | #2 and #3 this week with gap to Top Dog |
+| 👑 | Top Dog | Leader + 2 closest chasers on rolling 7d, with this-week km too |
 | 📊 | Biggest Shift | Largest positive week-on-week km jump |
 | 📈 | Biggest Glow-Up | Largest 30-day pace improvement |
 | 🔥 | La Flamme | Longest current streak |
