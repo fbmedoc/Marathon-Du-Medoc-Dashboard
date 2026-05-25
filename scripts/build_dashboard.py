@@ -1401,9 +1401,46 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
     last_wk_km = {r.cfg["id"]: km_in_window(r, week_start, week_end) for r in connected}
     prior_wk_km = {r.cfg["id"]: km_in_window(r, prior_start, prior_end) for r in connected}
 
+    def emit_cat(category, tag, name, rest, score):
+        """Like emit() but also tags with a category for cap-by-category dedupe."""
+        ins = emit(tag, name, rest, score)
+        ins["category"] = category
+        return ins
+
+    def squad_insight(category, tag, html_text, plain_text, score):
+        return {
+            "category": category,
+            "tag":      tag,
+            "html":     html_text,
+            "plain":    plain_text,
+            "score":    score,
+        }
+
     insights: list[dict] = []
 
-    # 1. NEW JOINER — anyone whose first ever logged run is inside this window.
+    # ── TOP DOG OF THE WEEK ───────────────────────────────────────
+    # Highest km in the target Mon-Sun window. Boosted score if the lead
+    # changed vs the prior week (different runner topped the prior week).
+    top_pool = sorted(
+        [(r, last_wk_km[r.cfg["id"]]) for r in connected if last_wk_km[r.cfg["id"]] > 0],
+        key=lambda x: -x[1],
+    )
+    prior_top_pool = sorted(
+        [(r, prior_wk_km[r.cfg["id"]]) for r in connected if prior_wk_km[r.cfg["id"]] > 0],
+        key=lambda x: -x[1],
+    )
+    if top_pool:
+        top_r, top_km = top_pool[0]
+        prior_top_r = prior_top_pool[0][0] if prior_top_pool else None
+        if prior_top_r and prior_top_r.cfg["id"] != top_r.cfg["id"]:
+            insights.append(emit_cat("top_dog", "👑", first_name(top_r),
+                f"took Top Dog with {top_km:.0f}km — knocking {first_name(prior_top_r)} off the perch.", 100))
+        else:
+            insights.append(emit_cat("top_dog", "👑", first_name(top_r),
+                f"holds Top Dog with {top_km:.0f}km this week. Hard to dislodge.", 88))
+
+    # ── NEW JOINER — anyone whose first ever logged run is in this window.
+    # Distinct from a comeback because they have no prior activities.
     for r in connected:
         if not r.activities:
             continue
@@ -1412,60 +1449,173 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
         except Exception:
             continue
         if week_start <= earliest <= week_end:
-            insights.append(emit("🎉", first_name(r),
-                "logged their first runs this week — welcome aboard.", 95))
+            insights.append(emit_cat("joiner", "🎉", first_name(r),
+                "logged their first runs this week — welcome aboard.", 96))
 
-    # 2. PERSONAL BEST LONG RUN — runner's longest-ever single run was THIS WEEK.
+    # ── RANK MOVEMENT — biggest climber on this week's km ranking.
+    def rank_dict(km_dict):
+        ranked = sorted([(rid, km) for rid, km in km_dict.items() if km > 0],
+                        key=lambda x: -x[1])
+        return {rid: idx + 1 for idx, (rid, _) in enumerate(ranked)}
+    cur_rank  = rank_dict(last_wk_km)
+    prev_rank = rank_dict(prior_wk_km)
+    runner_by_id = {r.cfg["id"]: r for r in connected}
+    rank_changes = []
+    for rid, cur in cur_rank.items():
+        prev = prev_rank.get(rid)
+        if prev is not None and prev != cur:
+            rank_changes.append((runner_by_id[rid], prev - cur, prev, cur))  # delta>0 = climbed
+    climbers = sorted([c for c in rank_changes if c[1] >= 2], key=lambda x: -x[1])
+    if climbers:
+        r, delta, prev, cur = climbers[0]
+        insights.append(emit_cat("rank", "⬆", first_name(r),
+            f"climbed {delta} places to #{cur} — was #{prev} a week ago. The chase is on.", 94))
+    fallers = sorted([c for c in rank_changes if c[1] <= -2], key=lambda x: x[1])
+    if fallers:
+        r, delta, prev, cur = fallers[0]
+        insights.append(emit_cat("rank", "⬇", first_name(r),
+            f"dropped {-delta} places to #{cur} — was #{prev} a week ago. The leaderboard moves on without you.", 78))
+
+    # ── COMEBACK — runner who'd been quiet ≥6 days then ran this week.
+    comeback_candidates = []
+    for r in connected:
+        if last_wk_km[r.cfg["id"]] <= 0:
+            continue
+        # Skip new joiners (no prior activity at all)
+        pre_week_dates = []
+        for a in r.activities:
+            try:
+                d = utc_to_uk(a["start_date"]).date()
+            except Exception:
+                continue
+            if d < week_start:
+                pre_week_dates.append(d)
+        if not pre_week_dates:
+            continue
+        last_pre = max(pre_week_dates)
+        # First run in target week
+        in_week_dates = []
+        for a in r.activities:
+            try:
+                d = utc_to_uk(a["start_date"]).date()
+            except Exception:
+                continue
+            if week_start <= d <= week_end:
+                in_week_dates.append(d)
+        if not in_week_dates:
+            continue
+        first_in = min(in_week_dates)
+        gap = (first_in - last_pre).days
+        if gap >= 6:
+            comeback_candidates.append((r, gap))
+    comeback_candidates.sort(key=lambda x: -x[1])
+    if comeback_candidates:
+        r, gap = comeback_candidates[0]
+        insights.append(emit_cat("comeback", "🔁", first_name(r),
+            f"is back — first run in {gap} days. The chase is rejoined.", 90))
+
+    # ── STREAK MILESTONE — hit a notable streak number THIS WEEK.
+    # We approximate by checking current streak (as of today) against milestones.
+    streak_milestones = {5, 7, 10, 14, 21, 30}
+    streakers = sorted([r for r in connected if r.streak >= 3], key=lambda r: -r.streak)
+    if streakers:
+        s = streakers[0]
+        if s.streak in streak_milestones:
+            insights.append(emit_cat("streak", "🔥", first_name(s),
+                f"hit a {s.streak}-day streak. La Flamme.", 86))
+        elif s.streak >= 5:
+            insights.append(emit_cat("streak", "🔥", first_name(s),
+                f"riding a {s.streak}-day streak — La Flamme leader.", 64))
+
+    # ── PERSONAL BEST LONG RUN this week — runner's longest-ever single run.
     pb_candidates = []
     for r in connected:
         wk_longest = longest_in_window(r, week_start, week_end)
         if wk_longest >= 10 and abs(wk_longest - r.longest_km) < 0.05:
             pb_candidates.append((r, wk_longest))
     pb_candidates.sort(key=lambda x: -x[1])
-    for r, dist in pb_candidates[:1]:
-        insights.append(emit("🥇", first_name(r),
+    if pb_candidates:
+        r, dist = pb_candidates[0]
+        insights.append(emit_cat("pb", "🥇", first_name(r),
             f"set a personal-best long run: {dist:.1f}km. The engine is warming.", 92))
 
-    # 3. MILESTONE CROSSED — anyone who passed a 50/100/etc. km total this week.
-    milestones = [50, 100, 150, 200, 250, 300, 400, 500, 750, 1000]
+    # ── MILESTONE(S) — consolidate ALL milestones crossed this week into ONE
+    # insight. Three people crossing 100km this week shouldn't take three slots.
+    km_milestones = [50, 100, 150, 200, 250, 300, 400, 500, 750, 1000]
+    crossed = []
     for r in connected:
         last_km = last_wk_km[r.cfg["id"]]
         pre_total = r.total_km - last_km
-        for m in milestones:
+        for m in km_milestones:
             if pre_total < m and r.total_km >= m:
-                insights.append(emit("🎖", first_name(r),
-                    f"crossed {m}km total this week. Onwards.", 88))
+                crossed.append((r, m))
                 break
+    crossed.sort(key=lambda x: -x[1])  # highest milestone first
+    if crossed:
+        if len(crossed) == 1:
+            r, m = crossed[0]
+            insights.append(emit_cat("milestone", "🎖", first_name(r),
+                f"crossed {m}km total this week. Onwards.", 84))
+        else:
+            # Multi-milestone line, mentioning everyone
+            pieces = [f"{first_name(r)} ({m}km)" for r, m in crossed[:4]]
+            joined = ", ".join(pieces)
+            text_plain = f"Milestone party — {joined} all crossed thresholds this week."
+            text_html  = f"Milestone party — {html_escape(joined)} all crossed thresholds this week."
+            insights.append(squad_insight("milestone", "🎖", text_html, text_plain, 88))
 
-    # 4. TOP RUNNER of the week (only fires if they were also in the top of
-    #    last week's km — otherwise more interesting candidates already cover them).
-    top_pool = [(r, km) for r, km in [(r, last_wk_km[r.cfg["id"]]) for r in connected] if km > 0]
-    if top_pool:
-        top_pool.sort(key=lambda x: -x[1])
-        top_r, top_km = top_pool[0]
-        insights.append(emit("🏃", first_name(top_r),
-            f"topped the week with {top_km:.0f}km logged.", 80))
+    # ── SIBLING RIVALRY status — current Illig pecking order with gaps.
+    illigs = [r for r in connected if r.cfg.get("is_groom") or r.cfg.get("is_brother")]
+    if len(illigs) >= 2:
+        illigs.sort(key=lambda r: -r.total_km)
+        louis = next((r for r in connected if r.cfg.get("is_groom")), None)
+        top_illig = illigs[0]
+        if louis and top_illig.cfg["id"] == louis.cfg["id"]:
+            # Louis leading
+            second = illigs[1]
+            gap_to_second = top_illig.total_km - second.total_km
+            insights.append(emit_cat("rivalry", "👯", "Louis",
+                f"holds the Illig crown · {first_name(second)} is {gap_to_second:.0f}km back. Brother in pursuit.", 78))
+        elif louis:
+            # A brother leading
+            gap_to_louis = top_illig.total_km - louis.total_km
+            insights.append(emit_cat("rivalry", "👯", first_name(top_illig),
+                f"leads the Illigs by {gap_to_louis:.0f}km. Louis, the groom needs to defend his crown.", 82))
 
-    # 5. BIGGEST JUMP — runner whose week was meaningfully bigger than prior week.
+    # ── L'AURORE OF THE WEEK — pre-7am leader for the target Mon-Sun window.
+    pre7am_counts = {}
+    for r in connected:
+        cnt = 0
+        for a in r.activities:
+            try:
+                t = utc_to_uk(a["start_date"])
+            except Exception:
+                continue
+            if week_start <= t.date() <= week_end and t.hour < 7:
+                cnt += 1
+        if cnt > 0:
+            pre7am_counts[r.cfg["id"]] = (r, cnt)
+    pre7am_sorted = sorted(pre7am_counts.values(), key=lambda x: -x[1])
+    if pre7am_sorted and pre7am_sorted[0][1] >= 2:
+        r, n = pre7am_sorted[0]
+        run_s = "run" if n == 1 else "runs"
+        insights.append(emit_cat("laurore", "🌅", first_name(r),
+            f"is L'Aurore this week — {n} pre-7am {run_s}. The rest of you were horizontal.", 72))
+
+    # ── BIGGEST WEEKLY JUMP — significant km increase on prior week.
     jump_pool = []
     for r in connected:
         cur = last_wk_km[r.cfg["id"]]
         pre = prior_wk_km[r.cfg["id"]]
-        if pre >= 3 and cur - pre >= 8:   # was running, now running noticeably more
-            jump_pool.append((r, cur, pre, cur - pre, cur / pre))
+        if pre >= 3 and cur - pre >= 8:
+            jump_pool.append((r, cur, pre, cur - pre))
     jump_pool.sort(key=lambda x: -x[3])
     if jump_pool:
-        r, cur, pre, delta, ratio = jump_pool[0]
-        # Avoid duplicating "top runner" if it's the same person
-        if not insights or all(i["plain"].find(first_name(r)) == -1 for i in insights if i["tag"] == "🏃"):
-            insights.append(emit("📈", first_name(r),
-                f"stepped up — {cur:.0f}km this week vs {pre:.0f}km the week before. Momentum.", 86))
-        elif ratio > 1.5:
-            # Top runner also jumped big; mention that
-            insights.append(emit("📈", first_name(r),
-                f"didn't just lead — they {int(round((ratio-1)*100))}% upped their own prior week.", 86))
+        r, cur, pre, delta = jump_pool[0]
+        insights.append(emit_cat("jump", "📈", first_name(r),
+            f"stepped up — {cur:.0f}km this week vs {pre:.0f}km the week before. Momentum.", 76))
 
-    # 6. BIGGEST DROP — runner whose week was notably smaller than prior week.
+    # ── BIGGEST WEEKLY DROP — significant km decrease.
     drop_pool = []
     for r in connected:
         cur = last_wk_km[r.cfg["id"]]
@@ -1475,59 +1625,39 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
     drop_pool.sort(key=lambda x: -x[3])
     if drop_pool:
         r, cur, pre, delta = drop_pool[0]
-        insights.append(emit("📉", first_name(r),
+        insights.append(emit_cat("drop", "📉", first_name(r),
             f"dropped to {cur:.0f}km from {pre:.0f}km the week before. Taper, illness, or selective memory?", 70))
 
-    # 7. GHOST WATCH — biggest gap among connected runners.
-    ghost_pool = [(r, r.days_since_last_run) for r in connected if r.days_since_last_run >= 5]
-    ghost_pool.sort(key=lambda x: -x[1])
-    if ghost_pool:
-        ghost_r, days = ghost_pool[0]
-        insights.append(emit("👻", first_name(ghost_r),
-            f"hasn't logged a run in {days} days. The dashboard remembers.", 72))
-
-    # 8. DARK HORSE — non-Illig outside the top 3 who still logged 20km+.
-    if top_pool:
-        top_three_ids = {r.cfg["id"] for r, _ in top_pool[:3]}
-        dark = [(r, km) for r, km in top_pool[3:] if km >= 20
-                and not r.cfg.get("is_groom") and not r.cfg.get("is_brother")
-                and r.cfg["id"] not in top_three_ids]
-        if dark:
-            r, km = dark[0]
-            insights.append(emit("🧱", first_name(r),
-                f"quietly stacking {km:.0f}km outside the top three · the engine you didn't see coming.", 60))
-
-    # 9. SIBLING RIVALRY — gap between top Illig and Louis (if separate).
-    illigs = [r for r in connected if r.cfg.get("is_groom") or r.cfg.get("is_brother")]
-    if len(illigs) >= 2:
-        illigs.sort(key=lambda r: -r.total_km)
-        top_illig = illigs[0]
-        louis = next((r for r in connected if r.cfg.get("is_groom")), None)
-        if louis and top_illig.cfg["id"] != louis.cfg["id"]:
-            gap = top_illig.total_km - louis.total_km
-            insights.append(emit("👯", first_name(top_illig),
-                f"leads the Illigs by {gap:.0f}km. Louis, the groom needs to defend his crown.", 68))
-
-    # 10. PACE GLOW-UP — biggest pace improvement on long runs.
+    # ── PACE GLOW-UP — biggest pace improvement on long runs.
     glow = [r for r in connected
             if r.pace_improvement_s is not None and r.pace_improvement_s < -5]
     glow.sort(key=lambda r: r.pace_improvement_s)
     if glow:
         g = glow[0]
-        insights.append(emit("⚡", first_name(g),
-            f"dropped {fmt_pace_delta(g.pace_improvement_s)}/km on long runs. Proper progress.", 76))
+        insights.append(emit_cat("pace", "⚡", first_name(g),
+            f"dropped {fmt_pace_delta(g.pace_improvement_s)}/km on long runs. Proper progress.", 68))
 
-    # 11. EARLY BIRDS — pre-7am runs in last 7 days.
-    if connected:
-        early = max(connected, key=lambda r: r.pre7am_runs_trailing_7d)
-        if early.pre7am_runs_trailing_7d >= 2:
-            n = early.pre7am_runs_trailing_7d
-            run_s = "run" if n == 1 else "runs"
-            insights.append(emit("🌅", first_name(early),
-                f"clocked {n} pre-7am {run_s} this week. The rest of us were horizontal.", 50))
+    # ── DARK HORSE — non-Illig outside the top 3 who still logged 20km+.
+    if len(top_pool) >= 4:
+        top_three_ids = {r.cfg["id"] for r, _ in top_pool[:3]}
+        dark = [(r, km) for r, km in top_pool[3:]
+                if km >= 20
+                and not r.cfg.get("is_groom") and not r.cfg.get("is_brother")
+                and r.cfg["id"] not in top_three_ids]
+        if dark:
+            r, km = dark[0]
+            insights.append(emit_cat("dark_horse", "🧱", first_name(r),
+                f"quietly stacking {km:.0f}km outside the top three · the engine you didn't see coming.", 60))
 
-    # 12. SQUAD ACTIVE DAYS — were there any days nobody ran?
-    active_days = 0
+    # ── GHOST WATCH — biggest current gap among connected runners.
+    ghost_pool = [(r, r.days_since_last_run) for r in connected if r.days_since_last_run >= 5]
+    ghost_pool.sort(key=lambda x: -x[1])
+    if ghost_pool:
+        ghost_r, days = ghost_pool[0]
+        insights.append(emit_cat("ghost", "👻", first_name(ghost_r),
+            f"hasn't logged a run in {days} days. The dashboard remembers.", 58))
+
+    # ── SILENT DAY — was there any day nobody ran across the whole squad?
     silent_days = []
     for i in range(7):
         d = week_start + timedelta(days=i)
@@ -1542,18 +1672,15 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
                     continue
             if any_run:
                 break
-        if any_run:
-            active_days += 1
-        else:
+        if not any_run:
             silent_days.append(d.strftime("%A"))
     if silent_days and len(silent_days) <= 2:
         silent_str = " and ".join(silent_days)
-        insights.append({
-            "tag":   "🤫",
-            "html":  f"Squad was silent on {html_escape(silent_str)} — no runs logged across the whole group.",
-            "plain": f"Squad was silent on {silent_str} — no runs logged across the whole group.",
-            "score": 55,
-        })
+        insights.append(squad_insight("silent",
+            "🤫",
+            f"Squad was silent on {html_escape(silent_str)} — not a single run logged.",
+            f"Squad was silent on {silent_str} — not a single run logged.",
+            54))
 
     # Squad WoW one-liner (always rendered separately at the top of the recap).
     squad_wow = None
