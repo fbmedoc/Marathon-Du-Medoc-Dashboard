@@ -499,6 +499,47 @@
   }
   .recap-missing strong{ color: var(--gold-bright); }
 
+  /* Weekly recap navigation — prev/next through earlier weeks. */
+  .recap-nav{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 0 0 16px;
+    padding-top: 4px;
+  }
+  .recap-nav-btn{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold-bright);
+    background: transparent;
+    border: 1px solid rgba(201, 169, 97, 0.4);
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s, color 0.15s;
+    user-select: none;
+  }
+  .recap-nav-btn:hover:not(:disabled){
+    background: rgba(201, 169, 97, 0.15);
+    color: var(--cream);
+  }
+  .recap-nav-btn:disabled{
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .recap-nav-label{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--gold-bright);
+    text-align: center;
+    flex: 1;
+  }
+  .recap-pane{ display: none; }
+  .recap-pane.active{ display: block; }
+
   /* HERO STAT STRIP */
   .hero-strip{
     display: grid;
@@ -1537,52 +1578,52 @@
           <span><b>COUNTDOWN:</b> 103 days till Pauillac · 14 long Sundays to suffer through · </span>
           <span><b>PHASE:</b> Week 5 of 18 — Build · Build phase begins. Long run lengthens. · </span>
           <span><b>ROLL CALL:</b> 4 of 13 still ghosting the dashboard · we see you, lads · </span>
-          <span><b>LEADERBOARD:</b> Top three this season: Fred > Louis > Blaise · everyone below has months to do something about it · </span>
-          <span><b>GAP:</b> Oskar sits 174km behind Fred · the gap is now a chasm · </span>
+          <span><b>LEADERBOARD:</b> Top three this season: Fred I. > Louis > Blaise · everyone below has months to do something about it · </span>
+          <span><b>GAP:</b> Oskar sits 174km behind Fred I. · the gap is now a chasm · </span>
           <span><b>BREAKING:</b> Louis just clocked a 24.4km long run · the groom is putting in the work — what's everyone else's excuse? · </span>
-          <span><b>RIVALRY:</b> Fred OUTRUNNING the groom by 35km · Louis, where's the alpha energy? · </span>
+          <span><b>RIVALRY:</b> Fred I. OUTRUNNING the groom by 35km · Louis, where's the alpha energy? · </span>
           <span><b>DARK HORSE:</b> Blaise quietly stacking 117km · the non-Illigs have arrived · </span>
           <span><b>PB:</b> Blaise drops −0:27/km on long runs · the engine is warming up · </span>
-          <span><b>PACE WATCH:</b> Freddy averaging 5:34/km · brisk if you're carrying the shopping · </span>
+          <span><b>PACE WATCH:</b> Freddy B. averaging 5:34/km · brisk if you're carrying the shopping · </span>
           <span><b>STRUGGLE:</b> Oskar at 4.2km since 1 May · 'starts Monday' has become a season · </span>
           <span><b>GHOST:</b> Oskar hasn't logged a run in 23 days · the dashboard has a long memory · </span>
           <span><b>TARGET:</b> Squad at 0% of target this week · the wine isn't going anywhere, but neither are you · </span>
           <span><b>PROJECTION:</b> Group projection 4:14 · +14:29 to sub-4 — but we still have months · </span>
           <span><b>MILESTONE:</b> 846km combined · 20 marathons' worth between the squad · </span>
-          <span><b>MILESTONE WATCH:</b> Dan is 4.4km from 100km · go and grab it · </span>
+          <span><b>MILESTONE WATCH:</b> Dan C. is 4.4km from 100km · go and grab it · </span>
           <span><b>MILESTONE WATCH:</b> Louis is 6.5km from 150km · go and grab it · </span>
           <span><b>PACE LEADER:</b> Matt averaging 5:05/km across the season · the gears are clean · </span>
-          <span><b>BIG WEEK:</b> Fred stacked 45km in the last 7 days · the calves know · </span>
-          <span><b>ASCENDED:</b> Fred climbed 1222m total · half a Snowdon and counting · </span>
+          <span><b>BIG WEEK:</b> Fred I. stacked 45km in the last 7 days · the calves know · </span>
+          <span><b>ASCENDED:</b> Fred I. climbed 1222m total · half a Snowdon and counting · </span>
           <span><b>LONG RUN OF THE WEEK:</b> Matt clocked 18.7km in a single session this week · respect · </span>
           <span><b>GROUP TREND:</b> Last week (18 May – 24 May): 221km, down 14% · taper week, or some are slacking · </span>
-          <span><b>RACE-DAY:</b> If they ran Médoc today: 1. Matt · 2. Louis · 3. Fred · everyone else has weeks to fight for it · </span>
+          <span><b>RACE-DAY:</b> If they ran Médoc today: 1. Matt · 2. Louis · 3. Fred I. · everyone else has weeks to fight for it · </span>
           <span><b>DRESS CODE:</b> Costumes are mandatory · this is non-negotiable, yes it'll chafe · </span>
           <span><b>RUMOUR:</b> One château allegedly pours grand cru · find the queue, join it, lose 12 minutes · </span>
           <span><b>PSA:</b> If you can hold a conversation on your long run the pace is right · if you're explaining politics, you're going too easy · </span>
           <span><b>COUNTDOWN:</b> 103 days till Pauillac · 14 long Sundays to suffer through · </span>
           <span><b>PHASE:</b> Week 5 of 18 — Build · Build phase begins. Long run lengthens. · </span>
           <span><b>ROLL CALL:</b> 4 of 13 still ghosting the dashboard · we see you, lads · </span>
-          <span><b>LEADERBOARD:</b> Top three this season: Fred > Louis > Blaise · everyone below has months to do something about it · </span>
-          <span><b>GAP:</b> Oskar sits 174km behind Fred · the gap is now a chasm · </span>
+          <span><b>LEADERBOARD:</b> Top three this season: Fred I. > Louis > Blaise · everyone below has months to do something about it · </span>
+          <span><b>GAP:</b> Oskar sits 174km behind Fred I. · the gap is now a chasm · </span>
           <span><b>BREAKING:</b> Louis just clocked a 24.4km long run · the groom is putting in the work — what's everyone else's excuse? · </span>
-          <span><b>RIVALRY:</b> Fred OUTRUNNING the groom by 35km · Louis, where's the alpha energy? · </span>
+          <span><b>RIVALRY:</b> Fred I. OUTRUNNING the groom by 35km · Louis, where's the alpha energy? · </span>
           <span><b>DARK HORSE:</b> Blaise quietly stacking 117km · the non-Illigs have arrived · </span>
           <span><b>PB:</b> Blaise drops −0:27/km on long runs · the engine is warming up · </span>
-          <span><b>PACE WATCH:</b> Freddy averaging 5:34/km · brisk if you're carrying the shopping · </span>
+          <span><b>PACE WATCH:</b> Freddy B. averaging 5:34/km · brisk if you're carrying the shopping · </span>
           <span><b>STRUGGLE:</b> Oskar at 4.2km since 1 May · 'starts Monday' has become a season · </span>
           <span><b>GHOST:</b> Oskar hasn't logged a run in 23 days · the dashboard has a long memory · </span>
           <span><b>TARGET:</b> Squad at 0% of target this week · the wine isn't going anywhere, but neither are you · </span>
           <span><b>PROJECTION:</b> Group projection 4:14 · +14:29 to sub-4 — but we still have months · </span>
           <span><b>MILESTONE:</b> 846km combined · 20 marathons' worth between the squad · </span>
-          <span><b>MILESTONE WATCH:</b> Dan is 4.4km from 100km · go and grab it · </span>
+          <span><b>MILESTONE WATCH:</b> Dan C. is 4.4km from 100km · go and grab it · </span>
           <span><b>MILESTONE WATCH:</b> Louis is 6.5km from 150km · go and grab it · </span>
           <span><b>PACE LEADER:</b> Matt averaging 5:05/km across the season · the gears are clean · </span>
-          <span><b>BIG WEEK:</b> Fred stacked 45km in the last 7 days · the calves know · </span>
-          <span><b>ASCENDED:</b> Fred climbed 1222m total · half a Snowdon and counting · </span>
+          <span><b>BIG WEEK:</b> Fred I. stacked 45km in the last 7 days · the calves know · </span>
+          <span><b>ASCENDED:</b> Fred I. climbed 1222m total · half a Snowdon and counting · </span>
           <span><b>LONG RUN OF THE WEEK:</b> Matt clocked 18.7km in a single session this week · respect · </span>
           <span><b>GROUP TREND:</b> Last week (18 May – 24 May): 221km, down 14% · taper week, or some are slacking · </span>
-          <span><b>RACE-DAY:</b> If they ran Médoc today: 1. Matt · 2. Louis · 3. Fred · everyone else has weeks to fight for it · </span>
+          <span><b>RACE-DAY:</b> If they ran Médoc today: 1. Matt · 2. Louis · 3. Fred I. · everyone else has weeks to fight for it · </span>
           <span><b>DRESS CODE:</b> Costumes are mandatory · this is non-negotiable, yes it'll chafe · </span>
           <span><b>RUMOUR:</b> One château allegedly pours grand cru · find the queue, join it, lose 12 minutes · </span>
           <span><b>PSA:</b> If you can hold a conversation on your long run the pace is right · if you're explaining politics, you're going too easy · </span>
@@ -1599,7 +1640,7 @@
     <div class="tk-list">
         <div class="tk-item">
           <div class="tk-runner">
-<span class="tk-avatar-fallback">D</span>            <span class="tk-name">Dan</span>
+<span class="tk-avatar-fallback">D</span>            <span class="tk-name">Dan C.</span>
           </div>
           <div class="tk-stats">
             <span class="tk-dist">12.0<span class="tk-u">km</span></span>
@@ -1612,7 +1653,7 @@
         </div>
         <div class="tk-item">
           <div class="tk-runner">
-<span class="tk-avatar-fallback">D</span>            <span class="tk-name">Danny</span>
+<span class="tk-avatar-fallback">D</span>            <span class="tk-name">Danny A.</span>
           </div>
           <div class="tk-stats">
             <span class="tk-dist">2.1<span class="tk-u">km</span></span>
@@ -1651,7 +1692,7 @@
         </div>
         <div class="tk-item">
           <div class="tk-runner">
-<span class="tk-avatar-fallback">F</span>            <span class="tk-name">Freddy</span>
+<span class="tk-avatar-fallback">F</span>            <span class="tk-name">Freddy B.</span>
           </div>
           <div class="tk-stats">
             <span class="tk-dist">12.6<span class="tk-u">km</span></span>
@@ -1664,7 +1705,7 @@
         </div>
         <div class="tk-item is-brother">
           <div class="tk-runner">
-<span class="tk-avatar-fallback">F</span>            <span class="tk-name">Fred</span>
+<span class="tk-avatar-fallback">F</span>            <span class="tk-name">Fred I.</span>
           </div>
           <div class="tk-stats">
             <span class="tk-dist">6.7<span class="tk-u">km</span></span>
@@ -1677,7 +1718,7 @@
         </div>
         <div class="tk-item">
           <div class="tk-runner">
-<span class="tk-avatar-fallback">D</span>            <span class="tk-name">Danny</span>
+<span class="tk-avatar-fallback">D</span>            <span class="tk-name">Danny A.</span>
           </div>
           <div class="tk-stats">
             <span class="tk-dist">8.1<span class="tk-u">km</span></span>
@@ -1690,7 +1731,7 @@
         </div>
         <div class="tk-item">
           <div class="tk-runner">
-<span class="tk-avatar-fallback">D</span>            <span class="tk-name">Dan</span>
+<span class="tk-avatar-fallback">D</span>            <span class="tk-name">Dan C.</span>
           </div>
           <div class="tk-stats">
             <span class="tk-dist">5.0<span class="tk-u">km</span></span>
@@ -1704,7 +1745,7 @@
     </div>
   </div>
 
-  <!-- WEEKLY RECAP CARD — collapsed by default, click to expand -->
+  <!-- WEEKLY RECAP CARD — collapsed by default, scroll back through earlier weeks -->
   <details class="recap">
     <summary class="recap-summary">
       <span class="recap-label">🍷 Weekly Recap</span>
@@ -1712,18 +1753,76 @@
       <span class="recap-chevron" aria-hidden="true">▾</span>
     </summary>
     <div class="recap-body">
-      <p class="recap-lead">Squad clocked 221km — down 14% on the prior week. Taper or collective amnesia?</p>
-      <ul class="recap-insights">
-          <li><span class="recap-tag">👑</span><span><strong>Fred</strong> took Top Dog with 45km — knocking Louis off the perch.</span></li>
-          <li><span class="recap-tag">🎉</span><span><strong>Danny</strong> logged their first runs this week — welcome aboard.</span></li>
-          <li><span class="recap-tag">⬆</span><span><strong>Dan</strong> climbed 4 places to #2 — was #6 a week ago. The chase is on.</span></li>
-          <li><span class="recap-tag">🥇</span><span><strong>Matt</strong> set a personal-best long run: 18.7km. The engine is warming.</span></li>
-          <li><span class="recap-tag">🎖</span><span>Milestone party — Fred (150km), Matt (100km), Blaise (100km), Jack (100km) all crossed thresholds this week.</span></li>
-      </ul>
-      <div class="recap-missing">
-        🚧 Still <strong>4 of 13</strong> not connected. Pass the connect link on — every extra runner is more rivalry, less wooden-spoon risk.
+      <div class="recap-nav">
+        <button type="button" class="recap-nav-btn" id="recap-prev">← Previous week</button>
+        <span class="recap-nav-label" id="recap-nav-label">Médoc Week 4 · 18 May – 24 May</span>
+        <button type="button" class="recap-nav-btn" id="recap-next" disabled>Next week →</button>
       </div>
+        <div class="recap-pane active" data-recap-idx="0" data-recap-label="Médoc Week 4 · 18 May – 24 May">
+          <p class="recap-lead">Squad clocked 221km — down 14% on the prior week. Taper or collective amnesia?</p>
+          <ul class="recap-insights">
+              <li><span class="recap-tag">👑</span><span><strong>Fred I.</strong> took Top Dog with 45km — knocking Louis off the perch.</span></li>
+              <li><span class="recap-tag">🎉</span><span><strong>Danny A.</strong> logged their first runs this week — welcome aboard.</span></li>
+              <li><span class="recap-tag">⬆</span><span><strong>Dan C.</strong> climbed 4 places to #2 — was #6 a week ago. The chase is on.</span></li>
+              <li><span class="recap-tag">🥇</span><span><strong>Matt</strong> set a personal-best long run: 18.7km. The engine is warming.</span></li>
+              <li><span class="recap-tag">🎖</span><span>Milestone party — Fred I. (150km), Matt (100km), Blaise (100km), Jack (100km) all crossed thresholds this week.</span></li>
+          </ul>
+          <div class="recap-missing">
+            🚧 Still <strong>4 of 13</strong> not connected. Pass the connect link on — every extra runner is more rivalry, less wooden-spoon risk.
+          </div>
+        </div>
+        <div class="recap-pane" data-recap-idx="1" data-recap-label="Médoc Week 3 · 11 May – 17 May">
+          <p class="recap-lead">Squad clocked 258km — within a few percent of the prior week. Steady.</p>
+          <ul class="recap-insights">
+              <li><span class="recap-tag">👑</span><span><strong>Louis</strong> took Top Dog with 57km — knocking Fred I. off the perch.</span></li>
+              <li><span class="recap-tag">🔁</span><span><strong>Dan C.</strong> is back — first run in 6 days. The chase is rejoined.</span></li>
+              <li><span class="recap-tag">🎖</span><span>Milestone party — Fred I. (150km), Louis (100km), Matt (100km), Blaise (100km) all crossed thresholds this week.</span></li>
+              <li><span class="recap-tag">👯</span><span><strong>Fred I.</strong> leads the Illigs by 35km. Louis, the groom needs to defend his crown.</span></li>
+              <li><span class="recap-tag">⬇</span><span><strong>Matt</strong> dropped 3 places to #7 — was #4 a week ago. The leaderboard moves on without you.</span></li>
+          </ul>
+        </div>
+        <div class="recap-pane" data-recap-idx="2" data-recap-label="Médoc Week 2 · 4 May – 10 May">
+          <p class="recap-lead">Squad clocked 249km — up 113% on the prior week. The engine is firing.</p>
+          <ul class="recap-insights">
+              <li><span class="recap-tag">👑</span><span><strong>Fred I.</strong> took Top Dog with 60km — knocking Jack off the perch.</span></li>
+              <li><span class="recap-tag">⬆</span><span><strong>Blaise</strong> climbed 5 places to #2 — was #7 a week ago. The chase is on.</span></li>
+              <li><span class="recap-tag">🎖</span><span>Milestone party — Fred I. (150km), Louis (100km), Matt (100km), Blaise (100km) all crossed thresholds this week.</span></li>
+              <li><span class="recap-tag">⬇</span><span><strong>Jack</strong> dropped 4 places to #5 — was #1 a week ago. The leaderboard moves on without you.</span></li>
+              <li><span class="recap-tag">🧱</span><span><strong>Matt</strong> quietly stacking 35km outside the top three · the engine you didn&#x27;t see coming.</span></li>
+          </ul>
+        </div>
+        <div class="recap-pane" data-recap-idx="3" data-recap-label="Médoc Week 1 · 27 Apr – 3 May">
+          <p class="recap-lead">Squad clocked 117km this week across 13 sessions.</p>
+          <ul class="recap-insights">
+              <li><span class="recap-tag">🎉</span><span><strong>Louis</strong> logged their first runs this week — welcome aboard.</span></li>
+              <li><span class="recap-tag">🎉</span><span><strong>Fred I.</strong> logged their first runs this week — welcome aboard.</span></li>
+              <li><span class="recap-tag">🎉</span><span><strong>Matt</strong> logged their first runs this week — welcome aboard.</span></li>
+              <li><span class="recap-tag">🎉</span><span><strong>Freddy B.</strong> logged their first runs this week — welcome aboard.</span></li>
+              <li><span class="recap-tag">🎉</span><span><strong>Dan C.</strong> logged their first runs this week — welcome aboard.</span></li>
+          </ul>
+        </div>
     </div>
+    <script>
+    (function(){
+      const panes = Array.from(document.querySelectorAll('.recap-pane'));
+      const prev  = document.getElementById('recap-prev');
+      const next  = document.getElementById('recap-next');
+      const label = document.getElementById('recap-nav-label');
+      if (!panes.length || !prev || !next || !label) return;
+      const maxIdx = panes.length - 1;
+      let idx = 0;
+      function update(){
+        panes.forEach(p => p.classList.toggle('active', parseInt(p.dataset.recapIdx, 10) === idx));
+        const active = panes.find(p => parseInt(p.dataset.recapIdx, 10) === idx);
+        if (active) label.textContent = active.dataset.recapLabel;
+        prev.disabled = idx >= maxIdx;
+        next.disabled = idx <= 0;
+      }
+      prev.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); if (idx < maxIdx) { idx++; update(); } });
+      next.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); if (idx > 0)      { idx--; update(); } });
+      update();
+    })();
+    </script>
   </details>
 
   <!-- HERO STAT STRIP -->
@@ -2152,11 +2251,15 @@
           <span class="form-day-labels">
 <span class="lbl">Tu</span><span class="lbl">We</span><span class="lbl">Th</span><span class="lbl">Fr</span><span class="lbl">Sa</span><span class="lbl">Su</span><span class="lbl">Mo</span><span class="lbl">Tu</span><span class="lbl">We</span><span class="lbl">Th</span><span class="lbl">Fr</span><span class="lbl">Sa</span><span class="lbl">Su</span><span class="lbl">Mo</span>          </span>
         </div>
-          <div class="mini-row"><span class="pos">i</span><span class="name">Fred Illig</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">8 runs</span></span></span></div>
+          <div class="mini-row top"><span class="pos">i</span><span class="name">Fred Illig</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">8 runs</span></span></span></div>
           <div class="mini-row"><span class="pos">ii</span><span class="name">Dan Christie</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="total">7 runs</span></span></span></div>
           <div class="mini-row"><span class="pos">iii</span><span class="name">Jack L.</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">7 runs</span></span></span></div>
           <div class="mini-row"><span class="pos">iv</span><span class="name">Blaise Bacquet</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d partial"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">6 runs</span></span></span></div>
           <div class="mini-row"><span class="pos">v</span><span class="name">Louis Illig</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">5 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">vi</span><span class="name">Matt M.</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">4 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">vii</span><span class="name">Freddy B.</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">4 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">viii</span><span class="name">Danny Arthur</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d on"></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d partial"></i></span><span class="d-slot"><i class="d "></i></span><span class="total">2 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">ix</span><span class="name">Oskar K</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
       </div>
 
       <div class="mini-board form-legend">
@@ -2366,6 +2469,98 @@
             <div class="stat"><div class="v">+112%</div><div class="l">vs prior week</div></div>
           </div>
         </div>
+        <div class="week-pane" data-week-offset="4" data-week-label="4 weeks ago · 27 Apr – 3 May">
+          <div class="week-grid">
+              <div class="day rest">
+                <div class="km">—</div>
+                <div class="bar"></div>
+                <div class="lbl">Mon</div>
+              </div>
+              <div class="day rest">
+                <div class="km">—</div>
+                <div class="bar"></div>
+                <div class="lbl">Tue</div>
+              </div>
+              <div class="day rest">
+                <div class="km">—</div>
+                <div class="bar"></div>
+                <div class="lbl">Wed</div>
+              </div>
+              <div class="day rest">
+                <div class="km">—</div>
+                <div class="bar"></div>
+                <div class="lbl">Thu</div>
+              </div>
+              <div class="day">
+                <div class="km">5</div>
+                <div class="bar" style="height:8%"></div>
+                <div class="lbl">Fri</div>
+              </div>
+              <div class="day">
+                <div class="km">63</div>
+                <div class="bar" style="height:100%"></div>
+                <div class="lbl">Sat</div>
+              </div>
+              <div class="day">
+                <div class="km">49</div>
+                <div class="bar" style="height:77%"></div>
+                <div class="lbl">Sun</div>
+              </div>
+          </div>
+          <div class="week-summary">
+            <div class="stat"><div class="v">117<span style="font-size:14px">km</span></div><div class="l">Group total</div></div>
+            <div class="stat"><div class="v">13<span style="font-size:14px">km</span></div><div class="l">Avg per runner</div></div>
+            <div class="stat"><div class="v">4:52</div><div class="l">Combined pace</div></div>
+            <div class="stat"><div class="v">13</div><div class="l">Sessions</div></div>
+            <div class="stat"><div class="v">—</div><div class="l">vs prior week</div></div>
+          </div>
+        </div>
+        <div class="week-pane" data-week-offset="5" data-week-label="5 weeks ago · 20 Apr – 26 Apr">
+          <div class="week-grid">
+              <div class="day rest">
+                <div class="km">—</div>
+                <div class="bar"></div>
+                <div class="lbl">Mon</div>
+              </div>
+              <div class="day rest">
+                <div class="km">—</div>
+                <div class="bar"></div>
+                <div class="lbl">Tue</div>
+              </div>
+              <div class="day rest">
+                <div class="km">—</div>
+                <div class="bar"></div>
+                <div class="lbl">Wed</div>
+              </div>
+              <div class="day rest">
+                <div class="km">—</div>
+                <div class="bar"></div>
+                <div class="lbl">Thu</div>
+              </div>
+              <div class="day rest">
+                <div class="km">—</div>
+                <div class="bar"></div>
+                <div class="lbl">Fri</div>
+              </div>
+              <div class="day rest">
+                <div class="km">—</div>
+                <div class="bar"></div>
+                <div class="lbl">Sat</div>
+              </div>
+              <div class="day rest">
+                <div class="km">—</div>
+                <div class="bar"></div>
+                <div class="lbl">Sun</div>
+              </div>
+          </div>
+          <div class="week-summary">
+            <div class="stat"><div class="v">0<span style="font-size:14px">km</span></div><div class="l">Group total</div></div>
+            <div class="stat"><div class="v">0<span style="font-size:14px">km</span></div><div class="l">Avg per runner</div></div>
+            <div class="stat"><div class="v">—</div><div class="l">Combined pace</div></div>
+            <div class="stat"><div class="v">0</div><div class="l">Sessions</div></div>
+            <div class="stat"><div class="v">—</div><div class="l">vs prior week</div></div>
+          </div>
+        </div>
     </div>
 
     <script>
@@ -2526,7 +2721,7 @@
 
   <!-- FOOTER -->
   <footer class="footer">
-    <div><a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:14px;vertical-align:middle"></a> · Updated 01:10 BST</div>
+    <div><a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:14px;vertical-align:middle"></a> · Updated 01:14 BST</div>
     <div><em>« On y va, doucement. »</em></div>
     <div>Le Domaine · MMXXVI</div>
   </footer>
