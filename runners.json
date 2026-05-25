@@ -10,6 +10,6 @@
   { "id": "friend9",  "name": "Danny Arthur",   "tag": null,              "client_id_secret": "FRIEND9_CLIENT_ID",  "client_secret_secret": "FRIEND9_CLIENT_SECRET",  "refresh_token_secret": "FRIEND9_REFRESH_TOKEN",  "is_groom": false, "is_brother": false },
   { "id": "friend10", "name": "Jack L.",        "tag": null,              "client_id_secret": "FRIEND10_CLIENT_ID", "client_secret_secret": "FRIEND10_CLIENT_SECRET", "refresh_token_secret": "FRIEND10_REFRESH_TOKEN", "is_groom": false, "is_brother": false },
   { "id": "friend11", "name": "Oskar K",        "tag": null,              "client_id_secret": "FRIEND11_CLIENT_ID", "client_secret_secret": "FRIEND11_CLIENT_SECRET", "refresh_token_secret": "FRIEND11_REFRESH_TOKEN", "is_groom": false, "is_brother": false },
-  { "id": "friend12", "name": "[Friend 12]",    "tag": null,              "client_id_secret": "FRIEND12_CLIENT_ID", "client_secret_secret": "FRIEND12_CLIENT_SECRET", "refresh_token_secret": "FRIEND12_REFRESH_TOKEN", "is_groom": false, "is_brother": false },
+  { "id": "friend12", "name": "Will H.",        "tag": null,              "client_id_secret": "FRIEND12_CLIENT_ID", "client_secret_secret": "FRIEND12_CLIENT_SECRET", "refresh_token_secret": "FRIEND12_REFRESH_TOKEN", "is_groom": false, "is_brother": false },
   { "id": "friend13", "name": "[Friend 13]",    "tag": null,              "client_id_secret": "FRIEND13_CLIENT_ID", "client_secret_secret": "FRIEND13_CLIENT_SECRET", "refresh_token_secret": "FRIEND13_REFRESH_TOKEN", "is_groom": false, "is_brother": false }
 ]

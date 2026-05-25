@@ -76,12 +76,18 @@ Each runner → their own Strava app → 3 GitHub Secrets per runner
 | id | name | tag | notes |
 | --- | --- | --- | --- |
 | `louis` | Louis Illig | ★ The Groom | `is_groom: true` |
-| `brother1` | [Brother 1] | Sibling Rivalry | `is_brother: true` |
-| `brother2` | [Brother 2] | Sibling Rivalry | `is_brother: true` |
+| `brother1` | Fred Illig | Sibling Rivalry | `is_brother: true` |
+| `brother2` | [Brother 2] | Sibling Rivalry | placeholder |
 | `matt` | Matt M. | — | |
 | `will` | Will J. | — | |
 | `freddy` | Freddy B. | — | the maintainer |
-| `friend7`–`friend13` | placeholders | — | rename as friends join |
+| `friend7` | Dan Christie | — | |
+| `friend8` | Blaise Bacquet | — | |
+| `friend9` | Danny Arthur | — | |
+| `friend10` | Jack L. | — | |
+| `friend11` | Oskar K | — | |
+| `friend12` | Will H. | — | |
+| `friend13` | placeholder | — | rename as friends join |
 
 Each entry has `client_id_secret`, `client_secret_secret`,
 `refresh_token_secret` → names of GitHub Secrets the workflow reads from.
@@ -162,39 +168,53 @@ Worker env bindings:
 
 Per runner: ~5 min runner side + ~2 min Fred side.
 
-## Current state (2026-05-19)
+## Current state (2026-05-25)
 
-Per-runner-app pivot **landed and live**. Cadence: cron every 5 minutes
-(lowest GitHub Actions interval; chosen over webhooks because per-runner
-apps would each need their own webhook subscription).
+Per-runner-app pivot **landed and live**. Cadence: Cloudflare Worker
+cron `*/5 * * * *` fires `repository_dispatch` to GitHub (the Worker's
+scheduled trigger is honoured to the minute, unlike GitHub Actions cron
+which is throttled to 4-7h on free tier).
 
-**Connected so far:** Freddy B. (the maintainer), Fred Illig (brother1
-slot), Louis Illig (groom), Matt Monk (matt slot), Dan Christie (friend7),
-Blaise Bacquet (friend8). 7 runners still pending onboarding.
+**Connected / named slots (11/13):** Freddy B. (maintainer), Fred Illig
+(brother1), Louis Illig (groom), Matt M. (matt), Will J. (will),
+Dan Christie (friend7), Blaise Bacquet (friend8), Danny Arthur (friend9),
+Jack L. (friend10), Oskar K (friend11), Will H. (friend12). Placeholders
+remaining: `brother2`, `friend13`.
 
 **Onboarding ops cadence:** runner sends 3 credentials via WhatsApp →
 Fred adds three GitHub Secrets (`<NAME>_CLIENT_ID`, `_CLIENT_SECRET`,
 `_REFRESH_TOKEN`) → Fred updates the placeholder name in `runners.json`
-→ next push or cron tick picks them up.
+→ next 5-min cron tick picks them up.
 
-**Recent UI/scoring tweaks (post-pivot):**
-- Masthead/title/prologue: dropped hard-coded "13 amateurs" — now reads
-  "Honest mileage, mild rivalries, and twenty-three wine stops at the
-  finish" (Option A copy).
-- Connect page Step 1/2: clearer "keep the Strava tab open" instruction;
-  Step 2 has a "Reopen Strava API settings" fallback link; empty
-  screenshot placeholder boxes removed.
-- Awards: each card now shows a small gold scope-chip next to its title
-  (`this week`, `since 1 May`, `right now`, `Sat / Sun`, etc.) so the
-  time window is scannable at a glance.
-- Hangover Hero: widened from Sunday-only to Sat OR Sun runs, catches
-  the Friday-night culprits too. Detail copy now "Highest weekend HR".
+**Sociability / motivation upgrades (May 25):**
+- **Live activity ticker** between newsflash and hero-strip — 8 newest
+  runs across the squad, runner-coloured borders (gold = groom, rust =
+  brothers), avatar or first-letter fallback. Built by
+  `build_activity_ticker()` in `build_dashboard.py`.
+- **Newsflash variety expanded**: MILESTONE WATCH (within 12 km of
+  50/100/150…), PACE LEADER, BIG WEEK (≥25 km/7d), ASCENDED (≥500 m/7d),
+  LONG RUN OF THE WEEK, RACE-DAY (top-3 predicted), GROUP TREND
+  (week-on-week tone bands keyed off `week_history[1].summary.wow_pct`,
+  e.g. "taper week — some might be slacking").
+- **Standings sort changed**: now ranks on **last-7-day km** rather than
+  cumulative. Total km column dropped from grid (still in the meta line
+  under each name). Column header reads "Last 7d". Sort key:
+  `(not connected, -trailing_7d_km, -total_km, name)`.
+- **Mini-boards**: new "Most km" board added; all boards now show
+  every connected runner (no `[:5]` truncation). `roman_ranks` extended
+  to 13 (i…xiii) with `|default(loop.index)` safety.
+- **Week in Verse**: desktop now has prev/next nav across 4 weeks of
+  history (`build_week_history`), mobile remains current-week-only.
+- **Hangover Hero**: Sat OR Sun runs, "Highest weekend HR".
+- **Award scope chips**: small gold chip per award showing time window.
 
-**Outstanding from priority list:**
-- Step 6: WhatsApp onboarding in progress (3 of 13 connected).
-- Optional: rotate `FREDDY_CLIENT_SECRET` on Strava (was pasted in chat
-  during the dogfood test) — 60-second job via Strava regenerate +
-  GitHub secret update.
+**Activity filter**: `RUN_SPORT_TYPES = {Run, TrailRun, VirtualRun}`,
+checks both `type` and `sport_type` (defensive after Freddy's
+watch↔Strava sync hiccup; not a site bug).
+
+**Outstanding:**
+- 3 placeholder slots (`brother2`, `friend12`, `friend13`).
+- Optional: rotate `FREDDY_CLIENT_SECRET` (pasted in chat during dogfood).
 
 ## Style / brand
 
