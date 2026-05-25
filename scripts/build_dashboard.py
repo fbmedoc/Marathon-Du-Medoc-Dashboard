@@ -318,6 +318,60 @@ def sub4_delta_label(predicted_seconds: float | None) -> str:
     return f"+{m}:{s:02d} to sub-4"
 
 
+def build_display_names(runners: list) -> dict:
+    """
+    Returns a dict of runner_id -> short display name with surname-initial
+    disambiguation when first names clash (or share a 3-character prefix).
+
+    Examples (squad has Dan Christie + Danny Arthur, Fred Illig + Freddy B.):
+      Dan Christie    -> "Dan C."     (clashes with Danny)
+      Danny Arthur    -> "Danny A."   (clashes with Dan)
+      Fred Illig      -> "Fred I."    (clashes with Freddy)
+      Freddy B.       -> "Freddy B."  (clashes with Fred; surname already an initial)
+      Matt M.         -> "Matt"       (no clash — just first name)
+      Louis Illig     -> "Louis"      (no clash)
+
+    Used by the activity ticker, weekly recap, and newsflash so people
+    with similar first names don't get confused across the dashboard.
+    """
+    firsts = []
+    for r in runners:
+        name = r.cfg.get("name", "")
+        first = name.split()[0] if name else ""
+        # Skip placeholder rows like "[Brother 2]"
+        if first.startswith("["):
+            first = ""
+        firsts.append((r.cfg["id"], first))
+
+    out = {}
+    for rid, first in firsts:
+        if not first:
+            out[rid] = ""
+            continue
+        prefix = first[:3].lower()
+        clashes = any(
+            other_first and not other_first.startswith("[")
+            and other_first[:3].lower() == prefix
+            for other_rid, other_first in firsts
+            if other_rid != rid
+        )
+        if clashes:
+            # Find the surname's first letter from the full name
+            runner = next((r for r in runners if r.cfg["id"] == rid), None)
+            if runner:
+                parts = runner.cfg.get("name", "").split()
+                if len(parts) >= 2 and parts[1] and not parts[1].startswith("["):
+                    initial = parts[1][0].upper().rstrip(".")
+                    out[rid] = f"{first} {initial}."
+                else:
+                    out[rid] = first
+            else:
+                out[rid] = first
+        else:
+            out[rid] = first
+    return out
+
+
 def to_roman(n: int) -> str:
     table = [
         (1000,"M"),(900,"CM"),(500,"D"),(400,"CD"),(100,"C"),(90,"XC"),
@@ -675,10 +729,11 @@ def build_trailing_7d(runners: list[RunnerStats], today_uk: date) -> dict:
     }
 
 
-def build_activity_ticker(runners: list[RunnerStats], limit: int = 8) -> list[dict]:
+def build_activity_ticker(runners: list[RunnerStats], display_names: dict, limit: int = 8) -> list[dict]:
     """
     Latest runs across the squad, newest first, for the "Live" activity
-    ticker at the top of the dashboard. Each entry includes runner name,
+    ticker at the top of the dashboard. Each entry includes runner name
+    (disambiguated to "Dan C." vs "Danny A." when first names clash),
     avatar, distance, pace, optional activity title, and a human time-ago.
     """
     now_uk = datetime.now(UK_TZ)
@@ -686,6 +741,7 @@ def build_activity_ticker(runners: list[RunnerStats], limit: int = 8) -> list[di
     for r in runners:
         if not r.connected:
             continue
+        display_name = display_names.get(r.cfg["id"]) or r.cfg["name"].split()[0]
         for a in r.activities:
             when_uk = utc_to_uk(a["start_date"])
             dist_km = (a.get("distance", 0) or 0) / 1000.0
@@ -694,7 +750,7 @@ def build_activity_ticker(runners: list[RunnerStats], limit: int = 8) -> list[di
                 continue
             entries.append({
                 "runner_name":   r.cfg["name"],
-                "runner_first":  r.cfg["name"].split()[0],
+                "runner_first":  display_name,
                 "avatar":        r.cfg.get("avatar"),
                 "is_groom":      bool(r.cfg.get("is_groom")),
                 "is_brother":    bool(r.cfg.get("is_brother")),
@@ -1041,13 +1097,13 @@ def build_mini_boards(runners: list[RunnerStats], today_uk: date) -> dict:
 
     # Form: rank by count of solid-run days, ties broken by short-run days.
     # Rewards consistency over the last 14 days, no penalty for rest.
-    # Form keeps top-5 only because the dot grid is too dense for all rows.
+    # Now shows every connected runner (used to be top 5 only).
     def form_score(r):
         on_count      = sum(1 for d in (r.form_dots or []) if d == "on")
         partial_count = sum(1 for d in (r.form_dots or []) if d == "partial")
         return (on_count, partial_count)
 
-    form_runners = sorted(connected, key=form_score, reverse=True)[:5]
+    form_runners = sorted(connected, key=form_score, reverse=True)
     # Shared day-of-week labels for the form mini-board — same window for
     # every runner, so we render the header once at the top of the board.
     # dots[0] = 13 days ago, dots[13] = today.
@@ -1081,18 +1137,20 @@ def build_newsflash(
     plan_status: dict,
     today_uk: date,
     week_history: list[dict],
+    display_names: dict,
 ) -> list[dict]:
     """
     A marquee biased toward people-driven banter — rivalries, heroes, ghosts.
-    Roughly half the items call out connected runners by first name. Evergreen
-    Médoc lore is kept thin so the data does most of the talking.
+    Roughly half the items call out connected runners by first name (with
+    surname-initial disambiguation when needed). Evergreen Médoc lore is
+    kept thin so the data does most of the talking.
     """
     items: list[dict] = []
     connected = [r for r in runners if r.connected]
     not_connected_n = sum(1 for r in runners if not r.connected)
 
     def first_name(r: RunnerStats) -> str:
-        return r.cfg["name"].split()[0]
+        return display_names.get(r.cfg["id"]) or r.cfg["name"].split()[0]
 
     # ── COUNTDOWN ─────────────────────────────────────────────────
     if days_until > 84:
@@ -1325,41 +1383,42 @@ def build_newsflash(
 
 
 # ─── Weekly Recap ──────────────────────────────────────────────────────
-def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], today_uk: date) -> dict | None:
+def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], today_uk: date, display_names: dict, target_offset: int | None = None) -> dict | None:
     """
-    Pick the most-recent completed Mon-Sun week (or the current week if
-    today is Sunday) and surface 4-6 *interesting* facts — biggest jumps,
-    personal bests, milestones crossed, dark horses, gaps, first-time
-    joiners — rather than a fixed template.
+    Build a sociable, insight-led recap for a single Mon-Sun week.
 
-    Each candidate insight gets a score; we take the top few. Each carries
-    both an HTML rendering (for the dashboard card) and a WhatsApp-friendly
-    plain-text rendering (with *asterisk bold* for native WA formatting).
-    Output includes a ready-built `share_url` that opens WhatsApp with the
-    full message pre-filled — one tap to send.
+    target_offset selects which week to recap:
+      None (default): "this past week" — Sunday => current week, otherwise
+                      the last completed Mon-Sun.
+      0: current (in-progress) week
+      1: last completed Mon-Sun
+      2+: further back (used by the "Previous recaps" navigation)
+
+    For offsets older than the default ("strictly historical"), insights
+    that depend on CURRENT runner state (active streak, days-since-last-run,
+    rolling 14d pace improvement) are skipped — they'd otherwise leak
+    today's data into a recap of weeks past.
     """
     if not week_history:
         return None
     connected = [r for r in runners if r.connected]
 
-    # Pick the target week. If today is Sunday, the in-progress week IS
-    # "this past week" (it ends today). Otherwise the most-recent completed
-    # Mon-Sun is week_history[1].
     monday_uk = today_uk - timedelta(days=today_uk.weekday())
     is_sunday = today_uk.weekday() == 6
-    if is_sunday:
-        target = week_history[0]
-        prior  = week_history[1] if len(week_history) >= 2 else None
-        week_start = monday_uk
-    else:
-        if len(week_history) < 2:
-            return None
-        target = week_history[1]
-        prior  = week_history[2] if len(week_history) >= 3 else None
-        week_start = monday_uk - timedelta(days=7)
+    default_offset = 0 if is_sunday else 1
+
+    if target_offset is None:
+        target_offset = default_offset
+    if target_offset >= len(week_history):
+        return None
+
+    target = week_history[target_offset]
+    prior  = week_history[target_offset + 1] if target_offset + 1 < len(week_history) else None
+    week_start = monday_uk - timedelta(days=target_offset * 7)
     week_end = week_start + timedelta(days=6)
     prior_start = week_start - timedelta(days=7)
     prior_end   = week_start - timedelta(days=1)
+    is_historical = target_offset > default_offset
 
     def km_in_window(r: RunnerStats, start: date, end: date) -> float:
         total = 0.0
@@ -1385,7 +1444,7 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
                     best = km
         return best
 
-    def first_name(r): return r.cfg["name"].split()[0]
+    def first_name(r): return display_names.get(r.cfg["id"]) or r.cfg["name"].split()[0]
 
     def emit(tag, name, rest, score):
         """Build an insight dict with both HTML and plain (WhatsApp) text."""
@@ -1516,16 +1575,19 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
 
     # ── STREAK MILESTONE — hit a notable streak number THIS WEEK.
     # We approximate by checking current streak (as of today) against milestones.
-    streak_milestones = {5, 7, 10, 14, 21, 30}
-    streakers = sorted([r for r in connected if r.streak >= 3], key=lambda r: -r.streak)
-    if streakers:
-        s = streakers[0]
-        if s.streak in streak_milestones:
-            insights.append(emit_cat("streak", "🔥", first_name(s),
-                f"hit a {s.streak}-day streak. La Flamme.", 86))
-        elif s.streak >= 5:
-            insights.append(emit_cat("streak", "🔥", first_name(s),
-                f"riding a {s.streak}-day streak — La Flamme leader.", 64))
+    # Only fires for the default/current recap; historical recaps would
+    # incorrectly use today's streak as a stand-in for that week's streak.
+    if not is_historical:
+        streak_milestones = {5, 7, 10, 14, 21, 30}
+        streakers = sorted([r for r in connected if r.streak >= 3], key=lambda r: -r.streak)
+        if streakers:
+            s = streakers[0]
+            if s.streak in streak_milestones:
+                insights.append(emit_cat("streak", "🔥", first_name(s),
+                    f"hit a {s.streak}-day streak. La Flamme.", 86))
+            elif s.streak >= 5:
+                insights.append(emit_cat("streak", "🔥", first_name(s),
+                    f"riding a {s.streak}-day streak — La Flamme leader.", 64))
 
     # ── PERSONAL BEST LONG RUN this week — runner's longest-ever single run.
     pb_candidates = []
@@ -1629,13 +1691,16 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
             f"dropped to {cur:.0f}km from {pre:.0f}km the week before. Taper, illness, or selective memory?", 70))
 
     # ── PACE GLOW-UP — biggest pace improvement on long runs.
-    glow = [r for r in connected
-            if r.pace_improvement_s is not None and r.pace_improvement_s < -5]
-    glow.sort(key=lambda r: r.pace_improvement_s)
-    if glow:
-        g = glow[0]
-        insights.append(emit_cat("pace", "⚡", first_name(g),
-            f"dropped {fmt_pace_delta(g.pace_improvement_s)}/km on long runs. Proper progress.", 68))
+    # Pace improvement is rolling-14d-as-of-today, so it doesn't apply to
+    # historical weeks (it'd describe today's improvement, not that week's).
+    if not is_historical:
+        glow = [r for r in connected
+                if r.pace_improvement_s is not None and r.pace_improvement_s < -5]
+        glow.sort(key=lambda r: r.pace_improvement_s)
+        if glow:
+            g = glow[0]
+            insights.append(emit_cat("pace", "⚡", first_name(g),
+                f"dropped {fmt_pace_delta(g.pace_improvement_s)}/km on long runs. Proper progress.", 68))
 
     # ── DARK HORSE — non-Illig outside the top 3 who still logged 20km+.
     if len(top_pool) >= 4:
@@ -1650,12 +1715,15 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
                 f"quietly stacking {km:.0f}km outside the top three · the engine you didn't see coming.", 60))
 
     # ── GHOST WATCH — biggest current gap among connected runners.
-    ghost_pool = [(r, r.days_since_last_run) for r in connected if r.days_since_last_run >= 5]
-    ghost_pool.sort(key=lambda x: -x[1])
-    if ghost_pool:
-        ghost_r, days = ghost_pool[0]
-        insights.append(emit_cat("ghost", "👻", first_name(ghost_r),
-            f"hasn't logged a run in {days} days. The dashboard remembers.", 58))
+    # days_since_last_run is "as of today" — would be misleading for
+    # a historical recap.
+    if not is_historical:
+        ghost_pool = [(r, r.days_since_last_run) for r in connected if r.days_since_last_run >= 5]
+        ghost_pool.sort(key=lambda x: -x[1])
+        if ghost_pool:
+            ghost_r, days = ghost_pool[0]
+            insights.append(emit_cat("ghost", "👻", first_name(ghost_r),
+                f"hasn't logged a run in {days} days. The dashboard remembers.", 58))
 
     # ── SILENT DAY — was there any day nobody ran across the whole squad?
     silent_days = []
@@ -1754,6 +1822,9 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
     return {
         "headline":      headline,
         "date_range":    date_range,
+        "week_label":    f"Week {week_num}",
+        "is_historical": is_historical,
+        "target_offset": target_offset,
         "squad_wow":     squad_wow,
         "insights":      picked,
         "missing_count": missing_count,
@@ -1761,6 +1832,36 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
         "share_text":    share_text,
         "share_url":     share_url,
     }
+
+
+def build_recap_history(runners: list[RunnerStats], week_history: list[dict], today_uk: date, display_names: dict, max_recaps: int = 4) -> list[dict]:
+    """
+    Generate a list of weekly recaps, newest first, so the dashboard can
+    let the user scroll back through previous weeks. List[0] is the default
+    "this past week" recap; List[1] is the week before that, etc.
+
+    Empty recaps (e.g. a week before training started where there's no
+    sensible content) are filtered out.
+    """
+    monday_uk = today_uk - timedelta(days=today_uk.weekday())
+    is_sunday = today_uk.weekday() == 6
+    default_offset = 0 if is_sunday else 1
+
+    recaps: list[dict] = []
+    for i in range(max_recaps):
+        offset = default_offset + i
+        # Stop if this week starts before training began (no meaningful recap)
+        week_start = monday_uk - timedelta(days=offset * 7)
+        if week_start < TRAINING_START - timedelta(days=6):
+            break
+        r = build_weekly_recap(runners, week_history, today_uk, display_names, target_offset=offset)
+        if not r:
+            continue
+        # Skip "empty" recaps with no insights and no meaningful squad WoW.
+        if not r["insights"] and not r["squad_wow"]:
+            continue
+        recaps.append(r)
+    return recaps
 
 
 # ─── Training plan: pick the current week & generate workouts ──────────
@@ -1973,20 +2074,28 @@ def main() -> None:
     # Order by total_km for award lookups (groom-first ordering happens in make_runner_rows)
     by_total = sorted(runners, key=lambda r: r.total_km, reverse=True)
 
+    # Disambiguation map: "Dan C." / "Danny A." when first names clash.
+    # Reused across ticker, newsflash, and weekly recap.
+    display_names = build_display_names(runners)
+
     rows         = make_runner_rows(runners)
     groom_row    = next((r for r in rows if r["is_groom"]), None)
     group        = build_group_stats(runners, today_uk)
     trailing_7d  = build_trailing_7d(runners, today_uk)
     week_grid, week_summary = build_week_grid(runners, today_uk)
-    week_history = build_week_history(runners, today_uk, num_weeks=4)
+    # Build enough week history to power the recap navigation (4 weeks back),
+    # plus an extra trailing week so each historical recap has a "prior week"
+    # for its WoW comparison.
+    week_history = build_week_history(runners, today_uk, num_weeks=6)
     awards       = build_awards(runners, by_total)
     mini_boards  = build_mini_boards(runners, today_uk)
-    activity_ticker = build_activity_ticker(runners, limit=8)
+    activity_ticker = build_activity_ticker(runners, display_names, limit=8)
     phases       = phases_with_current(today_uk)
     this_week    = current_week_plan(today_uk)
     plan_status  = group_plan_status(runners, this_week)
-    news_flash   = build_newsflash(runners, group, days_until, this_week, plan_status, today_uk, week_history)
-    weekly_recap = build_weekly_recap(runners, week_history, today_uk)
+    news_flash   = build_newsflash(runners, group, days_until, this_week, plan_status, today_uk, week_history, display_names)
+    weekly_recap = build_weekly_recap(runners, week_history, today_uk, display_names)
+    recap_history = build_recap_history(runners, week_history, today_uk, display_names, max_recaps=4)
 
     synced_uk = datetime.now(UK_TZ).strftime("%H:%M %Z")
 
@@ -2004,6 +2113,7 @@ def main() -> None:
         "news_flash":      news_flash,
         "activity_ticker": activity_ticker,
         "weekly_recap":    weekly_recap,
+        "recap_history":   recap_history,
         "runners":         rows,
         "groom_row":       groom_row,
         "group":           group,

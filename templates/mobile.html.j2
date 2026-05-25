@@ -451,6 +451,44 @@
   }
   .recap-missing strong{ color: var(--gold-bright); }
 
+  .recap-nav{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0 0 12px;
+  }
+  .recap-nav-btn{
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold-bright);
+    background: transparent;
+    border: 1px solid rgba(201, 169, 97, 0.4);
+    padding: 6px 9px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .recap-nav-btn:hover:not(:disabled){
+    background: rgba(201, 169, 97, 0.15);
+    color: var(--cream);
+  }
+  .recap-nav-btn:disabled{
+    opacity: 0.3;
+  }
+  .recap-nav-label{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--gold-bright);
+    text-align: center;
+    flex: 1;
+    min-width: 0;
+  }
+  .recap-pane{ display: none; }
+  .recap-pane.active{ display: block; }
+
   .tabs{
     position: sticky;
     top: 0;
@@ -1405,31 +1443,63 @@
     </div>
   </div>
 
-  <!-- WEEKLY RECAP CARD — collapsed by default, tap to expand -->
-  {% if weekly_recap %}
+  <!-- WEEKLY RECAP CARD — collapsed by default, tap to expand, scroll back through weeks -->
+  {% if recap_history %}
   <details class="recap">
     <summary class="recap-summary">
       <span class="recap-label">🍷 Weekly Recap</span>
-      <span class="recap-headline">{{ weekly_recap.headline }}</span>
+      <span class="recap-headline">{{ recap_history[0].headline }}</span>
       <span class="recap-chevron" aria-hidden="true">▾</span>
     </summary>
     <div class="recap-body">
-      {% if weekly_recap.squad_wow %}
-      <p class="recap-lead">{{ weekly_recap.squad_wow }}</p>
-      {% endif %}
-      {% if weekly_recap.insights %}
-      <ul class="recap-insights">
-        {% for insight in weekly_recap.insights %}
-          <li><span class="recap-tag">{{ insight.tag }}</span><span>{{ insight.html|safe }}</span></li>
-        {% endfor %}
-      </ul>
-      {% endif %}
-      {% if weekly_recap.missing_count > 0 %}
-      <div class="recap-missing">
-        🚧 Still <strong>{{ weekly_recap.missing_count }} of 13</strong> not connected — pass the link on.
+      {% if recap_history|length > 1 %}
+      <div class="recap-nav">
+        <button type="button" class="recap-nav-btn" id="recap-prev">← Prev</button>
+        <span class="recap-nav-label" id="recap-nav-label">{{ recap_history[0].headline }}</span>
+        <button type="button" class="recap-nav-btn" id="recap-next" disabled>Next →</button>
       </div>
       {% endif %}
+      {% for recap in recap_history %}
+        <div class="recap-pane{% if loop.first %} active{% endif %}" data-recap-idx="{{ loop.index0 }}" data-recap-label="{{ recap.headline }}">
+          {% if recap.squad_wow %}
+          <p class="recap-lead">{{ recap.squad_wow }}</p>
+          {% endif %}
+          {% if recap.insights %}
+          <ul class="recap-insights">
+            {% for insight in recap.insights %}
+              <li><span class="recap-tag">{{ insight.tag }}</span><span>{{ insight.html|safe }}</span></li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% if loop.first and recap.missing_count > 0 %}
+          <div class="recap-missing">
+            🚧 Still <strong>{{ recap.missing_count }} of 13</strong> not connected — pass the link on.
+          </div>
+          {% endif %}
+        </div>
+      {% endfor %}
     </div>
+    <script>
+    (function(){
+      const panes = Array.from(document.querySelectorAll('.recap-pane'));
+      const prev  = document.getElementById('recap-prev');
+      const next  = document.getElementById('recap-next');
+      const label = document.getElementById('recap-nav-label');
+      if (!panes.length || !prev || !next || !label) return;
+      const maxIdx = panes.length - 1;
+      let idx = 0;
+      function update(){
+        panes.forEach(p => p.classList.toggle('active', parseInt(p.dataset.recapIdx, 10) === idx));
+        const active = panes.find(p => parseInt(p.dataset.recapIdx, 10) === idx);
+        if (active) label.textContent = active.dataset.recapLabel;
+        prev.disabled = idx >= maxIdx;
+        next.disabled = idx <= 0;
+      }
+      prev.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); if (idx < maxIdx) { idx++; update(); } });
+      next.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); if (idx > 0)      { idx--; update(); } });
+      update();
+    })();
+    </script>
   </details>
   {% endif %}
 
@@ -1632,7 +1702,7 @@
           </span>
         </div>
         {% for row in mini_boards.form.rows %}
-          <div class="mini-row"><span class="pos">{{ ['i','ii','iii','iv','v'][loop.index0] }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for cls in row.dots %}<span class="d-slot"><i class="d {{ cls }}"></i></span>{% endfor %}<span class="total">{{ row.run_count }} run{% if row.run_count != 1 %}s{% endif %}</span></span></span></div>
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for cls in row.dots %}<span class="d-slot"><i class="d {{ cls }}"></i></span>{% endfor %}<span class="total">{{ row.run_count }} run{% if row.run_count != 1 %}s{% endif %}</span></span></span></div>
         {% else %}
           <div class="mini-row"><span class="pos">—</span><span class="name">Waiting on runs</span><span class="v">—</span></div>
         {% endfor %}
