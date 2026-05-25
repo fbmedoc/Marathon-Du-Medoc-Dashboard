@@ -1618,6 +1618,7 @@
           'le_groom':        'always',
           'sibling_rivalry': 'since 1 May',
           'top_dog':         'rolling 7d',
+          'top_dog_chase':   'rolling 7d',
           'biggest_shift':   'rolling 7d',
           'glow_up':         'rolling 14d',
           'la_flamme':       'right now',
@@ -1626,7 +1627,7 @@
           'ghost':           'right now',
           'hangover_hero':   'Sat / Sun',
         } %}
-        {% for key in ['le_groom', 'sibling_rivalry', 'top_dog', 'biggest_shift', 'glow_up', 'la_flamme', 'laurore', 'the_sufferer', 'ghost', 'hangover_hero'] %}
+        {% for key in ['le_groom', 'sibling_rivalry', 'top_dog', 'top_dog_chase', 'biggest_shift', 'glow_up', 'la_flamme', 'laurore', 'the_sufferer', 'ghost', 'hangover_hero'] %}
           {% set a = awards[key] %}
           <div class="award{% if a.featured %} featured{% endif %}{% if a.shame %} shame{% endif %}">
             <div class="icon">{% if a.image %}<img src="{{ a.image }}" alt="">{% else %}{{ a.icon }}{% endif %}</div>

@@ -941,6 +941,41 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     else:
         awards["top_dog"] = {"title": "Top Dog", "icon": "👑", "detail": "Up for grabs — first to log a run wins it."}
 
+    # The Chase — positions #2 and #3 on rolling 7d km, with the gap behind
+    # the leader. Sits beside Top Dog so the chasers know how close they are.
+    chase_field = sorted(
+        [r for r in runners if r.connected and r.trailing_7d_km > 0],
+        key=lambda r: -r.trailing_7d_km,
+    )
+    if len(chase_field) >= 2:
+        leader = chase_field[0]
+        chasers = chase_field[1:3]
+        lines = []
+        for idx, c in enumerate(chasers, start=2):
+            gap = leader.trailing_7d_km - c.trailing_7d_km
+            gap_txt = "level" if gap < 0.05 else f"–{gap:.1f}km"
+            lines.append(
+                f"#{idx} <b>{html_escape(c.cfg['name'])}</b> · "
+                f"{c.trailing_7d_km:.1f}km ({gap_txt})"
+            )
+        awards["top_dog_chase"] = {
+            "title":  "The Chase",
+            "icon":   "🐾",
+            "detail": "<br>".join(lines),
+        }
+    elif len(chase_field) == 1:
+        awards["top_dog_chase"] = {
+            "title":  "The Chase",
+            "icon":   "🐾",
+            "detail": "Leader's running solo — chasers wanted.",
+        }
+    else:
+        awards["top_dog_chase"] = {
+            "title":  "The Chase",
+            "icon":   "🐾",
+            "detail": "No runs this week — pack hasn't left the kennel.",
+        }
+
     # Biggest Shift — strictly the biggest positive week-on-week volume jump.
     # Pairs with Biggest Glow-Up: that's pace-change, this is volume-change.
     shift, shift_d = first(

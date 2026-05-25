@@ -107,11 +107,11 @@ runner is silently shown as "Not connected".
 | `GROUP_TARGET_RATIO` | `0.75` | Squad target = 75% of full plan total |
 | `MARATHON_PLAN` | dict, keyed by weeks-to-race | 18-week plan |
 
-## 10 Awards (in order on dashboard)
+## 11 Awards (in order on dashboard)
 
-🤵 Le Groom · 👯 Sibling Rivalry · 👑 Top Dog · 📊 Biggest Shift ·
-📈 Biggest Glow-Up · 🔥 La Flamme · 🌅 L'Aurore · 🌡️ The Sufferer ·
-👻 The Ghost · 🍷 The Hangover Hero
+🤵 Le Groom · 👯 Sibling Rivalry · 👑 Top Dog · 🐾 The Chase ·
+📊 Biggest Shift · 📈 Biggest Glow-Up · 🔥 La Flamme · 🌅 L'Aurore ·
+🌡️ The Sufferer · 👻 The Ghost · 🍷 The Hangover Hero
 
 Each has a neutral fallback when not enough data.
 
