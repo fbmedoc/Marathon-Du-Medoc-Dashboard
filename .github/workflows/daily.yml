@@ -97,6 +97,9 @@ jobs:
           FRIEND13_CLIENT_ID:     ${{ secrets.FRIEND13_CLIENT_ID }}
           FRIEND13_CLIENT_SECRET: ${{ secrets.FRIEND13_CLIENT_SECRET }}
           FRIEND13_REFRESH_TOKEN: ${{ secrets.FRIEND13_REFRESH_TOKEN }}
+          FRIEND14_CLIENT_ID:     ${{ secrets.FRIEND14_CLIENT_ID }}
+          FRIEND14_CLIENT_SECRET: ${{ secrets.FRIEND14_CLIENT_SECRET }}
+          FRIEND14_REFRESH_TOKEN: ${{ secrets.FRIEND14_REFRESH_TOKEN }}
         run: python scripts/build_dashboard.py
 
       - name: Commit refreshed HTML if changed
