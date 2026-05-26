@@ -87,8 +87,8 @@ Each runner → their own Strava app → 3 GitHub Secrets per runner
 | `friend10` | Jack L. | — | |
 | `friend11` | Oskar K | — | |
 | `friend12` | Will H. | — | |
-| `friend13` | placeholder | — | rename as friends join |
-| `friend14` | placeholder | — | added 26 May — squad now 14 |
+| `friend13` | Timothy L. | — | |
+| `friend14` | Marcus G. | — | added 26 May — squad now 14 |
 
 Each entry has `client_id_secret`, `client_secret_secret`,
 `refresh_token_secret` → names of GitHub Secrets the workflow reads from.
