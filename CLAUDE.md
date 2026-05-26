@@ -115,8 +115,9 @@ runner is silently shown as "Not connected".
 👻 The Ghost · 🍷 The Hangover Hero
 
 Top Dog is a podium-style tile: leader + 2 closest chasers, ordered by
-rolling 7-day km, each showing both `trailing_7d_km` and `week_km`
-(Mon→today), plus the gap behind the leader.
+**`week_km`** (calendar week, Mon→today). Each line shows two numbers:
+this-week km first, then `trailing_7d_km` for context. Gap behind the
+leader is on the week_km figure. Scope chip: `this wk / 7d`.
 
 Each has a neutral fallback when not enough data.
 

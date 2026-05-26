@@ -927,29 +927,28 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     else:
         awards["sibling_rivalry"] = {"title": "The Sibling Rivalry", "icon": "👯", "detail": "Waiting on the Illigs to lace up."}
 
-    # Top Dog — single tile: leader + 2 closest chasers. Order is by rolling
-    # 7-day km (the trailing window — calendar week comparisons are noisy on
-    # Mondays/Tuesdays). Each line shows two numbers: trailing 7d and the
-    # week-in-progress (Mon→today), so the squad can see how the current
-    # calendar week is shaping up against the rolling figure.
+    # Top Dog — single tile: leader + 2 closest chasers ordered by THIS
+    # WEEK's km (Mon→today, calendar week). Each line carries two numbers:
+    # this-week (the sort key, shown first) and trailing 7d (for context, so
+    # the squad sees a Monday-fresh leaderboard alongside the rolling figure).
     chase_field = sorted(
-        [r for r in runners if r.connected and r.trailing_7d_km > 0],
-        key=lambda r: -r.trailing_7d_km,
+        [r for r in runners if r.connected and r.week_km > 0],
+        key=lambda r: -r.week_km,
     )
     if chase_field:
         leader = chase_field[0]
         chasers = chase_field[1:3]
         lines = [
             f"<b>{html_escape(leader.cfg['name'])}</b> · "
-            f"{leader.trailing_7d_km:.1f}km <small>(7d)</small> · "
-            f"{leader.week_km:.1f}km <small>(this wk)</small>"
+            f"{leader.week_km:.1f}km <small>(this wk)</small> · "
+            f"{leader.trailing_7d_km:.1f}km <small>(7d)</small>"
         ]
         for idx, c in enumerate(chasers, start=2):
-            gap = leader.trailing_7d_km - c.trailing_7d_km
+            gap = leader.week_km - c.week_km
             gap_txt = "level" if gap < 0.05 else f"–{gap:.1f}km"
             lines.append(
                 f"#{idx} <b>{html_escape(c.cfg['name'])}</b> · "
-                f"{c.trailing_7d_km:.1f} / {c.week_km:.1f} ({gap_txt})"
+                f"{c.week_km:.1f} / {c.trailing_7d_km:.1f} ({gap_txt})"
             )
         awards["top_dog"] = {
             "title":  "Top Dog",
