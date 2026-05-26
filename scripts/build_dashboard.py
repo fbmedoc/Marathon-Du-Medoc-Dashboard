@@ -19,7 +19,7 @@ import os
 import re
 import sys
 import time as time_module
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
 from html import escape as html_escape
@@ -220,8 +220,8 @@ def get_access_token(runner_id: str, client_id: str, client_secret: str,
 RUN_SPORT_TYPES = {"Run", "TrailRun", "VirtualRun"}
 
 
-def fetch_activities(access_token: str, after_ts: int) -> list[dict]:
-    """Fetch activities since `after_ts` (unix). Paginates until exhausted."""
+def fetch_activities_raw(access_token: str, after_ts: int) -> list[dict]:
+    """Fetch raw activities since `after_ts` (unix) — no type filter."""
     activities: list[dict] = []
     page = 1
     while True:
@@ -243,13 +243,35 @@ def fetch_activities(access_token: str, after_ts: int) -> list[dict]:
         if len(batch) < 200:
             break
         page += 1
-    # Runs only — checks both legacy `type` and newer `sport_type`. Strava
-    # is inconsistent about which field has the run designation depending on
-    # how/when the activity was recorded.
+    return activities
+
+
+def filter_runs(activities: list[dict]) -> list[dict]:
+    """Keep only activities tagged as a run. Checks both legacy `type` and
+    newer `sport_type` — Strava is inconsistent about which has the run
+    designation depending on how/when the activity was recorded."""
     return [
         a for a in activities
         if a.get("type") in RUN_SPORT_TYPES or a.get("sport_type") in RUN_SPORT_TYPES
     ]
+
+
+def fetch_athlete_name(access_token: str) -> str:
+    """One-shot GET /athlete — used purely for diagnostic logging so we can
+    confirm a runner's refresh token is tied to the account we expect."""
+    try:
+        r = requests.get(
+            "https://www.strava.com/api/v3/athlete",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=10,
+        )
+        r.raise_for_status()
+        j = r.json()
+        fn = (j.get("firstname") or "").strip()
+        ln = (j.get("lastname") or "").strip()
+        return f"{fn} {ln}".strip() or "(no name on account)"
+    except Exception as e:
+        return f"(athlete lookup failed: {e})"
 
 
 # ─── Helpers: time & formatting ────────────────────────────────────────
@@ -438,10 +460,28 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
         print(f"[{cfg['id']}] token refresh failed — marking disconnected")
         return rs
 
-    # Pull every run since the training-cycle start date.
+    # Pull every activity since the training-cycle start date, then keep
+    # only runs. We log raw vs filtered counts plus the type distribution so
+    # if a runner shows 0 runs we can immediately see whether the issue is
+    # (a) wrong Strava account on the token, (b) all activities tagged as
+    # Workout/Hike/Walk instead of Run, or (c) genuine inactivity.
     cutoff_uk = UK_TZ.localize(datetime.combine(TRAINING_START, time.min))
-    activities = fetch_activities(access, int(cutoff_uk.timestamp()))
-    print(f"[{cfg['id']}] {len(activities)} runs since {TRAINING_START.isoformat()}")
+    raw_activities = fetch_activities_raw(access, int(cutoff_uk.timestamp()))
+    activities = filter_runs(raw_activities)
+
+    athlete_name = fetch_athlete_name(access)
+    if raw_activities:
+        type_counts = Counter(
+            (a.get("sport_type") or a.get("type") or "Unknown") for a in raw_activities
+        )
+        type_summary = ", ".join(f"{k}={v}" for k, v in type_counts.most_common())
+    else:
+        type_summary = "(none)"
+    print(
+        f"[{cfg['id']}] account='{athlete_name}' "
+        f"raw={len(raw_activities)} runs={len(activities)} "
+        f"types={type_summary}"
+    )
 
     rs.connected = True
     rs.activities = activities
