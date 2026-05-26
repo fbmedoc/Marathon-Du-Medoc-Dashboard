@@ -256,9 +256,10 @@ def filter_runs(activities: list[dict]) -> list[dict]:
     ]
 
 
-def fetch_athlete_name(access_token: str) -> str:
-    """One-shot GET /athlete — used purely for diagnostic logging so we can
-    confirm a runner's refresh token is tied to the account we expect."""
+def fetch_athlete_summary(access_token: str) -> tuple[str, str]:
+    """One-shot GET /athlete — returns (name, athlete_id) for diagnostic
+    logging. Athlete ID is the durable identifier (names aren't unique on
+    Strava) and can be compared against the URL of the user's profile page."""
     try:
         r = requests.get(
             "https://www.strava.com/api/v3/athlete",
@@ -269,9 +270,11 @@ def fetch_athlete_name(access_token: str) -> str:
         j = r.json()
         fn = (j.get("firstname") or "").strip()
         ln = (j.get("lastname") or "").strip()
-        return f"{fn} {ln}".strip() or "(no name on account)"
+        name = f"{fn} {ln}".strip() or "(no name on account)"
+        aid = str(j.get("id") or "?")
+        return name, aid
     except Exception as e:
-        return f"(athlete lookup failed: {e})"
+        return f"(athlete lookup failed: {e})", "?"
 
 
 # ─── Helpers: time & formatting ────────────────────────────────────────
@@ -469,7 +472,7 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
     raw_activities = fetch_activities_raw(access, int(cutoff_uk.timestamp()))
     activities = filter_runs(raw_activities)
 
-    athlete_name = fetch_athlete_name(access)
+    athlete_name, athlete_id = fetch_athlete_summary(access)
     if raw_activities:
         type_counts = Counter(
             (a.get("sport_type") or a.get("type") or "Unknown") for a in raw_activities
@@ -478,7 +481,7 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
     else:
         type_summary = "(none)"
     print(
-        f"[{cfg['id']}] account='{athlete_name}' "
+        f"[{cfg['id']}] account='{athlete_name}' id={athlete_id} "
         f"raw={len(raw_activities)} runs={len(activities)} "
         f"types={type_summary}"
     )
