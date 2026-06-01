@@ -56,8 +56,9 @@ Each runner → their own Strava app → 3 GitHub Secrets per runner
 .
 ├── CLAUDE.md                          ← this file (memory)
 ├── README.md                          ← public docs
-├── runners.json                       ← 13 entries; 3 secret-name slots each
+├── runners.json                       ← 14 entries; 3 secret-name slots each
 ├── connect.html                       ← 3-step walkthrough for personal app
+├── drinks.html                        ← self-select drinks logger (access-code gated)
 ├── scripts/build_dashboard.py         ← Strava → stats → templates
 ├── templates/desktop.html.j2          ← desktop dashboard
 ├── templates/mobile.html.j2           ← mobile dashboard
@@ -102,24 +103,35 @@ runner is silently shown as "Not connected".
 | --- | --- | --- |
 | `RACE_DATE` | `date(2026, 9, 5)` | Marathon du Médoc 2026 |
 | `TRAINING_START` | `date(2026, 5, 1)` | Cumulative-stat baseline |
+| `DRINK_WINDOW_START` | `date(2026, 6, 1)` | Drinks-tracker window opens |
+| `DRINKS_DATA_URL` | Worker `/drinks-data` | Build-time drinks fetch |
 | `UK_TZ` | `Europe/London` | Activities timestamped in UK time |
 | `SUB_4_SECONDS` | `14400` | Sub-4hr marathon reference |
 | `MEDOC_PENALTY` | `1.10` | Médoc time = marathon × this (wine stops) |
 | `GROUP_TARGET_RATIO` | `0.75` | Squad target = 75% of full plan total |
 | `MARATHON_PLAN` | dict, keyed by weeks-to-race | 18-week plan |
 
-## 10 Awards (in order on dashboard)
+## 12 Awards (order on dashboard)
 
 🤵 Le Groom · 👯 Sibling Rivalry · 👑 Top Dog · 📊 Biggest Shift ·
-📈 Biggest Glow-Up · 🔥 La Flamme · 🌅 L'Aurore · 🌡️ The Sufferer ·
-👻 The Ghost · 🍷 The Hangover Hero
+📈 Biggest Glow-Up · 🔥 La Flamme · 🌅 L'Aurore · 🚱 L'Abstinent ·
+🌡️ The Sufferer · 👻 The Ghost · 🍷 The Hangover Hero · 🍷 La Soif
 
 Top Dog is a podium-style tile: leader + 2 closest chasers, ordered by
 **`week_km`** (calendar week, Mon→today). Each line shows two numbers:
 this-week km first, then `trailing_7d_km` for context. Gap behind the
 leader is on the week_km figure. Scope chip: `this wk / 7d`.
 
-Each has a neutral fallback when not enough data.
+**Drinks awards** (from the self-select tracker, not Strava):
+- **🍷 La Soif** ("The Thirst") — most self-logged drinks in trailing 7d.
+  Shame award. Only counts runners who've logged something.
+- **🚱 L'Abstinent** — driest runner *among those who ran in the last 7d*
+  (running is the entry ticket; fewest drinks wins, ties → most km).
+
+The award loop + `award_scopes` map live in BOTH templates and must be
+edited together. The loop order interleaves shame awards near the end.
+
+Each award has a neutral fallback when not enough data.
 
 ## Worker endpoints
 
@@ -127,6 +139,8 @@ Each has a neutral fallback when not enough data.
 | --- | --- | --- |
 | POST | `/check-code` | Validate access code |
 | POST | `/exchange-personal` | OAuth proxy: takes `{code, client_id, client_secret, access_code}`, returns `{refresh_token, athlete_name}` |
+| POST | `/log-drinks` | Drinks logger write (access-code gated). Body `{access_code, runner_id, entries:{date:int}}` → merges into `drinks:<id>` KV blob |
+| GET | `/drinks-data` | **Open** read. Returns `{runner_id: {date: int}}` for the build script + logger prefill |
 | GET | `/` (with `hub.*` params) | Webhook subscription handshake (vestigial) |
 | POST | `/` | Webhook event handler (vestigial — fires `repository_dispatch`) |
 | GET | `/` (bare) | Liveness probe |
@@ -134,7 +148,26 @@ Each has a neutral fallback when not enough data.
 Worker env bindings:
 - Vars: `GITHUB_REPO`, `ALLOWED_ORIGIN`
 - Secrets: `ACCESS_CODE` (required), `STRAVA_VERIFY_TOKEN` and `GITHUB_PAT` (vestigial)
+- KV: `DRINKS` namespace (binding in `wrangler.toml`; for the drinks tracker)
 - `STRAVA_CLIENT_SECRET` previously held; **delete it** — no longer used.
+
+### Drinks tracker (added 2026-06-01)
+
+Self-select honour-system tracker. `drinks.html` (access-code gated) →
+`POST /log-drinks` → `DRINKS` KV. Build script `fetch_drinks()` reads
+`GET /drinks-data` at build time (graceful `{}` if Worker/KV unreachable,
+so the dashboard never breaks). Window opens **1 June 2026**
+(`DRINK_WINDOW_START`). Bands map est. drink count → vibe: 0 Sec ·
+1 Social · 2–3 Éméché · 4+ Bourré (stored as representative ints 0/1/3/5).
+Surfaces as: standings "Drinks 7d" column (predicted finish demoted to a
+"Predicted Finish" mini-board), wine-glass overlay on the 14-day form
+dots, and the two awards above.
+
+**Deploy steps** (one-time KV creation): in `webhook/`, run
+`wrangler kv namespace create DRINKS` and `... --preview`, paste the two
+returned ids into `wrangler.toml` (`id` / `preview_id`, currently
+`REPLACE_WITH_*` placeholders), then `wrangler deploy`. No new GitHub
+Secrets needed (reads are open).
 
 ## Gotchas / lessons learned
 

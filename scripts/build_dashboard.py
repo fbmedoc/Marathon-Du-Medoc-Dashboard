@@ -47,6 +47,18 @@ RACE_DATE          = date(2026, 9, 5)        # Marathon du Médoc 2026
 RACE_DATE_LABEL    = "5 September 2026"
 TRAINING_START     = date(2026, 5, 1)        # All cumulative stats start here
 TRAINING_START_LBL = "since 1 May"           # Short label for the UI
+
+# ─── Drinks tracker ────────────────────────────────────────────────────
+# Self-select "how many did you have" data, logged via drinks.html → Worker
+# → DRINKS KV, read back here at build time. Window opens 1 June 2026.
+# Bands map an estimated drink count to a vibe (honesty is the methodology):
+#   0      Sec      — dry. A clean run tomorrow.
+#   1      Social   — one glass. "Light workout."
+#   2–3    Éméché   — alcohol in the system.
+#   4+     Bourré   — a heavy night in the vineyards.
+DRINK_WINDOW_START = date(2026, 6, 1)
+DRINK_WINDOW_LBL   = "since 1 June"
+DRINKS_DATA_URL    = "https://medoc-26-webhook.bloem-fred.workers.dev/drinks-data"
 UK_TZ              = pytz.timezone("Europe/London")
 SUB_4_SECONDS      = 4 * 3600                # reference time for "to sub-4" deltas
 MEDOC_PENALTY      = 1.10                    # Médoc time = marathon × this (wine stops!)
@@ -277,6 +289,97 @@ def fetch_athlete_summary(access_token: str) -> tuple[str, str]:
         return f"(athlete lookup failed: {e})", "?"
 
 
+# ─── Drinks tracker data ───────────────────────────────────────────────
+def drink_band(n: int) -> dict:
+    """Map an estimated drink count to a band. `key` drives CSS/markers;
+    empty key means a dry/no-glass day."""
+    if n <= 0:
+        return {"key": "",      "label": "Sec",    "cls": "b0"}
+    if n == 1:
+        return {"key": "light", "label": "Social", "cls": "b1"}
+    if n <= 3:
+        return {"key": "tipsy", "label": "Éméché", "cls": "b3"}
+    return {"key": "heavy",     "label": "Bourré", "cls": "b5"}
+
+
+def drinks_week_dot(total_7d: int) -> str:
+    """CSS dot class for a runner's *7-day total* drinks (standings column)."""
+    if total_7d <= 0:
+        return "b0"
+    if total_7d <= 3:
+        return "b1"
+    if total_7d <= 9:
+        return "b3"
+    return "b5"
+
+
+def fetch_drinks() -> dict:
+    """GET the Worker's /drinks-data → { runner_id: { 'YYYY-MM-DD': int } }.
+
+    Degrades gracefully: any failure (Worker not deployed yet, KV unbound,
+    network hiccup) returns {} so the dashboard builds fine with no drinks
+    overlay rather than crashing.
+    """
+    try:
+        r = requests.get(DRINKS_DATA_URL, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        if isinstance(data, dict):
+            return data
+        print(f"  drinks-data: unexpected shape {type(data).__name__}, ignoring", file=sys.stderr)
+    except Exception as e:
+        print(f"  drinks-data unavailable ({e}) — building without drinks overlay", file=sys.stderr)
+    return {}
+
+
+def attach_drinks(rs: "RunnerStats", drinks_map: dict, today_uk: date) -> None:
+    """Parse a runner's logged drinks and derive the trailing-7d total, the
+    per-day overlay (aligned with the 14-day form dots), and today's band."""
+    logs = drinks_map.get(rs.cfg["id"], {})
+    by_day: dict[str, int] = {}
+    if isinstance(logs, dict):
+        for k, v in logs.items():
+            try:
+                d = date.fromisoformat(k)
+            except (ValueError, TypeError):
+                continue
+            if d < DRINK_WINDOW_START or d > today_uk:
+                continue
+            try:
+                by_day[k] = max(0, int(v))
+            except (TypeError, ValueError):
+                continue
+    rs.drinks_by_day = by_day
+    rs.has_drinks_log = bool(by_day)
+
+    # Trailing 7 days (clamped to the drink window), inclusive of today.
+    win_start = max(DRINK_WINDOW_START, today_uk - timedelta(days=6))
+    total = 0
+    days = 0
+    d = win_start
+    while d <= today_uk:
+        n = by_day.get(d.isoformat(), 0)
+        total += n
+        if n > 0:
+            days += 1
+        d += timedelta(days=1)
+    rs.drinks_7d = total
+    rs.drink_days_7d = days
+
+    rs.today_drinks = by_day.get(today_uk.isoformat(), 0)
+    rs.today_band   = drink_band(rs.today_drinks)["key"]
+
+    # 14-day overlay aligned 1:1 with rs.form_dots (oldest → today).
+    dots = []
+    for i in range(13, -1, -1):
+        d = today_uk - timedelta(days=i)
+        if d < DRINK_WINDOW_START:
+            dots.append("")
+            continue
+        dots.append(drink_band(by_day.get(d.isoformat(), 0))["key"])
+    rs.drink_dots = dots
+
+
 # ─── Helpers: time & formatting ────────────────────────────────────────
 def utc_to_uk(iso_str: str) -> datetime:
     """Parse a Strava ISO-8601 UTC timestamp and convert to UK local time."""
@@ -437,6 +540,14 @@ class RunnerStats:
     wow_shift_km: float | None = None         # trailing 7 days' km minus the 7 days before that
     avg_hr_trailing_7d: float | None = None   # duration-weighted across last 7d, requires ≥3 HR runs
     hr_runs_trailing_7d: int = 0
+    # Drinks tracker (self-selected, via drinks.html → Worker KV)
+    drinks_by_day: dict[str, int] = field(default_factory=dict)  # 'YYYY-MM-DD' → est. drinks
+    has_drinks_log: bool = False
+    drinks_7d: int = 0                         # total est. drinks in trailing 7d
+    drink_days_7d: int = 0                     # number of days drunk in trailing 7d
+    today_drinks: int = 0
+    today_band: str = ""                       # "" | light | tipsy | heavy
+    drink_dots: list[str] = field(default_factory=list)  # 14 entries aligned with form_dots
 
 
 def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
@@ -915,7 +1026,8 @@ def winner_html(before: str, name: str, after: str) -> str:
 
 
 def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -> dict:
-    """Compute all eight award winners. Tolerant of empty fields."""
+    """Compute every award winner (incl. the drinks-tracker awards La Soif
+    and L'Abstinent). Tolerant of empty fields."""
 
     def first(predicate, key, reverse=True):
         """Return (runner, value) of the best runner by `key`, or (None, None)."""
@@ -1102,6 +1214,58 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
     else:
         awards["hangover_hero"] = {"title": "The Hangover Hero", "icon": "🍷", "detail": "No suspicious weekends. Yet.", "shame": True}
 
+    # La Soif ("The Thirst") — most self-logged drinks in the trailing 7 days.
+    # Pulls from the honour-system drinks tracker (drinks.html → KV), not from
+    # Strava. Only counts runners who've actually logged something.
+    soif_candidates = [r for r in runners if r.has_drinks_log and r.drinks_7d > 0]
+    if soif_candidates:
+        soif = max(soif_candidates, key=lambda r: (r.drinks_7d, r.drink_days_7d))
+        nights = soif.drink_days_7d
+        night_s = "night" if nights == 1 else "nights"
+        awards["la_soif"] = {
+            "title":  "La Soif",
+            "icon":   "🍷",
+            "detail": winner_html(
+                "Most drinks logged (7d) — ",
+                soif.cfg["name"],
+                f", {soif.drinks_7d} across {nights} {night_s}. Vive le Médoc.",
+            ),
+            "shame":  True,
+        }
+    else:
+        awards["la_soif"] = {
+            "title":  "La Soif",
+            "icon":   "🍷",
+            "detail": "Nobody's owned up yet — log your week at /drinks.html.",
+            "shame":  True,
+        }
+
+    # L'Abstinent — the driest runner among those who actually RAN in the last
+    # 7 days. Running is the entry ticket: you can't win sobriety on the sofa.
+    # Fewest drinks wins; ties broken by who ran the most.
+    abst_candidates = [
+        r for r in runners
+        if r.has_drinks_log and r.connected and r.trailing_7d_km > 0
+    ]
+    if abst_candidates:
+        abst = min(abst_candidates, key=lambda r: (r.drinks_7d, -r.trailing_7d_km))
+        tail = (
+            f", bone dry while running {abst.trailing_7d_km:.0f}km (7d). Saint."
+            if abst.drinks_7d == 0
+            else f", just {abst.drinks_7d} drinks on {abst.trailing_7d_km:.0f}km (7d). Disciplined."
+        )
+        awards["labstinent"] = {
+            "title":  "L'Abstinent",
+            "icon":   "🚱",
+            "detail": winner_html("Driest runner of the week — ", abst.cfg["name"], tail),
+        }
+    else:
+        awards["labstinent"] = {
+            "title":  "L'Abstinent",
+            "icon":   "🚱",
+            "detail": "No runner has both run and logged this week — the title waits.",
+        }
+
     return awards
 
 
@@ -1154,6 +1318,14 @@ def build_mini_boards(runners: list[RunnerStats], today_uk: date) -> dict:
         reverse=False,           # lower HR = more aerobic = top
         value_class=lambda v: "good" if v < 155 else "",
     )
+    # Predicted Médoc finish (Riegel × wine penalty). Moved here from the
+    # standings — interesting, but secondary to current activity. Lower = top.
+    predicted = board(
+        lambda r: r.predicted_medoc_s is not None and r.predicted_medoc_s > 0,
+        lambda r: r.predicted_medoc_s,
+        lambda v: fmt_hms(v),
+        reverse=False,
+    )
 
     # Form: rank by count of solid-run days, ties broken by short-run days.
     # Rewards consistency over the last 14 days, no penalty for rest.
@@ -1175,7 +1347,16 @@ def build_mini_boards(runners: list[RunnerStats], today_uk: date) -> dict:
     for r in form_runners:
         dots = r.form_dots or [""] * 14
         run_count = sum(1 for c in dots if c in ("on", "partial"))
-        form_rows.append({"name": r.cfg["name"], "dots": dots, "run_count": run_count})
+        # Wine-glass overlay aligned 1:1 with the form dots. Each entry is
+        # "" | light | tipsy | heavy; the template shows a glass for any
+        # non-empty band on the matching day.
+        drink_dots = r.drink_dots if r.drink_dots else [""] * 14
+        form_rows.append({
+            "name": r.cfg["name"],
+            "dots": dots,
+            "drink_dots": drink_dots,
+            "run_count": run_count,
+        })
     form = {"day_labels": day_labels, "rows": form_rows}
 
     return {
@@ -1184,6 +1365,7 @@ def build_mini_boards(runners: list[RunnerStats], today_uk: date) -> dict:
         "pace_imp":  pace_imp,
         "elevation": elevation,
         "hr":        hr,
+        "predicted": predicted,
         "form":      form,
     }
 
@@ -2104,6 +2286,12 @@ def make_runner_rows(runners: list[RunnerStats]) -> list[dict]:
             "avg_pace":         fmt_pace(r.avg_pace_s),
             "avg_hr":           f"{int(round(r.avg_hr))}" if r.avg_hr else "—",
             "elevation_m":      int(round(r.elevation_m)),
+            # Drinks (trailing 7d). "—" when the runner has never logged.
+            "drinks_7d":        str(r.drinks_7d) if r.has_drinks_log else "—",
+            "drinks_dot":       drinks_week_dot(r.drinks_7d) if r.has_drinks_log else "b0",
+            "has_drinks_log":   r.has_drinks_log,
+            "today_band":       r.today_band,
+            "drink_dots":       r.drink_dots if r.drink_dots else [""] * 14,
         })
     return rows
 
@@ -2118,6 +2306,11 @@ def main() -> None:
     token_cache = load_token_cache()
     cache_hits_before = sum(1 for v in token_cache.values() if v.get("access_token"))
 
+    # Self-selected drinks log (graceful {} if the Worker/KV isn't reachable).
+    drinks_map = fetch_drinks()
+    if drinks_map:
+        print(f"Drinks: loaded logs for {len(drinks_map)} runner(s).")
+
     # Crunch per-runner stats
     runners: list[RunnerStats] = []
     for cfg in runners_cfg:
@@ -2126,6 +2319,11 @@ def main() -> None:
         except Exception as e:
             print(f"[{cfg['id']}] unexpected error: {e}", file=sys.stderr)
             rs = RunnerStats(cfg=cfg)
+        # Attach drinks to every runner (logged independently of Strava).
+        try:
+            attach_drinks(rs, drinks_map, today_uk)
+        except Exception as e:
+            print(f"[{cfg['id']}] drinks attach failed: {e}", file=sys.stderr)
         runners.append(rs)
 
     save_token_cache(token_cache)
@@ -2185,6 +2383,8 @@ def main() -> None:
         "mini_boards":     mini_boards,
         "medoc_facts":     MEDOC_FACTS,
         "plan_targets":    PLAN_TARGETS,
+        "drinks_window_label": DRINK_WINDOW_LBL,
+        "drinks_any":      any(r.has_drinks_log for r in runners),
     }
 
     env = Environment(

@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<!--
+  Le Marathon Du Médoc 26 — Drinks Logger
+  ────────────────────────────────────────
+  Self-select "how many did you have" tracker for the last 7 days (rolling,
+  starting 1 June 2026). Gated by the same shared friend-group access code as
+  connect.html. Writes to the Worker's /log-drinks endpoint (→ DRINKS KV),
+  reads back via /drinks-data to prefill.
+
+  Honesty is the methodology. There is no validation against reality. C'est la
+  vie de château.
+
+  Bands (representative drink count stored in KV):
+    Sec       0   — dry. A clean run tomorrow.
+    Social    1   — one glass. "Light workout."
+    Éméché    3   — 2-3. Alcohol in the system.
+    Bourré    5   — 4+. A heavy night in the vineyards.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Le Carnet de Soif — Le Marathon Du Médoc 26</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wine: #4a0e1f;
+    --wine-deep: #2d0812;
+    --wine-light: #6b1a2e;
+    --cream: #f4ead5;
+    --gold: #c9a961;
+    --gold-bright: #e6c87d;
+    --ink: #1a0a0e;
+    --paper: #faf3e0;
+    --moss: #5a6b3f;
+    --rust: #a84e2e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html, body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    line-height: 1.5;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at top, rgba(74,14,31,0.06), transparent 60%),
+      radial-gradient(ellipse at bottom, rgba(201,169,97,0.10), transparent 60%);
+  }
+  body::before{
+    content:'';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: multiply;
+  }
+  .wrap{
+    position: relative;
+    z-index: 2;
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    text-align: center;
+  }
+  .crest{
+    width: 58px; height: 58px;
+    border: 1.5px solid var(--wine);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    background: var(--paper);
+    font-size: 26px;
+  }
+  .crest::before{
+    content:''; position: absolute; inset: 3px;
+    border: 1px solid var(--wine); border-radius: 50%;
+  }
+  h1{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 800;
+    font-size: clamp(32px, 8vw, 44px);
+    color: var(--wine);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .sub{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin-top: 12px;
+  }
+  .prologue{
+    font-style: italic;
+    font-size: 16px;
+    color: var(--wine-deep);
+    margin: 24px 0 32px;
+    line-height: 1.55;
+  }
+  .prologue::before, .prologue::after{
+    content: '❦';
+    color: var(--gold);
+    margin: 0 10px;
+    font-size: 18px;
+  }
+  .card{
+    background: var(--cream);
+    border: 1px solid var(--wine);
+    padding: 28px 24px;
+    margin-bottom: 20px;
+    text-align: left;
+    position: relative;
+  }
+  .card::before{
+    content:'';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(74,14,31,0.18);
+    pointer-events: none;
+  }
+  .card > *{ position: relative; z-index: 1; }
+  .card h2{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--wine);
+    margin-bottom: 10px;
+  }
+  .card p{ font-size: 16px; }
+  .hidden{ display: none !important; }
+
+  .field-label{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    margin: 18px 0 6px;
+  }
+  .cred-input, select.cred-input{
+    width: 100%;
+    padding: 12px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--wine);
+    border-radius: 0;
+    outline: none;
+    appearance: none;
+  }
+  .cred-input:focus{
+    border-color: var(--gold);
+    box-shadow: inset 0 0 0 1px var(--gold);
+  }
+
+  .btn{
+    display: inline-block;
+    width: 100%;
+    padding: 16px 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 500;
+    background: var(--wine);
+    color: var(--cream);
+    border: 1px solid var(--gold);
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 18px;
+  }
+  .btn:hover{ background: var(--wine-deep); }
+  .btn:active{ transform: translateY(1px); }
+  .btn:disabled{ opacity: 0.5; cursor: not-allowed; }
+  .btn.ghost{
+    background: transparent;
+    color: var(--wine);
+    border-color: var(--wine);
+  }
+
+  .err{
+    color: var(--rust);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    margin-top: 12px;
+    display: none;
+  }
+  .ok{
+    color: var(--moss);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    margin-top: 12px;
+  }
+
+  /* ─── Legend ──────────────────────────────────────────── */
+  .legend{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .legend .lg{
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px;
+    padding: 6px 8px;
+    background: rgba(201,169,97,0.10);
+    border-left: 3px solid var(--gold);
+  }
+  .legend .dot{
+    width: 14px; height: 14px; border-radius: 50%;
+    flex: 0 0 auto;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+  .b0{ background: #d9e2cf; }
+  .b1{ background: #e8c98a; }
+  .b3{ background: #cf7d3a; }
+  .b5{ background: #8c1d12; }
+
+  /* ─── Day rows ────────────────────────────────────────── */
+  .day{
+    margin-bottom: 14px;
+  }
+  .day-head{
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .day-name{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--wine-deep);
+  }
+  .day-date{
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--wine-light);
+  }
+  .bands{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .band{
+    cursor: pointer;
+    text-align: center;
+    padding: 8px 4px 7px;
+    border: 1px solid rgba(74,14,31,0.30);
+    background: var(--paper);
+    transition: transform 0.08s;
+    user-select: none;
+  }
+  .band:active{ transform: translateY(1px); }
+  .band .bdot{
+    width: 16px; height: 16px; border-radius: 50%;
+    margin: 0 auto 4px;
+    border: 1px solid rgba(0,0,0,0.18);
+  }
+  .band .blabel{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--wine-deep);
+    line-height: 1.1;
+  }
+  .band .bsub{
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.06em;
+    color: var(--wine-light);
+    margin-top: 1px;
+  }
+  .band.sel{
+    border-color: var(--wine);
+    box-shadow: inset 0 0 0 2px var(--wine);
+    background: var(--cream);
+  }
+
+  .footnote{
+    font-style: italic;
+    font-size: 13px;
+    color: var(--wine-light);
+    margin-top: 8px;
+    text-align: center;
+  }
+  a.backlink{
+    display: inline-block;
+    margin-top: 18px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--wine-light);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--wine-light);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crest">🍷</div>
+  <h1>Le Carnet de Soif</h1>
+  <div class="sub">The Thirst Ledger · Médoc 26</div>
+  <p class="prologue">Honesty is the only methodology. Log what you actually drank — the vineyards are watching.</p>
+
+  <!-- ─── Step 0: access code gate ─── -->
+  <div class="card" id="gate-card">
+    <h2>Entrée</h2>
+    <p>Type the friend-group code to open your ledger.</p>
+    <div class="field-label">Access code</div>
+    <input class="cred-input" id="code-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="••••••••">
+    <button class="btn" id="code-btn">Continue</button>
+    <div class="err" id="code-err"></div>
+  </div>
+
+  <!-- ─── Step 1: pick runner + log ─── -->
+  <div class="card hidden" id="log-card">
+    <h2>Your week so far</h2>
+    <div class="field-label">Who are you?</div>
+    <select class="cred-input" id="runner-select">
+      <option value="">— choose your name —</option>
+    </select>
+
+    <div class="legend">
+      <div class="lg"><span class="dot b0"></span><div><b>Sec</b> · dry (0)</div></div>
+      <div class="lg"><span class="dot b1"></span><div><b>Social</b> · 1 glass</div></div>
+      <div class="lg"><span class="dot b3"></span><div><b>Éméché</b> · 2–3</div></div>
+      <div class="lg"><span class="dot b5"></span><div><b>Bourré</b> · 4+</div></div>
+    </div>
+
+    <div id="days" style="margin-top:18px;"></div>
+
+    <button class="btn" id="save-btn" disabled>Save my ledger</button>
+    <div class="err" id="save-err"></div>
+    <div class="ok hidden" id="save-ok"></div>
+    <p class="footnote">Tap a band for each day. We trust you completely. We shouldn't.</p>
+    <a class="backlink" href="index.html">← back to the dashboard</a>
+  </div>
+</div>
+
+<script>
+  const WORKER_BASE    = "https://medoc-26-webhook.bloem-fred.workers.dev";
+  const CHECK_CODE_URL = WORKER_BASE + "/check-code";
+  const LOG_URL        = WORKER_BASE + "/log-drinks";
+  const DATA_URL       = WORKER_BASE + "/drinks-data";
+  const WINDOW_START   = "2026-06-01";   // logger covers this date onward
+
+  // Band model: value stored in KV is the representative drink count.
+  const BANDS = [
+    { v: 0, label: "Sec",     sub: "dry",  cls: "b0" },
+    { v: 1, label: "Social",  sub: "1",    cls: "b1" },
+    { v: 3, label: "Éméché",  sub: "2–3",  cls: "b3" },
+    { v: 5, label: "Bourré",  sub: "4+",   cls: "b5" },
+  ];
+
+  // localStorage keys (remember code + last name picked)
+  const LS_CODE = "medoc_drinks_code";
+  const LS_NAME = "medoc_drinks_runner";
+  const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+
+  const $ = (id) => document.getElementById(id);
+  const showErr = (el, msg) => { el.textContent = msg; el.style.display = "block"; };
+  const hideErr = (el) => { el.style.display = "none"; };
+
+  // ─── Date helpers (local time, YYYY-MM-DD) ───
+  function ymd(d){
+    return d.getFullYear() + "-" +
+           String(d.getMonth()+1).padStart(2,"0") + "-" +
+           String(d.getDate()).padStart(2,"0");
+  }
+  function parseYmd(s){
+    const [y,m,d] = s.split("-").map(Number);
+    return new Date(y, m-1, d);
+  }
+  // The rolling window: up to 7 most-recent days, never before WINDOW_START.
+  function windowDays(){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const start = parseYmd(WINDOW_START);
+    const earliest = new Date(today); earliest.setDate(earliest.getDate() - 6);
+    const from = earliest < start ? start : earliest;
+    const days = [];
+    for (let d = new Date(from); d <= today; d.setDate(d.getDate()+1)){
+      days.push(ymd(new Date(d)));
+    }
+    return days;
+  }
+  const DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  // selections: { "YYYY-MM-DD": <int> }
+  let selections = {};
+
+  // ─── Step 0: access code ───
+  $("code-btn").addEventListener("click", async () => {
+    const code = $("code-input").value.trim().toLowerCase();
+    hideErr($("code-err"));
+    if (!code){ showErr($("code-err"), "Type the code first."); return; }
+    const btn = $("code-btn");
+    btn.disabled = true; btn.textContent = "Checking…";
+    try{
+      const r = await fetch(CHECK_CODE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ access_code: code }),
+      });
+      const data = await r.json();
+      if (!r.ok || !data.ok){
+        showErr($("code-err"), "Wrong code. Ask Freddy in the group chat.");
+        btn.disabled = false; btn.textContent = "Continue";
+        return;
+      }
+      lsSet(LS_CODE, code);
+      enterApp();
+    }catch(err){
+      showErr($("code-err"), "Couldn't reach the server: " + err.message);
+      btn.disabled = false; btn.textContent = "Continue";
+    }
+  });
+  $("code-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter"){ e.preventDefault(); $("code-btn").click(); }
+  });
+
+  // ─── Enter the app: build day rows, load runners, prefill ───
+  function enterApp(){
+    $("gate-card").classList.add("hidden");
+    $("log-card").classList.remove("hidden");
+    buildDays();
+    loadRunners();
+  }
+
+  function buildDays(){
+    const wrap = $("days");
+    wrap.innerHTML = "";
+    for (const day of windowDays()){
+      const d = parseYmd(day);
+      const row = document.createElement("div");
+      row.className = "day";
+      row.innerHTML =
+        '<div class="day-head">' +
+          '<span class="day-name">' + DOW[d.getDay()] + '</span>' +
+          '<span class="day-date">' + d.getDate() + ' ' + MON[d.getMonth()] + '</span>' +
+        '</div>' +
+        '<div class="bands" data-day="' + day + '"></div>';
+      const bandsEl = row.querySelector(".bands");
+      for (const b of BANDS){
+        const cell = document.createElement("div");
+        cell.className = "band";
+        cell.dataset.v = b.v;
+        cell.innerHTML =
+          '<div class="bdot ' + b.cls + '"></div>' +
+          '<div class="blabel">' + b.label + '</div>' +
+          '<div class="bsub">' + b.sub + '</div>';
+        cell.addEventListener("click", () => {
+          selections[day] = b.v;
+          bandsEl.querySelectorAll(".band").forEach((x) => x.classList.remove("sel"));
+          cell.classList.add("sel");
+        });
+        bandsEl.appendChild(cell);
+      }
+      wrap.appendChild(row);
+    }
+  }
+
+  function applySelections(){
+    document.querySelectorAll(".bands").forEach((bandsEl) => {
+      const day = bandsEl.dataset.day;
+      const v = selections[day];
+      bandsEl.querySelectorAll(".band").forEach((cell) => {
+        cell.classList.toggle("sel", v !== undefined && Number(cell.dataset.v) === v);
+      });
+    });
+  }
+
+  async function loadRunners(){
+    const sel = $("runner-select");
+    try{
+      const r = await fetch("runners.json", { cache: "no-store" });
+      const runners = await r.json();
+      for (const run of runners){
+        if (run.name && run.name.startsWith("[")) continue; // skip placeholders
+        const opt = document.createElement("option");
+        opt.value = run.id;
+        opt.textContent = run.name;
+        sel.appendChild(opt);
+      }
+    }catch(err){
+      showErr($("save-err"), "Couldn't load the runner list: " + err.message);
+    }
+    const last = lsGet(LS_NAME);
+    if (last){ sel.value = last; sel.dispatchEvent(new Event("change")); }
+  }
+
+  $("runner-select").addEventListener("change", async (e) => {
+    const id = e.target.value;
+    $("save-btn").disabled = !id;
+    selections = {};
+    applySelections();
+    if (!id) return;
+    lsSet(LS_NAME, id);
+    // Prefill from server
+    try{
+      const r = await fetch(DATA_URL, { cache: "no-store" });
+      const all = await r.json();
+      const mine = all[id] || {};
+      const valid = new Set(BANDS.map((b) => b.v));
+      for (const [day, v] of Object.entries(mine)){
+        // snap stored ints to the nearest band so old data still highlights
+        const n = Number(v);
+        selections[day] = valid.has(n) ? n : (n <= 0 ? 0 : n === 1 ? 1 : n <= 3 ? 3 : 5);
+      }
+      applySelections();
+    }catch{ /* server may be down — leave blank */ }
+  });
+
+  $("save-btn").addEventListener("click", async () => {
+    hideErr($("save-err"));
+    $("save-ok").classList.add("hidden");
+    const id   = $("runner-select").value;
+    const code = lsGet(LS_CODE);
+    if (!id){ showErr($("save-err"), "Pick your name first."); return; }
+    // Only send the days currently in the window that were touched.
+    const entries = {};
+    for (const day of windowDays()){
+      if (selections[day] !== undefined) entries[day] = selections[day];
+    }
+    if (Object.keys(entries).length === 0){
+      showErr($("save-err"), "Tap a band for at least one day first."); return;
+    }
+    const btn = $("save-btn");
+    btn.disabled = true; btn.textContent = "Saving…";
+    try{
+      const r = await fetch(LOG_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ access_code: code, runner_id: id, entries }),
+      });
+      const data = await r.json();
+      if (!r.ok || !data.ok){
+        throw new Error(data.error || "Save failed — try again.");
+      }
+      $("save-ok").textContent = "Saved. The ledger remembers. 🍷";
+      $("save-ok").classList.remove("hidden");
+    }catch(err){
+      showErr($("save-err"), err.message);
+    }finally{
+      btn.disabled = false; btn.textContent = "Save my ledger";
+    }
+  });
+
+  // ─── Auto-enter if we already have a verified code this browser ───
+  if (lsGet(LS_CODE)){ enterApp(); }
+</script>
+</body>
+</html>

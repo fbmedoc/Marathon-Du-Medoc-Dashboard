@@ -1031,6 +1031,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    position: relative;
   }
   .form-mini .d{
     display: inline-block;
@@ -1042,6 +1043,33 @@
   .form-mini .d.on{ background: var(--moss); border-color: var(--moss); }
   .form-mini .d.partial{ background: var(--gold); border-color: var(--gold); }
   .form-mini .d.skip{ background: var(--rust); border-color: var(--rust); }
+  /* Wine-glass overlay on the form dots — a day someone drank. The glass
+     sits just above the dot; deeper colour = heavier night. */
+  .form-mini .glass{
+    position: absolute;
+    top: -9px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    line-height: 1;
+    pointer-events: none;
+  }
+  .form-mini .glass.tipsy{ opacity: 0.85; filter: saturate(1.2); }
+  .form-mini .glass.heavy{ opacity: 1; filter: saturate(1.6) drop-shadow(0 0 1px rgba(140,29,18,0.6)); }
+  .form-mini .glass.light{ opacity: 0.55; }
+
+  /* Drinks pip in the standings 'Drinks 7d' column. */
+  .col-stat .v .drink-pip{
+    display: inline-block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+    border: 1px solid rgba(0,0,0,0.18);
+  }
+  .drink-pip.b0{ background: #d9e2cf; }
+  .drink-pip.b1{ background: #e8c98a; }
+  .drink-pip.b3{ background: #cf7d3a; }
+  .drink-pip.b5{ background: #8c1d12; }
   .form-mini .total{
     font-family: 'DM Mono', monospace;
     font-size: 9px;
@@ -1744,7 +1772,7 @@
           <div>Runner</div>
           <div class="r hide-mob">Last 7d</div>
           <div class="r hide-mob">Longest</div>
-          <div class="r">Predicted</div>
+          <div class="r">Drinks 7d</div>
         </div>
 
         {% for r in runners %}
@@ -1761,8 +1789,8 @@
           <div class="col-stat hide-mob"><div class="v">{{ r.trailing_7d_km }}{% if r.trailing_7d_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
           <div class="col-stat hide-mob"><div class="v">{{ r.longest_km }}{% if r.longest_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
           <div class="col-stat">
-            <div class="v">{{ r.predicted }}</div>
-            <div class="l">{{ r.sub4 }}</div>
+            <div class="v">{% if r.has_drinks_log %}<i class="drink-pip {{ r.drinks_dot }}"></i>{% endif %}{{ r.drinks_7d }}</div>
+            <div class="l">{% if r.has_drinks_log %}self-logged{% else %}not logged{% endif %}</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:{{ r.progress_pct }}%"></div></div>
         </div>
@@ -1787,8 +1815,10 @@
           'the_sufferer':    'rolling 7d',
           'ghost':           'right now',
           'hangover_hero':   'Sat / Sun',
+          'la_soif':         'rolling 7d',
+          'labstinent':      'rolling 7d',
         } %}
-        {% for key in ['le_groom', 'sibling_rivalry', 'top_dog', 'biggest_shift', 'glow_up', 'la_flamme', 'laurore', 'the_sufferer', 'ghost', 'hangover_hero'] %}
+        {% for key in ['le_groom', 'sibling_rivalry', 'top_dog', 'biggest_shift', 'glow_up', 'la_flamme', 'laurore', 'labstinent', 'the_sufferer', 'ghost', 'hangover_hero', 'la_soif'] %}
           {% set a = awards[key] %}
           <div class="award{% if a.featured %} featured{% endif %}{% if a.shame %} shame{% endif %}">
             <div class="icon">{% if a.image %}<img src="{{ a.image }}" alt="">{% else %}{{ a.icon }}{% endif %}</div>
@@ -1859,6 +1889,15 @@
         {% endfor %}
       </div>
 
+      <div class="mini-board">
+        <h3>Predicted Finish <span class="meta">Médoc time · Riegel + wine</span></h3>
+        {% for row in mini_boards.predicted %}
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
+        {% else %}
+          <div class="mini-row"><span class="pos">—</span><span class="name">Need a 10km+ run first</span><span class="v">—</span></div>
+        {% endfor %}
+      </div>
+
       <div class="mini-board form-board">
         <h3>Form <span class="meta">Last 14 days · most consistent</span></h3>
         <div class="form-header-row">
@@ -1867,7 +1906,7 @@
           </span>
         </div>
         {% for row in mini_boards.form.rows %}
-          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for cls in row.dots %}<span class="d-slot"><i class="d {{ cls }}"></i></span>{% endfor %}<span class="total">{{ row.run_count }} run{% if row.run_count != 1 %}s{% endif %}</span></span></span></div>
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for cls in row.dots %}<span class="d-slot">{% set dk = row.drink_dots[loop.index0] %}{% if dk %}<span class="glass {{ dk }}">🍷</span>{% endif %}<i class="d {{ cls }}"></i></span>{% endfor %}<span class="total">{{ row.run_count }} run{% if row.run_count != 1 %}s{% endif %}</span></span></span></div>
         {% else %}
           <div class="mini-row"><span class="pos">—</span><span class="name">Waiting on runs</span><span class="v">—</span></div>
         {% endfor %}
@@ -1878,6 +1917,7 @@
         <div class="legend-row"><span class="form-mini"><i class="d on"></i></span><span class="lbl">Solid run — at least 5 km</span></div>
         <div class="legend-row"><span class="form-mini"><i class="d partial"></i></span><span class="lbl">Short or shake-out — under 5 km</span></div>
         <div class="legend-row"><span class="form-mini"><i class="d"></i></span><span class="lbl">Rest day or no run logged</span></div>
+        <div class="legend-row"><span class="form-mini"><span class="d-slot" style="width:11px;"><span class="glass tipsy" style="position:static;transform:none;">🍷</span></span></span><span class="lbl">A glass = drinks logged that day · <a href="drinks.html" style="color:var(--wine);">log yours</a></span></div>
       </div>
     </div>
   </section>

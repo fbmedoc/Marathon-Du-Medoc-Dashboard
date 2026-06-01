@@ -986,6 +986,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    position: relative;
   }
   .form-mini .d{
     display: inline-block;
@@ -997,6 +998,29 @@
   .form-mini .d.on{ background: var(--moss); border-color: var(--moss); }
   .form-mini .d.partial{ background: var(--gold); border-color: var(--gold); }
   .form-mini .d.skip{ background: var(--rust); border-color: var(--rust); }
+  .form-mini .glass{
+    position: absolute;
+    top: -8px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 7px;
+    line-height: 1;
+    pointer-events: none;
+  }
+  .form-mini .glass.tipsy{ opacity: 0.85; }
+  .form-mini .glass.heavy{ opacity: 1; filter: saturate(1.6); }
+  .form-mini .glass.light{ opacity: 0.5; }
+  .stat .v .drink-pip{
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+    border: 1px solid rgba(0,0,0,0.18);
+  }
+  .drink-pip.b0{ background: #d9e2cf; }
+  .drink-pip.b1{ background: #e8c98a; }
+  .drink-pip.b3{ background: #cf7d3a; }
+  .drink-pip.b5{ background: #8c1d12; }
   .form-mini .total{
     font-family: 'DM Mono', monospace;
     font-size: 8px;
@@ -1593,13 +1617,14 @@
           <div class="meta">{{ r.meta }}</div>
         </div>
         <div class="stat">
-          <div class="v">{{ r.predicted }}</div>
-          <div class="l">{{ r.sub4 }}</div>
+          <div class="v">{% if r.has_drinks_log %}<i class="drink-pip {{ r.drinks_dot }}"></i>{% endif %}{{ r.drinks_7d }}</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">{{ r.trailing_7d_km }}{% if r.trailing_7d_km != "—" %}km{% endif %}</div></div>
           <div class="x"><div class="l">Total</div><div class="v">{{ r.total_km }}{% if r.total_km != "—" %}km{% endif %}</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">{{ r.longest_km }}{% if r.longest_km != "—" %}km{% endif %}</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">{{ r.predicted }}</div></div>
         </div>
       </div>
       {% endfor %}
@@ -1625,8 +1650,10 @@
           'the_sufferer':    'rolling 7d',
           'ghost':           'right now',
           'hangover_hero':   'Sat / Sun',
+          'la_soif':         'rolling 7d',
+          'labstinent':      'rolling 7d',
         } %}
-        {% for key in ['le_groom', 'sibling_rivalry', 'top_dog', 'biggest_shift', 'glow_up', 'la_flamme', 'laurore', 'the_sufferer', 'ghost', 'hangover_hero'] %}
+        {% for key in ['le_groom', 'sibling_rivalry', 'top_dog', 'biggest_shift', 'glow_up', 'la_flamme', 'laurore', 'labstinent', 'the_sufferer', 'ghost', 'hangover_hero', 'la_soif'] %}
           {% set a = awards[key] %}
           <div class="award{% if a.featured %} featured{% endif %}{% if a.shame %} shame{% endif %}">
             <div class="icon">{% if a.image %}<img src="{{ a.image }}" alt="">{% else %}{{ a.icon }}{% endif %}</div>
@@ -1694,6 +1721,15 @@
         {% endfor %}
       </div>
 
+      <div class="mini-board">
+        <h3>Predicted Finish <span class="meta">Médoc · Riegel + wine</span></h3>
+        {% for row in mini_boards.predicted %}
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
+        {% else %}
+          <div class="mini-row"><span class="pos">—</span><span class="name">Need a 10km+ run first</span><span class="v">—</span></div>
+        {% endfor %}
+      </div>
+
       <div class="mini-board form-board">
         <h3>Form <span class="meta">Last 14d · most consistent</span></h3>
         <div class="form-header-row">
@@ -1702,10 +1738,11 @@
           </span>
         </div>
         {% for row in mini_boards.form.rows %}
-          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for cls in row.dots %}<span class="d-slot"><i class="d {{ cls }}"></i></span>{% endfor %}<span class="total">{{ row.run_count }} run{% if row.run_count != 1 %}s{% endif %}</span></span></span></div>
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for cls in row.dots %}<span class="d-slot">{% set dk = row.drink_dots[loop.index0] %}{% if dk %}<span class="glass {{ dk }}">🍷</span>{% endif %}<i class="d {{ cls }}"></i></span>{% endfor %}<span class="total">{{ row.run_count }} run{% if row.run_count != 1 %}s{% endif %}</span></span></span></div>
         {% else %}
           <div class="mini-row"><span class="pos">—</span><span class="name">Waiting on runs</span><span class="v">—</span></div>
         {% endfor %}
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;color:var(--wine-light);margin-top:8px;text-transform:uppercase;">🍷 = drinks logged that day · <a href="drinks.html" style="color:var(--wine);">log yours</a></div>
       </div>
     </section>
 

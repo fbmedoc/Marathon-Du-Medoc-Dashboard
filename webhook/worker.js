@@ -41,10 +41,15 @@
  */
 
 const CORS_BASE = {
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Max-Age": "86400",
 };
+
+// Drinks tracker window: the self-select logger covers a rolling 7-day strip
+// starting on this date. Logs are stored per-runner in the DRINKS KV namespace
+// under key `drinks:<runner_id>` as a JSON map of { "YYYY-MM-DD": <int drinks> }.
+const DRINK_WINDOW_START = "2026-06-01";
 
 function corsHeaders(env) {
   return {
@@ -90,6 +95,28 @@ export default {
       }
       if (request.method === "POST") {
         return handlePersonalExchange(request, env);
+      }
+      return new Response("Method not allowed", { status: 405 });
+    }
+
+    // ─── Drinks tracker: log self-selected drinks (access-code gated) ─
+    if (url.pathname === "/log-drinks") {
+      if (request.method === "OPTIONS") {
+        return new Response(null, { status: 204, headers: corsHeaders(env) });
+      }
+      if (request.method === "POST") {
+        return handleLogDrinks(request, env);
+      }
+      return new Response("Method not allowed", { status: 405 });
+    }
+
+    // ─── Drinks tracker: read all logs (open; build script + logger UI) ─
+    if (url.pathname === "/drinks-data") {
+      if (request.method === "OPTIONS") {
+        return new Response(null, { status: 204, headers: corsHeaders(env) });
+      }
+      if (request.method === "GET") {
+        return handleDrinksData(request, env);
       }
       return new Response("Method not allowed", { status: 405 });
     }
@@ -259,6 +286,124 @@ async function handlePersonalExchange(request, env) {
     console.error(`OAuth exchange error: ${err.message}`);
     return new Response(JSON.stringify({ error: err.message }), { status: 502, headers: jsonHeaders });
   }
+}
+
+/**
+ * Log self-selected drinks for a runner.
+ *
+ * Access-code gated (same shared friend-group code as the OAuth flow), so
+ * only people with the code can write. Stores one JSON blob per runner in
+ * the DRINKS KV namespace under key `drinks:<runner_id>`, merging the
+ * supplied day→count entries over whatever's already stored.
+ *
+ * Request body:
+ *   {
+ *     access_code: "medoc26",
+ *     runner_id:   "louis",
+ *     entries:     { "2026-06-01": 3, "2026-06-02": 0, ... }   // ints
+ *   }
+ *
+ * Drink counts are clamped to 0..30 ints. Dates must be YYYY-MM-DD on/after
+ * the DRINK_WINDOW_START — anything else is ignored.
+ */
+async function handleLogDrinks(request, env) {
+  const cors = corsHeaders(env);
+  const jsonHeaders = { "Content-Type": "application/json", ...cors };
+
+  if (!env.DRINKS) {
+    return new Response(JSON.stringify({ error: "DRINKS KV namespace not bound" }), { status: 500, headers: jsonHeaders });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Malformed JSON body" }), { status: 400, headers: jsonHeaders });
+  }
+
+  // Access code gate.
+  const supplied = (body.access_code || "").toString().trim().toLowerCase();
+  const expected = (env.ACCESS_CODE   || "").toString().trim().toLowerCase();
+  if (!expected || supplied !== expected) {
+    return new Response(JSON.stringify({ error: "Wrong or missing access code" }), { status: 401, headers: jsonHeaders });
+  }
+
+  const runnerId = (body.runner_id || "").toString().trim();
+  if (!/^[a-z0-9_]+$/i.test(runnerId)) {
+    return new Response(JSON.stringify({ error: "Bad or missing runner_id" }), { status: 400, headers: jsonHeaders });
+  }
+
+  const entries = body.entries;
+  if (!entries || typeof entries !== "object" || Array.isArray(entries)) {
+    return new Response(JSON.stringify({ error: "entries must be an object of { date: count }" }), { status: 400, headers: jsonHeaders });
+  }
+
+  // Load existing blob, merge, write back.
+  const key = `drinks:${runnerId}`;
+  let stored = {};
+  try {
+    const raw = await env.DRINKS.get(key);
+    if (raw) stored = JSON.parse(raw);
+  } catch {
+    stored = {};
+  }
+
+  const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+  let written = 0;
+  for (const [day, val] of Object.entries(entries)) {
+    if (!dateRe.test(day)) continue;
+    if (day < DRINK_WINDOW_START) continue;
+    let n = Math.round(Number(val));
+    if (!Number.isFinite(n)) continue;
+    n = Math.max(0, Math.min(30, n));
+    stored[day] = n;
+    written++;
+  }
+
+  try {
+    await env.DRINKS.put(key, JSON.stringify(stored));
+  } catch (err) {
+    return new Response(JSON.stringify({ error: `KV write failed: ${err.message}` }), { status: 502, headers: jsonHeaders });
+  }
+
+  return new Response(JSON.stringify({ ok: true, runner_id: runnerId, written, days: stored }), { status: 200, headers: jsonHeaders });
+}
+
+/**
+ * Return all drinks logs as a single JSON object, keyed by runner_id:
+ *   { "louis": { "2026-06-01": 3, ... }, "matt": { ... }, ... }
+ *
+ * Open (no access code) — the build script reads this server-side at build
+ * time, and the logger page reads it to prefill. Nothing sensitive here.
+ */
+async function handleDrinksData(request, env) {
+  const cors = corsHeaders(env);
+  const jsonHeaders = { "Content-Type": "application/json", ...cors };
+
+  if (!env.DRINKS) {
+    // Graceful empty payload so the build script can no-op cleanly.
+    return new Response(JSON.stringify({}), { status: 200, headers: jsonHeaders });
+  }
+
+  const out = {};
+  try {
+    let cursor;
+    do {
+      const listed = await env.DRINKS.list({ prefix: "drinks:", cursor });
+      for (const k of listed.keys) {
+        const runnerId = k.name.slice("drinks:".length);
+        const raw = await env.DRINKS.get(k.name);
+        if (raw) {
+          try { out[runnerId] = JSON.parse(raw); } catch { /* skip bad blob */ }
+        }
+      }
+      cursor = listed.list_complete ? undefined : listed.cursor;
+    } while (cursor);
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 502, headers: jsonHeaders });
+  }
+
+  return new Response(JSON.stringify(out), { status: 200, headers: jsonHeaders });
 }
 
 /**

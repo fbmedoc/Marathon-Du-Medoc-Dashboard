@@ -23,6 +23,20 @@ compatibility_date = "2026-05-12"
 GITHUB_REPO    = "fbmedoc/Marathon-Du-Medoc-Dashboard"
 ALLOWED_ORIGIN = "https://fbmedoc.github.io"
 
+# KV namespace for the self-select drinks tracker. Logs are stored one blob
+# per runner under key `drinks:<runner_id>` (JSON map of date → drink count).
+#
+# Create it once, then paste the returned id below:
+#   cd webhook
+#   wrangler kv namespace create DRINKS
+#   wrangler kv namespace create DRINKS --preview
+#
+# Then fill in id / preview_id from the command output.
+[[kv_namespaces]]
+binding    = "DRINKS"
+id         = "REPLACE_WITH_KV_ID"
+preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
+
 # Scheduled trigger — Cloudflare honours this to the minute (unlike GitHub
 # Actions */5 cron, which gets throttled to 4-7 hour intervals on free tier).
 # The Worker's scheduled() handler fires repository_dispatch to GitHub so
