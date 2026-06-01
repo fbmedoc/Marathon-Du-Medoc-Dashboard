@@ -1031,6 +1031,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    position: relative;
   }
   .form-mini .d{
     display: inline-block;
@@ -1042,6 +1043,33 @@
   .form-mini .d.on{ background: var(--moss); border-color: var(--moss); }
   .form-mini .d.partial{ background: var(--gold); border-color: var(--gold); }
   .form-mini .d.skip{ background: var(--rust); border-color: var(--rust); }
+  /* Wine-glass overlay on the form dots — a day someone drank. The glass
+     sits just above the dot; deeper colour = heavier night. */
+  .form-mini .glass{
+    position: absolute;
+    top: -9px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    line-height: 1;
+    pointer-events: none;
+  }
+  .form-mini .glass.tipsy{ opacity: 0.85; filter: saturate(1.2); }
+  .form-mini .glass.heavy{ opacity: 1; filter: saturate(1.6) drop-shadow(0 0 1px rgba(140,29,18,0.6)); }
+  .form-mini .glass.light{ opacity: 0.55; }
+
+  /* Drinks pip in the standings 'Drinks 7d' column. */
+  .col-stat .v .drink-pip{
+    display: inline-block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+    border: 1px solid rgba(0,0,0,0.18);
+  }
+  .drink-pip.b0{ background: #d9e2cf; }
+  .drink-pip.b1{ background: #e8c98a; }
+  .drink-pip.b3{ background: #cf7d3a; }
+  .drink-pip.b5{ background: #8c1d12; }
   .form-mini .total{
     font-family: 'DM Mono', monospace;
     font-size: 9px;
@@ -1892,7 +1920,7 @@
           <div>Runner</div>
           <div class="r hide-mob">Last 7d</div>
           <div class="r hide-mob">Longest</div>
-          <div class="r">Predicted</div>
+          <div class="r">Drinks 7d</div>
         </div>
 
         <div class="runner top">
@@ -1905,8 +1933,8 @@
           <div class="col-stat hide-mob"><div class="v">43<span class="unit">km</span></div></div>
           <div class="col-stat hide-mob"><div class="v">14.5<span class="unit">km</span></div></div>
           <div class="col-stat">
-            <div class="v">5:38</div>
-            <div class="l">+98:08 to sub-4</div>
+            <div class="v">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:64%"></div></div>
         </div>
@@ -1920,8 +1948,8 @@
           <div class="col-stat hide-mob"><div class="v">33<span class="unit">km</span></div></div>
           <div class="col-stat hide-mob"><div class="v">13.0<span class="unit">km</span></div></div>
           <div class="col-stat">
-            <div class="v">4:37</div>
-            <div class="l">+37:01 to sub-4</div>
+            <div class="v">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:78%"></div></div>
         </div>
@@ -1935,8 +1963,8 @@
           <div class="col-stat hide-mob"><div class="v">30<span class="unit">km</span></div></div>
           <div class="col-stat hide-mob"><div class="v">14.0<span class="unit">km</span></div></div>
           <div class="col-stat">
-            <div class="v">4:54</div>
-            <div class="l">+54:23 to sub-4</div>
+            <div class="v">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:74%"></div></div>
         </div>
@@ -1950,8 +1978,8 @@
           <div class="col-stat hide-mob"><div class="v">30<span class="unit">km</span></div></div>
           <div class="col-stat hide-mob"><div class="v">20.0<span class="unit">km</span></div></div>
           <div class="col-stat">
-            <div class="v">3:37</div>
-            <div class="l">on for sub-4</div>
+            <div class="v">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:100%"></div></div>
         </div>
@@ -1965,8 +1993,8 @@
           <div class="col-stat hide-mob"><div class="v">26<span class="unit">km</span></div></div>
           <div class="col-stat hide-mob"><div class="v">21.0<span class="unit">km</span></div></div>
           <div class="col-stat">
-            <div class="v">4:08</div>
-            <div class="l">+8:31 to sub-4</div>
+            <div class="v">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:87%"></div></div>
         </div>
@@ -1981,8 +2009,8 @@
           <div class="col-stat hide-mob"><div class="v">21<span class="unit">km</span></div></div>
           <div class="col-stat hide-mob"><div class="v">20.5<span class="unit">km</span></div></div>
           <div class="col-stat">
-            <div class="v">4:07</div>
-            <div class="l">+7:51 to sub-4</div>
+            <div class="v">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:88%"></div></div>
         </div>
@@ -1997,8 +2025,8 @@
           <div class="col-stat hide-mob"><div class="v">16<span class="unit">km</span></div></div>
           <div class="col-stat hide-mob"><div class="v">24.4<span class="unit">km</span></div></div>
           <div class="col-stat">
-            <div class="v">4:03</div>
-            <div class="l">+3:57 to sub-4</div>
+            <div class="v">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:89%"></div></div>
         </div>
@@ -2012,8 +2040,8 @@
           <div class="col-stat hide-mob"><div class="v">15<span class="unit">km</span></div></div>
           <div class="col-stat hide-mob"><div class="v">16.5<span class="unit">km</span></div></div>
           <div class="col-stat">
-            <div class="v">4:29</div>
-            <div class="l">+29:44 to sub-4</div>
+            <div class="v">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:81%"></div></div>
         </div>
@@ -2027,8 +2055,8 @@
           <div class="col-stat hide-mob"><div class="v">8<span class="unit">km</span></div></div>
           <div class="col-stat hide-mob"><div class="v">12.2<span class="unit">km</span></div></div>
           <div class="col-stat">
-            <div class="v">5:15</div>
-            <div class="l">+75:39 to sub-4</div>
+            <div class="v">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:69%"></div></div>
         </div>
@@ -2042,8 +2070,8 @@
           <div class="col-stat hide-mob"><div class="v">8<span class="unit">km</span></div></div>
           <div class="col-stat hide-mob"><div class="v">13.4<span class="unit">km</span></div></div>
           <div class="col-stat">
-            <div class="v">4:14</div>
-            <div class="l">+14:00 to sub-4</div>
+            <div class="v">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:86%"></div></div>
         </div>
@@ -2058,7 +2086,7 @@
           <div class="col-stat hide-mob"><div class="v">4.2<span class="unit">km</span></div></div>
           <div class="col-stat">
             <div class="v">—</div>
-            <div class="l">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
         </div>
@@ -2073,7 +2101,7 @@
           <div class="col-stat hide-mob"><div class="v">—</div></div>
           <div class="col-stat">
             <div class="v">—</div>
-            <div class="l">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
         </div>
@@ -2088,7 +2116,7 @@
           <div class="col-stat hide-mob"><div class="v">—</div></div>
           <div class="col-stat">
             <div class="v">—</div>
-            <div class="l">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
         </div>
@@ -2104,7 +2132,7 @@
           <div class="col-stat hide-mob"><div class="v">—</div></div>
           <div class="col-stat">
             <div class="v">—</div>
-            <div class="l">—</div>
+            <div class="l">not logged</div>
           </div>
           <div class="progress-bar"><div class="fill" style="width:0%"></div></div>
         </div>
@@ -2167,6 +2195,13 @@
             </div>
           </div>
           <div class="award">
+            <div class="icon">🚱</div>
+            <div>
+              <div class="title">L'Abstinent<span class="scope">rolling 7d</span></div>
+              <div class="winner">No runner has both run and logged this week — the title waits.</div>
+            </div>
+          </div>
+          <div class="award">
             <div class="icon">🌡️</div>
             <div>
               <div class="title">The Sufferer<span class="scope">rolling 7d</span></div>
@@ -2185,6 +2220,13 @@
             <div>
               <div class="title">The Hangover Hero<span class="scope">Sat / Sun</span></div>
               <div class="winner">Highest weekend HR — <b>Danny Arthur</b>, 152bpm. Suspicious.</div>
+            </div>
+          </div>
+          <div class="award shame">
+            <div class="icon">🍷</div>
+            <div>
+              <div class="title">La Soif<span class="scope">rolling 7d</span></div>
+              <div class="winner">Nobody's owned up yet — log your week at /drinks.html.</div>
             </div>
           </div>
       </div>
@@ -2270,6 +2312,20 @@
           <div class="mini-row"><span class="pos">viii</span><span class="name">Marcus G.</span><span class="v ">178 bpm</span></div>
       </div>
 
+      <div class="mini-board">
+        <h3>Predicted Finish <span class="meta">Médoc time · Riegel + wine</span></h3>
+          <div class="mini-row top"><span class="pos">i</span><span class="name">Blaise Bacquet</span><span class="v">3:37</span></div>
+          <div class="mini-row"><span class="pos">ii</span><span class="name">Louis Illig</span><span class="v">4:03</span></div>
+          <div class="mini-row"><span class="pos">iii</span><span class="name">Fred Illig</span><span class="v">4:07</span></div>
+          <div class="mini-row"><span class="pos">iv</span><span class="name">Matt M.</span><span class="v">4:08</span></div>
+          <div class="mini-row"><span class="pos">v</span><span class="name">Marcus G.</span><span class="v">4:14</span></div>
+          <div class="mini-row"><span class="pos">vi</span><span class="name">Freddy B.</span><span class="v">4:29</span></div>
+          <div class="mini-row"><span class="pos">vii</span><span class="name">Jack L.</span><span class="v">4:37</span></div>
+          <div class="mini-row"><span class="pos">viii</span><span class="name">Danny Arthur</span><span class="v">4:54</span></div>
+          <div class="mini-row"><span class="pos">ix</span><span class="name">Will H.</span><span class="v">5:15</span></div>
+          <div class="mini-row"><span class="pos">x</span><span class="name">Dan Christie</span><span class="v">5:38</span></div>
+      </div>
+
       <div class="mini-board form-board">
         <h3>Form <span class="meta">Last 14 days · most consistent</span></h3>
         <div class="form-header-row">
@@ -2296,6 +2352,7 @@
         <div class="legend-row"><span class="form-mini"><i class="d on"></i></span><span class="lbl">Solid run — at least 5 km</span></div>
         <div class="legend-row"><span class="form-mini"><i class="d partial"></i></span><span class="lbl">Short or shake-out — under 5 km</span></div>
         <div class="legend-row"><span class="form-mini"><i class="d"></i></span><span class="lbl">Rest day or no run logged</span></div>
+        <div class="legend-row"><span class="form-mini"><span class="d-slot" style="width:11px;"><span class="glass tipsy" style="position:static;transform:none;">🍷</span></span></span><span class="lbl">A glass = drinks logged that day · <a href="drinks.html" style="color:var(--wine);">log yours</a></span></div>
       </div>
     </div>
   </section>
@@ -2750,7 +2807,7 @@
 
   <!-- FOOTER -->
   <footer class="footer">
-    <div><a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:14px;vertical-align:middle"></a> · Updated 21:51 BST</div>
+    <div><a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:14px;vertical-align:middle"></a> · Updated 21:53 BST</div>
     <div><em>« On y va, doucement. »</em></div>
     <div>Le Domaine · MMXXVI</div>
   </footer>

@@ -986,6 +986,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    position: relative;
   }
   .form-mini .d{
     display: inline-block;
@@ -997,6 +998,29 @@
   .form-mini .d.on{ background: var(--moss); border-color: var(--moss); }
   .form-mini .d.partial{ background: var(--gold); border-color: var(--gold); }
   .form-mini .d.skip{ background: var(--rust); border-color: var(--rust); }
+  .form-mini .glass{
+    position: absolute;
+    top: -8px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 7px;
+    line-height: 1;
+    pointer-events: none;
+  }
+  .form-mini .glass.tipsy{ opacity: 0.85; }
+  .form-mini .glass.heavy{ opacity: 1; filter: saturate(1.6); }
+  .form-mini .glass.light{ opacity: 0.5; }
+  .stat .v .drink-pip{
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+    border: 1px solid rgba(0,0,0,0.18);
+  }
+  .drink-pip.b0{ background: #d9e2cf; }
+  .drink-pip.b1{ background: #e8c98a; }
+  .drink-pip.b3{ background: #cf7d3a; }
+  .drink-pip.b5{ background: #8c1d12; }
   .form-mini .total{
     font-family: 'DM Mono', monospace;
     font-size: 8px;
@@ -1733,13 +1757,14 @@
           <div class="meta">138km total</div>
         </div>
         <div class="stat">
-          <div class="v">5:38</div>
-          <div class="l">+98:08 to sub-4</div>
+          <div class="v">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">43km</div></div>
           <div class="x"><div class="l">Total</div><div class="v">138km</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">14.5km</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">5:38</div></div>
         </div>
       </div>
       <div class="runner-card">
@@ -1750,13 +1775,14 @@
           <div class="meta">143km total</div>
         </div>
         <div class="stat">
-          <div class="v">4:37</div>
-          <div class="l">+37:01 to sub-4</div>
+          <div class="v">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">33km</div></div>
           <div class="x"><div class="l">Total</div><div class="v">143km</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">13.0km</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">4:37</div></div>
         </div>
       </div>
       <div class="runner-card">
@@ -1767,13 +1793,14 @@
           <div class="meta">40km total · 2-day streak</div>
         </div>
         <div class="stat">
-          <div class="v">4:54</div>
-          <div class="l">+54:23 to sub-4</div>
+          <div class="v">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">30km</div></div>
           <div class="x"><div class="l">Total</div><div class="v">40km</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">14.0km</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">4:54</div></div>
         </div>
       </div>
       <div class="runner-card">
@@ -1784,13 +1811,14 @@
           <div class="meta">156km total · 1-day streak</div>
         </div>
         <div class="stat">
-          <div class="v">3:37</div>
-          <div class="l">on for sub-4</div>
+          <div class="v">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">30km</div></div>
           <div class="x"><div class="l">Total</div><div class="v">156km</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">20.0km</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">3:37</div></div>
         </div>
       </div>
       <div class="runner-card">
@@ -1801,13 +1829,14 @@
           <div class="meta">127km total · 1-day streak</div>
         </div>
         <div class="stat">
-          <div class="v">4:08</div>
-          <div class="l">+8:31 to sub-4</div>
+          <div class="v">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">26km</div></div>
           <div class="x"><div class="l">Total</div><div class="v">127km</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">21.0km</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">4:08</div></div>
         </div>
       </div>
       <div class="runner-card">
@@ -1819,13 +1848,14 @@
           <div class="meta">199km total · 1-day streak</div>
         </div>
         <div class="stat">
-          <div class="v">4:07</div>
-          <div class="l">+7:51 to sub-4</div>
+          <div class="v">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">21km</div></div>
           <div class="x"><div class="l">Total</div><div class="v">199km</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">20.5km</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">4:07</div></div>
         </div>
       </div>
       <div class="runner-card">
@@ -1837,13 +1867,14 @@
           <div class="meta">160km total</div>
         </div>
         <div class="stat">
-          <div class="v">4:03</div>
-          <div class="l">+3:57 to sub-4</div>
+          <div class="v">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">16km</div></div>
           <div class="x"><div class="l">Total</div><div class="v">160km</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">24.4km</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">4:03</div></div>
         </div>
       </div>
       <div class="runner-card">
@@ -1854,13 +1885,14 @@
           <div class="meta">109km total · 1-day streak</div>
         </div>
         <div class="stat">
-          <div class="v">4:29</div>
-          <div class="l">+29:44 to sub-4</div>
+          <div class="v">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">15km</div></div>
           <div class="x"><div class="l">Total</div><div class="v">109km</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">16.5km</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">4:29</div></div>
         </div>
       </div>
       <div class="runner-card">
@@ -1871,13 +1903,14 @@
           <div class="meta">47km total · 1-day streak</div>
         </div>
         <div class="stat">
-          <div class="v">5:15</div>
-          <div class="l">+75:39 to sub-4</div>
+          <div class="v">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">8km</div></div>
           <div class="x"><div class="l">Total</div><div class="v">47km</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">12.2km</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">5:15</div></div>
         </div>
       </div>
       <div class="runner-card">
@@ -1888,13 +1921,14 @@
           <div class="meta">53km total</div>
         </div>
         <div class="stat">
-          <div class="v">4:14</div>
-          <div class="l">+14:00 to sub-4</div>
+          <div class="v">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">8km</div></div>
           <div class="x"><div class="l">Total</div><div class="v">53km</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">13.4km</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">4:14</div></div>
         </div>
       </div>
       <div class="runner-card">
@@ -1906,12 +1940,13 @@
         </div>
         <div class="stat">
           <div class="v">—</div>
-          <div class="l">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">—</div></div>
           <div class="x"><div class="l">Total</div><div class="v">4km</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">4.2km</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">—</div></div>
         </div>
       </div>
       <div class="runner-card">
@@ -1923,12 +1958,13 @@
         </div>
         <div class="stat">
           <div class="v">—</div>
-          <div class="l">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">—</div></div>
           <div class="x"><div class="l">Total</div><div class="v">—</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">—</div></div>
         </div>
       </div>
       <div class="runner-card">
@@ -1940,12 +1976,13 @@
         </div>
         <div class="stat">
           <div class="v">—</div>
-          <div class="l">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">—</div></div>
           <div class="x"><div class="l">Total</div><div class="v">—</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">—</div></div>
         </div>
       </div>
       <div class="runner-card">
@@ -1958,12 +1995,13 @@
         </div>
         <div class="stat">
           <div class="v">—</div>
-          <div class="l">—</div>
+          <div class="l">drinks 7d</div>
         </div>
         <div class="extras">
           <div class="x"><div class="l">Last 7d</div><div class="v">—</div></div>
           <div class="x"><div class="l">Total</div><div class="v">—</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">—</div></div>
+          <div class="x"><div class="l">Predicted</div><div class="v">—</div></div>
         </div>
       </div>
     </section>
@@ -2027,6 +2065,13 @@
             </div>
           </div>
           <div class="award">
+            <div class="icon">🚱</div>
+            <div>
+              <div class="title">L'Abstinent<span class="scope">rolling 7d</span></div>
+              <div class="winner">No runner has both run and logged this week — the title waits.</div>
+            </div>
+          </div>
+          <div class="award">
             <div class="icon">🌡️</div>
             <div>
               <div class="title">The Sufferer<span class="scope">rolling 7d</span></div>
@@ -2045,6 +2090,13 @@
             <div>
               <div class="title">The Hangover Hero<span class="scope">Sat / Sun</span></div>
               <div class="winner">Highest weekend HR — <b>Danny Arthur</b>, 152bpm. Suspicious.</div>
+            </div>
+          </div>
+          <div class="award shame">
+            <div class="icon">🍷</div>
+            <div>
+              <div class="title">La Soif<span class="scope">rolling 7d</span></div>
+              <div class="winner">Nobody's owned up yet — log your week at /drinks.html.</div>
             </div>
           </div>
       </div>
@@ -2128,6 +2180,20 @@
           <div class="mini-row"><span class="pos">viii</span><span class="name">Marcus G.</span><span class="v ">178 bpm</span></div>
       </div>
 
+      <div class="mini-board">
+        <h3>Predicted Finish <span class="meta">Médoc · Riegel + wine</span></h3>
+          <div class="mini-row top"><span class="pos">i</span><span class="name">Blaise Bacquet</span><span class="v">3:37</span></div>
+          <div class="mini-row"><span class="pos">ii</span><span class="name">Louis Illig</span><span class="v">4:03</span></div>
+          <div class="mini-row"><span class="pos">iii</span><span class="name">Fred Illig</span><span class="v">4:07</span></div>
+          <div class="mini-row"><span class="pos">iv</span><span class="name">Matt M.</span><span class="v">4:08</span></div>
+          <div class="mini-row"><span class="pos">v</span><span class="name">Marcus G.</span><span class="v">4:14</span></div>
+          <div class="mini-row"><span class="pos">vi</span><span class="name">Freddy B.</span><span class="v">4:29</span></div>
+          <div class="mini-row"><span class="pos">vii</span><span class="name">Jack L.</span><span class="v">4:37</span></div>
+          <div class="mini-row"><span class="pos">viii</span><span class="name">Danny Arthur</span><span class="v">4:54</span></div>
+          <div class="mini-row"><span class="pos">ix</span><span class="name">Will H.</span><span class="v">5:15</span></div>
+          <div class="mini-row"><span class="pos">x</span><span class="name">Dan Christie</span><span class="v">5:38</span></div>
+      </div>
+
       <div class="mini-board form-board">
         <h3>Form <span class="meta">Last 14d · most consistent</span></h3>
         <div class="form-header-row">
@@ -2147,6 +2213,7 @@
           <div class="mini-row"><span class="pos">xi</span><span class="name">Will J.</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
           <div class="mini-row"><span class="pos">xii</span><span class="name">Oskar K</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
           <div class="mini-row"><span class="pos">xiii</span><span class="name">Timothy L.</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;color:var(--wine-light);margin-top:8px;text-transform:uppercase;">🍷 = drinks logged that day · <a href="drinks.html" style="color:var(--wine);">log yours</a></div>
       </div>
     </section>
 
@@ -2281,7 +2348,7 @@
 
   <footer class="footer">
     <em>« On y va, doucement. »</em>
-    <a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:12px;vertical-align:middle"></a> · 21:51 BST
+    <a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:12px;vertical-align:middle"></a> · 21:53 BST
   </footer>
 
 </div>
