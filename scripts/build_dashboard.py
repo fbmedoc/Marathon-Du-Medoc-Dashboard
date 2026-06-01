@@ -1710,6 +1710,22 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
                     best = km
         return best
 
+    def drinks_in_window(r: RunnerStats, start: date, end: date) -> tuple[int, int]:
+        """(total drinks, session-days) a runner self-logged in [start, end].
+        Honour-system data; by_day is already clamped to the drink window, so
+        weeks before the tracker opened naturally return (0, 0)."""
+        total = 0
+        days = 0
+        for k, v in (r.drinks_by_day or {}).items():
+            try:
+                d = date.fromisoformat(k)
+            except (ValueError, TypeError):
+                continue
+            if start <= d <= end and v > 0:
+                total += v
+                days += 1
+        return total, days
+
     def first_name(r): return display_names.get(r.cfg["id"]) or r.cfg["name"].split()[0]
 
     def emit(tag, name, rest, score):
@@ -2015,6 +2031,32 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
             f"Squad was silent on {html_escape(silent_str)} — not a single run logged.",
             f"Squad was silent on {silent_str} — not a single run logged.",
             54))
+
+    # ── LA SOIF OF THE WEEK — thirstiest self-logged drinker in the window.
+    # Honour-system (drinks.html → KV); spans all runners, not just connected.
+    # by_day is clamped to the drink window, so weeks before the tracker
+    # opened stay bone-dry and this simply doesn't fire.
+    soif_pool = []
+    for r in runners:
+        t, d = drinks_in_window(r, week_start, week_end)
+        if t > 0:
+            soif_pool.append((r, t, d))
+    soif_pool.sort(key=lambda x: (-x[1], -x[2]))
+    if soif_pool:
+        soif_r, soif_drinks, soif_days = soif_pool[0]
+        drink_s = "drink" if soif_drinks == 1 else "drinks"
+        night_s = "night" if soif_days == 1 else "nights"
+        insights.append(emit_cat("soif", "🍷", first_name(soif_r),
+            f"led the bar — {soif_drinks} {drink_s} across {soif_days} {night_s}. La Soif salutes you.", 72))
+        # Squad tally, only when more than the leader contributed — otherwise
+        # it just restates the individual line above.
+        if len(soif_pool) > 1:
+            squad_drinks = sum(t for _, t, _ in soif_pool)
+            squad_sessions = sum(d for _, _, d in soif_pool)
+            insights.append(squad_insight("drinks_squad", "🍻",
+                f"Squad sank <strong>{squad_drinks}</strong> drinks across {squad_sessions} thirsty sessions this week.",
+                f"Squad sank {squad_drinks} drinks across {squad_sessions} thirsty sessions this week.",
+                50))
 
     # Squad WoW one-liner (always rendered separately at the top of the recap).
     squad_wow = None
