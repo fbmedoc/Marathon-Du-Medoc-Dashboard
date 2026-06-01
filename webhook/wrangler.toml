@@ -17,6 +17,11 @@ name = "medoc-26-webhook"
 main = "worker.js"
 compatibility_date = "2026-05-12"
 
+# Pinned because the local wrangler OAuth token can't auto-list accounts
+# (limited scopes) — without this, deploy/KV commands fail with "Failed to
+# automatically retrieve account IDs". Account IDs aren't secret.
+account_id = "22adf8f057dcd71a45dfbafb7c304273"
+
 # Non-secret variables. None of these are sensitive — repo name is public,
 # origin is the public Pages URL.
 [vars]
@@ -34,8 +39,8 @@ ALLOWED_ORIGIN = "https://fbmedoc.github.io"
 # Then fill in id / preview_id from the command output.
 [[kv_namespaces]]
 binding    = "DRINKS"
-id         = "REPLACE_WITH_KV_ID"
-preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
+id         = "13691b65b8ca4f5ba35d98a1a52f9a86"
+preview_id = "9b8798a2629a4debad917aa55bf4bd01"
 
 # Scheduled trigger — Cloudflare honours this to the minute (unlike GitHub
 # Actions */5 cron, which gets throttled to 4-7 hour intervals on free tier).
