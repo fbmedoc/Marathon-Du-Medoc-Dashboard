@@ -158,7 +158,9 @@ Self-select honour-system tracker. `drinks.html` (access-code gated) →
 `GET /drinks-data` at build time (graceful `{}` if Worker/KV unreachable,
 so the dashboard never breaks). Window opens **1 June 2026**
 (`DRINK_WINDOW_START`). Bands map est. drink count → vibe: 0 Sec ·
-1 Social · 2–3 Éméché · 4+ Bourré (stored as representative ints 0/1/3/5).
+1 Social · 2–3 Éméché · 4+ Bourré (stored as capped ints 0/1/2/4 — the
+top two bands are capped so one big night can't dominate the tables; the
+tracker logs a rolling 14-day window so the preceding ~week can be backfilled).
 Surfaces as: standings "Drinks 7d" column (predicted finish demoted to a
 "Predicted Finish" mini-board), wine-glass overlay on the 14-day form
 dots, and the two awards above.

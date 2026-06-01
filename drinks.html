@@ -2,7 +2,7 @@
 <!--
   Le Marathon Du Médoc 26 — Drinks Logger
   ────────────────────────────────────────
-  Self-select "how many did you have" tracker for the last 7 days (rolling,
+  Self-select "how many did you have" tracker for the last 14 days (rolling,
   starting 1 June 2026). Gated by the same shared friend-group access code as
   connect.html. Writes to the Worker's /log-drinks endpoint (→ DRINKS KV),
   reads back via /drinks-data to prefill.
@@ -10,11 +10,12 @@
   Honesty is the methodology. There is no validation against reality. C'est la
   vie de château.
 
-  Bands (representative drink count stored in KV):
+  Bands (point value stored in KV; capped so one big night can't dominate the
+  league tables — Bourré always reads as "4+ drinks"):
     Sec       0   — dry. A clean run tomorrow.
     Social    1   — one glass. "Light workout."
-    Éméché    3   — 2-3. Alcohol in the system.
-    Bourré    5   — 4+. A heavy night in the vineyards.
+    Éméché    2   — 2-3 drinks. Alcohol in the system.
+    Bourré    4   — 4+ drinks. A heavy night in the vineyards.
 -->
 <html lang="en">
 <head>
@@ -329,7 +330,7 @@
 
   <!-- ─── Step 1: pick runner + log ─── -->
   <div class="card hidden" id="log-card">
-    <h2>Your week so far</h2>
+    <h2>Your last two weeks</h2>
     <div class="field-label">Who are you?</div>
     <select class="cred-input" id="runner-select">
       <option value="">— choose your name —</option>
@@ -363,8 +364,8 @@
   const BANDS = [
     { v: 0, label: "Sec",     sub: "dry",  cls: "b0" },
     { v: 1, label: "Social",  sub: "1",    cls: "b1" },
-    { v: 3, label: "Éméché",  sub: "2–3",  cls: "b3" },
-    { v: 5, label: "Bourré",  sub: "4+",   cls: "b5" },
+    { v: 2, label: "Éméché",  sub: "2–3",  cls: "b3" },
+    { v: 4, label: "Bourré",  sub: "4+",   cls: "b5" },
   ];
 
   // localStorage keys (remember code + last name picked)
@@ -387,11 +388,11 @@
     const [y,m,d] = s.split("-").map(Number);
     return new Date(y, m-1, d);
   }
-  // The rolling window: up to 7 most-recent days, never before WINDOW_START.
+  // The rolling window: up to 14 most-recent days, never before WINDOW_START.
   function windowDays(){
     const today = new Date(); today.setHours(0,0,0,0);
     const start = parseYmd(WINDOW_START);
-    const earliest = new Date(today); earliest.setDate(earliest.getDate() - 6);
+    const earliest = new Date(today); earliest.setDate(earliest.getDate() - 13);
     const from = earliest < start ? start : earliest;
     const days = [];
     for (let d = new Date(from); d <= today; d.setDate(d.getDate()+1)){
@@ -521,7 +522,7 @@
       for (const [day, v] of Object.entries(mine)){
         // snap stored ints to the nearest band so old data still highlights
         const n = Number(v);
-        selections[day] = valid.has(n) ? n : (n <= 0 ? 0 : n === 1 ? 1 : n <= 3 ? 3 : 5);
+        selections[day] = valid.has(n) ? n : (n <= 0 ? 0 : n === 1 ? 1 : n <= 3 ? 2 : 4);
       }
       applySelections();
     }catch{ /* server may be down — leave blank */ }

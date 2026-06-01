@@ -58,6 +58,7 @@ TRAINING_START_LBL = "since 1 May"           # Short label for the UI
 #   4+     Bourré   — a heavy night in the vineyards.
 DRINK_WINDOW_START = date(2026, 6, 1)
 DRINK_WINDOW_LBL   = "since 1 June"
+DRINK_HEAVY_VALUE  = 4                       # top band (Bourré) — render as "4+"
 DRINKS_DATA_URL    = "https://medoc-26-webhook.bloem-fred.workers.dev/drinks-data"
 UK_TZ              = pytz.timezone("Europe/London")
 SUB_4_SECONDS      = 4 * 3600                # reference time for "to sub-4" deltas
@@ -313,6 +314,12 @@ def drinks_week_dot(total_7d: int) -> str:
     return "b5"
 
 
+def fmt_drink_total(total: int, heavy: bool) -> str:
+    """Render a drink total for prose. If any day hit the capped top band
+    (Bourré), the true count is unknown beyond the cap, so read as "N+"."""
+    return f"{total}+" if heavy else str(total)
+
+
 def fetch_drinks() -> dict:
     """GET the Worker's /drinks-data → { runner_id: { 'YYYY-MM-DD': int } }.
 
@@ -356,15 +363,19 @@ def attach_drinks(rs: "RunnerStats", drinks_map: dict, today_uk: date) -> None:
     win_start = max(DRINK_WINDOW_START, today_uk - timedelta(days=6))
     total = 0
     days = 0
+    heavy = False
     d = win_start
     while d <= today_uk:
         n = by_day.get(d.isoformat(), 0)
         total += n
         if n > 0:
             days += 1
+        if n >= DRINK_HEAVY_VALUE:
+            heavy = True
         d += timedelta(days=1)
     rs.drinks_7d = total
     rs.drink_days_7d = days
+    rs.drinks_7d_heavy = heavy
 
     # Running totals across the whole window (a "session day" = any day with ≥1 drink).
     rs.drink_days_total = sum(1 for v in by_day.values() if v > 0)
@@ -548,6 +559,7 @@ class RunnerStats:
     drinks_by_day: dict[str, int] = field(default_factory=dict)  # 'YYYY-MM-DD' → est. drinks
     has_drinks_log: bool = False
     drinks_7d: int = 0                         # total est. drinks in trailing 7d
+    drinks_7d_heavy: bool = False              # any trailing-7d day hit the capped top band
     drink_days_7d: int = 0                     # number of days drunk in trailing 7d
     drink_days_total: int = 0                  # running total of session-days since window start
     drinks_total: int = 0                      # running total of est. drinks since window start
@@ -1228,13 +1240,14 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
         soif = max(soif_candidates, key=lambda r: (r.drinks_7d, r.drink_days_7d))
         nights = soif.drink_days_7d
         night_s = "night" if nights == 1 else "nights"
+        soif_total = fmt_drink_total(soif.drinks_7d, soif.drinks_7d_heavy)
         awards["la_soif"] = {
             "title":  "La Soif",
             "icon":   "🍷",
             "detail": winner_html(
                 "Most drinks logged (7d) — ",
                 soif.cfg["name"],
-                f", {soif.drinks_7d} across {nights} {night_s}. Vive le Médoc.",
+                f", {soif_total} across {nights} {night_s}. Vive le Médoc.",
             ),
             "shame":  True,
         }
@@ -1258,7 +1271,7 @@ def build_awards(runners: list[RunnerStats], total_km_rank: list[RunnerStats]) -
         tail = (
             f", bone dry while running {abst.trailing_7d_km:.0f}km (7d). Saint."
             if abst.drinks_7d == 0
-            else f", just {abst.drinks_7d} drinks on {abst.trailing_7d_km:.0f}km (7d). Disciplined."
+            else f", just {fmt_drink_total(abst.drinks_7d, abst.drinks_7d_heavy)} drinks on {abst.trailing_7d_km:.0f}km (7d). Disciplined."
         )
         awards["labstinent"] = {
             "title":  "L'Abstinent",
@@ -1526,6 +1539,17 @@ def build_newsflash(
         run_s = "run" if e.pre7am_runs_trailing_7d == 1 else "runs"
         items.append({"label": "DAWN PATROL", "text": f"{first_name(e)} clocked {e.pre7am_runs_trailing_7d} pre-7am {run_s} in 7d · the rest of you were horizontal"})
 
+    # ── LA SOIF: thirstiest runner over the trailing 7d ─────────
+    # Honour-system drinks tracker (drinks.html → KV), not Strava. Top band
+    # is capped, so a heavy night reads as "4+".
+    soif_pool = [r for r in runners if r.has_drinks_log and r.drinks_7d > 0]
+    if soif_pool:
+        thirsty = max(soif_pool, key=lambda r: (r.drinks_7d, r.drink_days_7d))
+        tot = fmt_drink_total(thirsty.drinks_7d, thirsty.drinks_7d_heavy)
+        nights = thirsty.drink_days_7d
+        night_s = "night" if nights == 1 else "nights"
+        items.append({"label": "LA SOIF", "text": f"{first_name(thirsty)} logged {tot} drinks across {nights} {night_s} (7d) · the vineyards are calling"})
+
     # ── SQUAD TARGET PROGRESS ───────────────────────────────────
     if plan_status["connected_n"] > 0 and plan_status["total_target"] > 0:
         if plan_status["pct"] >= 100:
@@ -1710,12 +1734,15 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
                     best = km
         return best
 
-    def drinks_in_window(r: RunnerStats, start: date, end: date) -> tuple[int, int]:
-        """(total drinks, session-days) a runner self-logged in [start, end].
-        Honour-system data; by_day is already clamped to the drink window, so
-        weeks before the tracker opened naturally return (0, 0)."""
+    def drinks_in_window(r: RunnerStats, start: date, end: date) -> tuple[int, int, bool]:
+        """(total drinks, session-days, heavy) a runner self-logged in
+        [start, end]. `heavy` marks any day at the capped top band (Bourré),
+        so totals render as "N+". Honour-system data; by_day is already
+        clamped to the drink window, so weeks before the tracker opened
+        naturally return (0, 0, False)."""
         total = 0
         days = 0
+        heavy = False
         for k, v in (r.drinks_by_day or {}).items():
             try:
                 d = date.fromisoformat(k)
@@ -1724,7 +1751,9 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
             if start <= d <= end and v > 0:
                 total += v
                 days += 1
-        return total, days
+                if v >= DRINK_HEAVY_VALUE:
+                    heavy = True
+        return total, days, heavy
 
     def first_name(r): return display_names.get(r.cfg["id"]) or r.cfg["name"].split()[0]
 
@@ -2037,25 +2066,29 @@ def build_weekly_recap(runners: list[RunnerStats], week_history: list[dict], tod
     # by_day is clamped to the drink window, so weeks before the tracker
     # opened stay bone-dry and this simply doesn't fire.
     soif_pool = []
+    squad_heavy = False
     for r in runners:
-        t, d = drinks_in_window(r, week_start, week_end)
+        t, d, h = drinks_in_window(r, week_start, week_end)
         if t > 0:
-            soif_pool.append((r, t, d))
+            soif_pool.append((r, t, d, h))
+            if h:
+                squad_heavy = True
     soif_pool.sort(key=lambda x: (-x[1], -x[2]))
     if soif_pool:
-        soif_r, soif_drinks, soif_days = soif_pool[0]
-        drink_s = "drink" if soif_drinks == 1 else "drinks"
+        soif_r, soif_drinks, soif_days, soif_heavy = soif_pool[0]
+        soif_tot = fmt_drink_total(soif_drinks, soif_heavy)
         night_s = "night" if soif_days == 1 else "nights"
         insights.append(emit_cat("soif", "🍷", first_name(soif_r),
-            f"led the bar — {soif_drinks} {drink_s} across {soif_days} {night_s}. La Soif salutes you.", 72))
+            f"led the bar — {soif_tot} drinks across {soif_days} {night_s}. La Soif salutes you.", 72))
         # Squad tally, only when more than the leader contributed — otherwise
         # it just restates the individual line above.
         if len(soif_pool) > 1:
-            squad_drinks = sum(t for _, t, _ in soif_pool)
-            squad_sessions = sum(d for _, _, d in soif_pool)
+            squad_drinks = sum(t for _, t, _, _ in soif_pool)
+            squad_sessions = sum(d for _, _, d, _ in soif_pool)
+            squad_tot = fmt_drink_total(squad_drinks, squad_heavy)
             insights.append(squad_insight("drinks_squad", "🍻",
-                f"Squad sank <strong>{squad_drinks}</strong> drinks across {squad_sessions} thirsty sessions this week.",
-                f"Squad sank {squad_drinks} drinks across {squad_sessions} thirsty sessions this week.",
+                f"Squad sank <strong>{squad_tot}</strong> drinks across {squad_sessions} thirsty sessions this week.",
+                f"Squad sank {squad_tot} drinks across {squad_sessions} thirsty sessions this week.",
                 50))
 
     # Squad WoW one-liner (always rendered separately at the top of the recap).
