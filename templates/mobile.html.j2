@@ -1009,7 +1009,7 @@
   .form-mini .glass.tipsy{ opacity: 0.85; }
   .form-mini .glass.heavy{ opacity: 1; filter: saturate(1.6); }
   .form-mini .glass.light{ opacity: 0.5; }
-  .stat .v .drink-pip{
+  .drink-pip{
     display: inline-block;
     width: 8px; height: 8px;
     border-radius: 50%;
@@ -1617,11 +1617,11 @@
           <div class="meta">{{ r.meta }}</div>
         </div>
         <div class="stat">
-          <div class="v">{% if r.has_drinks_log %}<i class="drink-pip {{ r.drinks_dot }}"></i>{% endif %}{{ r.drinks_7d }}</div>
-          <div class="l">drinks 7d</div>
+          <div class="v">{{ r.trailing_7d_km }}{% if r.trailing_7d_km != "—" %}<span class="u">km</span>{% endif %}</div>
+          <div class="l">km · 7d</div>
         </div>
         <div class="extras">
-          <div class="x"><div class="l">Last 7d</div><div class="v">{{ r.trailing_7d_km }}{% if r.trailing_7d_km != "—" %}km{% endif %}</div></div>
+          <div class="x"><div class="l">Drinks 7d</div><div class="v">{% if r.has_drinks_log %}<i class="drink-pip {{ r.drinks_dot }}"></i>{% endif %}{{ r.drinks_7d }}</div></div>
           <div class="x"><div class="l">Total</div><div class="v">{{ r.total_km }}{% if r.total_km != "—" %}km{% endif %}</div></div>
           <div class="x"><div class="l">Longest</div><div class="v">{{ r.longest_km }}{% if r.longest_km != "—" %}km{% endif %}</div></div>
           <div class="x"><div class="l">Predicted</div><div class="v">{{ r.predicted }}</div></div>
@@ -1694,6 +1694,21 @@
         {% endfor %}
       </div>
 
+      <div class="mini-board form-board">
+        <h3>Form <span class="meta">Last 14d · most consistent</span></h3>
+        <div class="form-header-row">
+          <span class="form-day-labels">
+            {% for lbl in mini_boards.form.day_labels %}<span class="lbl">{{ lbl }}</span>{% endfor %}
+          </span>
+        </div>
+        {% for row in mini_boards.form.rows %}
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for cls in row.dots %}<span class="d-slot">{% set dk = row.drink_dots[loop.index0] %}{% if dk %}<span class="glass {{ dk }}">🍷</span>{% endif %}<i class="d {{ cls }}"></i></span>{% endfor %}<span class="total">{{ row.run_count }} run{% if row.run_count != 1 %}s{% endif %}</span></span></span></div>
+        {% else %}
+          <div class="mini-row"><span class="pos">—</span><span class="name">Waiting on runs</span><span class="v">—</span></div>
+        {% endfor %}
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;color:var(--wine-light);margin-top:8px;text-transform:uppercase;">🍷 = drinks logged that day · <a href="drinks.html" style="color:var(--wine);">log yours</a></div>
+      </div>
+
       <div class="mini-board">
         <h3>Pace Improvement <span class="meta">Rolling 14d · /km</span></h3>
         {% for row in mini_boards.pace_imp %}
@@ -1730,19 +1745,13 @@
         {% endfor %}
       </div>
 
-      <div class="mini-board form-board">
-        <h3>Form <span class="meta">Last 14d · most consistent</span></h3>
-        <div class="form-header-row">
-          <span class="form-day-labels">
-            {% for lbl in mini_boards.form.day_labels %}<span class="lbl">{{ lbl }}</span>{% endfor %}
-          </span>
-        </div>
-        {% for row in mini_boards.form.rows %}
-          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for cls in row.dots %}<span class="d-slot">{% set dk = row.drink_dots[loop.index0] %}{% if dk %}<span class="glass {{ dk }}">🍷</span>{% endif %}<i class="d {{ cls }}"></i></span>{% endfor %}<span class="total">{{ row.run_count }} run{% if row.run_count != 1 %}s{% endif %}</span></span></span></div>
+      <div class="mini-board">
+        <h3>Drinking Sessions <span class="meta">{{ drinks_window_label }} · days</span></h3>
+        {% for row in mini_boards.sessions %}
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
         {% else %}
-          <div class="mini-row"><span class="pos">—</span><span class="name">Waiting on runs</span><span class="v">—</span></div>
+          <div class="mini-row"><span class="pos">—</span><span class="name">No sessions logged yet — <a href="drinks.html" style="color:var(--wine);">log yours</a></span><span class="v">—</span></div>
         {% endfor %}
-        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;color:var(--wine-light);margin-top:8px;text-transform:uppercase;">🍷 = drinks logged that day · <a href="drinks.html" style="color:var(--wine);">log yours</a></div>
       </div>
     </section>
 

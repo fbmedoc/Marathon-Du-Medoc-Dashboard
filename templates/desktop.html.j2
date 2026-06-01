@@ -1558,7 +1558,7 @@
     .medoc-strip{ grid-template-columns: 1fr; }
     .header{ grid-template-columns: 1fr; gap: 16px; text-align: left; }
     .countdown{ text-align: left; }
-    .lb-headers, .runner{ grid-template-columns: 28px 1fr 90px; }
+    .lb-headers, .runner{ grid-template-columns: 28px 1fr 72px 88px; }
     .lb-headers .hide-mob, .runner .hide-mob{ display: none; }
     .squad-total{ grid-template-columns: 1fr; gap: 16px; }
     .squad-total .stats{ grid-template-columns: repeat(2, 1fr); }
@@ -1770,7 +1770,7 @@
         <div class="lb-headers">
           <div></div>
           <div>Runner</div>
-          <div class="r hide-mob">Last 7d</div>
+          <div class="r">Last 7d</div>
           <div class="r hide-mob">Longest</div>
           <div class="r">Drinks 7d</div>
         </div>
@@ -1786,7 +1786,7 @@
             </div>
             <div class="meta">{{ r.meta }}</div>
           </div>
-          <div class="col-stat hide-mob"><div class="v">{{ r.trailing_7d_km }}{% if r.trailing_7d_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
+          <div class="col-stat"><div class="v">{{ r.trailing_7d_km }}{% if r.trailing_7d_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
           <div class="col-stat hide-mob"><div class="v">{{ r.longest_km }}{% if r.longest_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
           <div class="col-stat">
             <div class="v">{% if r.has_drinks_log %}<i class="drink-pip {{ r.drinks_dot }}"></i>{% endif %}{{ r.drinks_7d }}</div>
@@ -1862,6 +1862,28 @@
         {% endfor %}
       </div>
 
+      <div class="mini-board form-board">
+        <h3>Form <span class="meta">Last 14 days · most consistent</span></h3>
+        <div class="form-header-row">
+          <span class="form-day-labels">
+            {% for lbl in mini_boards.form.day_labels %}<span class="lbl">{{ lbl }}</span>{% endfor %}
+          </span>
+        </div>
+        {% for row in mini_boards.form.rows %}
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for cls in row.dots %}<span class="d-slot">{% set dk = row.drink_dots[loop.index0] %}{% if dk %}<span class="glass {{ dk }}">🍷</span>{% endif %}<i class="d {{ cls }}"></i></span>{% endfor %}<span class="total">{{ row.run_count }} run{% if row.run_count != 1 %}s{% endif %}</span></span></span></div>
+        {% else %}
+          <div class="mini-row"><span class="pos">—</span><span class="name">Waiting on runs</span><span class="v">—</span></div>
+        {% endfor %}
+      </div>
+
+      <div class="mini-board form-legend">
+        <h3>How to Read <span class="meta">Form dots · 14 days</span></h3>
+        <div class="legend-row"><span class="form-mini"><i class="d on"></i></span><span class="lbl">Solid run — at least 5 km</span></div>
+        <div class="legend-row"><span class="form-mini"><i class="d partial"></i></span><span class="lbl">Short or shake-out — under 5 km</span></div>
+        <div class="legend-row"><span class="form-mini"><i class="d"></i></span><span class="lbl">Rest day or no run logged</span></div>
+        <div class="legend-row"><span class="form-mini"><span class="d-slot" style="width:11px;"><span class="glass tipsy" style="position:static;transform:none;">🍷</span></span></span><span class="lbl">A glass = drinks logged that day · <a href="drinks.html" style="color:var(--wine);">log yours</a></span></div>
+      </div>
+
       <div class="mini-board">
         <h3>Pace Improvement <span class="meta">Rolling 14d · /km</span></h3>
         {% for row in mini_boards.pace_imp %}
@@ -1898,26 +1920,13 @@
         {% endfor %}
       </div>
 
-      <div class="mini-board form-board">
-        <h3>Form <span class="meta">Last 14 days · most consistent</span></h3>
-        <div class="form-header-row">
-          <span class="form-day-labels">
-            {% for lbl in mini_boards.form.day_labels %}<span class="lbl">{{ lbl }}</span>{% endfor %}
-          </span>
-        </div>
-        {% for row in mini_boards.form.rows %}
-          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v"><span class="form-mini">{% for cls in row.dots %}<span class="d-slot">{% set dk = row.drink_dots[loop.index0] %}{% if dk %}<span class="glass {{ dk }}">🍷</span>{% endif %}<i class="d {{ cls }}"></i></span>{% endfor %}<span class="total">{{ row.run_count }} run{% if row.run_count != 1 %}s{% endif %}</span></span></span></div>
+      <div class="mini-board">
+        <h3>Drinking Sessions <span class="meta">{{ drinks_window_label }} · days · honour system</span></h3>
+        {% for row in mini_boards.sessions %}
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
         {% else %}
-          <div class="mini-row"><span class="pos">—</span><span class="name">Waiting on runs</span><span class="v">—</span></div>
+          <div class="mini-row"><span class="pos">—</span><span class="name">No sessions logged yet — <a href="drinks.html" style="color:var(--wine);">log yours</a></span><span class="v">—</span></div>
         {% endfor %}
-      </div>
-
-      <div class="mini-board form-legend">
-        <h3>How to Read <span class="meta">Form dots · 14 days</span></h3>
-        <div class="legend-row"><span class="form-mini"><i class="d on"></i></span><span class="lbl">Solid run — at least 5 km</span></div>
-        <div class="legend-row"><span class="form-mini"><i class="d partial"></i></span><span class="lbl">Short or shake-out — under 5 km</span></div>
-        <div class="legend-row"><span class="form-mini"><i class="d"></i></span><span class="lbl">Rest day or no run logged</span></div>
-        <div class="legend-row"><span class="form-mini"><span class="d-slot" style="width:11px;"><span class="glass tipsy" style="position:static;transform:none;">🍷</span></span></span><span class="lbl">A glass = drinks logged that day · <a href="drinks.html" style="color:var(--wine);">log yours</a></span></div>
       </div>
     </div>
   </section>

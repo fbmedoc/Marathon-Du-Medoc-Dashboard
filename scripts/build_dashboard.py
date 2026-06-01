@@ -366,6 +366,10 @@ def attach_drinks(rs: "RunnerStats", drinks_map: dict, today_uk: date) -> None:
     rs.drinks_7d = total
     rs.drink_days_7d = days
 
+    # Running totals across the whole window (a "session day" = any day with ≥1 drink).
+    rs.drink_days_total = sum(1 for v in by_day.values() if v > 0)
+    rs.drinks_total = sum(by_day.values())
+
     rs.today_drinks = by_day.get(today_uk.isoformat(), 0)
     rs.today_band   = drink_band(rs.today_drinks)["key"]
 
@@ -545,6 +549,8 @@ class RunnerStats:
     has_drinks_log: bool = False
     drinks_7d: int = 0                         # total est. drinks in trailing 7d
     drink_days_7d: int = 0                     # number of days drunk in trailing 7d
+    drink_days_total: int = 0                  # running total of session-days since window start
+    drinks_total: int = 0                      # running total of est. drinks since window start
     today_drinks: int = 0
     today_band: str = ""                       # "" | light | tipsy | heavy
     drink_dots: list[str] = field(default_factory=list)  # 14 entries aligned with form_dots
@@ -1327,6 +1333,23 @@ def build_mini_boards(runners: list[RunnerStats], today_uk: date) -> dict:
         reverse=False,
     )
 
+    # Drinking sessions: running total of session-days (any day with ≥1 drink)
+    # since the drink window opened. Honour-system, fed by drinks.html → KV.
+    # Most sessions on top; ties broken by total drinks. Spans ALL runners, not
+    # just Strava-connected ones — logging a pint doesn't require a Strava link.
+    sessions = []
+    sess_items = sorted(
+        [r for r in runners if r.has_drinks_log and r.drink_days_total > 0],
+        key=lambda r: (r.drink_days_total, r.drinks_total),
+        reverse=True,
+    )
+    for r in sess_items:
+        d, n = r.drink_days_total, r.drinks_total
+        sessions.append({
+            "name": r.cfg["name"],
+            "value": f"{d} day{'s' if d != 1 else ''} · {n} drink{'s' if n != 1 else ''}",
+        })
+
     # Form: rank by count of solid-run days, ties broken by short-run days.
     # Rewards consistency over the last 14 days, no penalty for rest.
     # Now shows every connected runner (used to be top 5 only).
@@ -1366,6 +1389,7 @@ def build_mini_boards(runners: list[RunnerStats], today_uk: date) -> dict:
         "elevation": elevation,
         "hr":        hr,
         "predicted": predicted,
+        "sessions":  sessions,
         "form":      form,
     }
 
