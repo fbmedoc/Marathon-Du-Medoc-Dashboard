@@ -665,7 +665,13 @@
 <script>
   // ─── Configuration ────────────────────────────────────────────────
   const REDIRECT_URI     = "https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/connect.html";
-  const SCOPE            = "activity:read_all";
+  // Request BOTH scopes. Strava treats activity:read_all as an opt-in
+  // checkbox on the consent screen — if a runner unticks it and we only
+  // requested read_all, their token comes back with no activity scope at
+  // all, and /athlete/activities returns 401. Including activity:read
+  // means the token still works for Everyone + Followers visibility runs
+  // (the default for most users) even if read_all is declined.
+  const SCOPE            = "activity:read,activity:read_all";
   const WORKER_BASE      = "https://medoc-26-webhook.bloem-fred.workers.dev";
   const EXCHANGE_URL     = WORKER_BASE + "/exchange-personal";
   const CHECK_CODE_URL   = WORKER_BASE + "/check-code";
