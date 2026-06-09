@@ -549,6 +549,7 @@ class RunnerStats:
     pace_improvement_s: float | None = None   # negative = faster · median pace on ≥5km runs, last 14d vs prior 14d
     pre7am_runs_week: int = 0
     trailing_7d_km: float = 0.0               # km in last 7 days (rolling), for Top Dog
+    longest_14d_km: float = 0.0               # longest single run in last 14 days, for Long Run Watch
     pre7am_runs_trailing_7d: int = 0          # pre-7am runs in last 7 days, for L'Aurore
     days_since_last_run: int = 999
     hangover_score: float | None = None       # weekend (Sat/Sun) HR / speed; higher = more hungover
@@ -766,6 +767,16 @@ def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
     )
     rs.wow_shift_km    = trailing_7_km - prior_7_km
     rs.trailing_7d_km  = trailing_7_km   # also used by Top Dog
+
+    # Longest single run in the last 14 days (Long Run Watch board). The
+    # all-time PB says who *has* gone long; this says who's long-run ready now.
+    rs.longest_14d_km = max(
+        (
+            (a.get("distance", 0) / 1000.0) for a in activities
+            if prior_start <= utc_to_uk(a["start_date"]).date() <= trailing_end
+        ),
+        default=0.0,
+    )
 
     # Pre-7am runs in the trailing 7 days (for L'Aurore)
     rs.pre7am_runs_trailing_7d = sum(
@@ -1346,6 +1357,17 @@ def build_mini_boards(runners: list[RunnerStats], today_uk: date) -> dict:
         reverse=False,
     )
 
+    # Long Run Watch: longest single run in the last 14 days vs the plan's
+    # long-run target for the current week. Hitting the target earns a tick
+    # and the moss colour — the most marathon-relevant readiness signal.
+    long_target = current_week_plan(today_uk)["long_km"]
+    long_watch = board(
+        lambda r: r.longest_14d_km > 0,
+        lambda r: r.longest_14d_km,
+        lambda v: f"{v:.1f} km" + (" ✓" if v >= long_target else ""),
+        value_class=lambda v: "good" if v >= long_target else "",
+    )
+
     # Drinking sessions: running total of session-days (any day with ≥1 drink)
     # since the drink window opened. Honour-system, fed by drinks.html → KV.
     # Most sessions on top; ties broken by total drinks. Spans ALL runners, not
@@ -1396,14 +1418,16 @@ def build_mini_boards(runners: list[RunnerStats], today_uk: date) -> dict:
     form = {"day_labels": day_labels, "rows": form_rows}
 
     return {
-        "most_km":   most_km,
-        "longest":   longest,
-        "pace_imp":  pace_imp,
-        "elevation": elevation,
-        "hr":        hr,
-        "predicted": predicted,
-        "sessions":  sessions,
-        "form":      form,
+        "most_km":     most_km,
+        "longest":     longest,
+        "long_watch":  long_watch,
+        "long_target": long_target,
+        "pace_imp":    pace_imp,
+        "elevation":   elevation,
+        "hr":          hr,
+        "predicted":   predicted,
+        "sessions":    sessions,
+        "form":        form,
     }
 
 
@@ -2364,6 +2388,17 @@ def make_runner_rows(runners: list[RunnerStats]) -> list[dict]:
             sub4 = "—"
             pct = 0
 
+        # Week-over-week momentum (trailing 7d vs the 7 before): glanceable
+        # arrow under the Last-7d figure. Shifts under 1 km are noise — show
+        # nothing rather than a fluttering arrow.
+        shift = r.wow_shift_km if r.connected else None
+        if shift is None or abs(shift) < 1.0:
+            trend_dir, trend_label = "", ""
+        elif shift > 0:
+            trend_dir, trend_label = "up", f"▲ +{shift:.0f} km"
+        else:
+            trend_dir, trend_label = "down", f"▼ −{abs(shift):.0f} km"
+
         rows.append({
             "rank":             i,
             "rank_roman":       to_roman(i),
@@ -2376,6 +2411,8 @@ def make_runner_rows(runners: list[RunnerStats]) -> list[dict]:
             "meta":             meta,
             "week_km":          f"{r.week_km:.0f}" if r.connected and r.week_km > 0 else "—",
             "trailing_7d_km":   f"{r.trailing_7d_km:.0f}" if r.connected and r.trailing_7d_km > 0 else "—",
+            "trend_dir":        trend_dir,
+            "trend_label":      trend_label,
             "total_km":         f"{int(round(r.total_km))}" if r.connected and r.total_km > 0 else "—",
             "longest_km":       f"{r.longest_km:.1f}" if r.connected and r.longest_km > 0 else "—",
             "predicted":        predicted,
@@ -2393,6 +2430,35 @@ def make_runner_rows(runners: list[RunnerStats]) -> list[dict]:
             "drink_dots":       r.drink_dots if r.drink_dots else [""] * 14,
         })
     return rows
+
+
+# ─── WhatsApp share text ───────────────────────────────────────────────
+def build_share_text(
+    runners: list[RunnerStats],
+    rows: list[dict],
+    trailing_7d: dict,
+    days_until: int,
+    today_uk: date,
+) -> str:
+    """Plain-text squad update for the dashboard's copy-to-clipboard button.
+    Built server-side so the page JS just copies a ready-made string."""
+    lines = [
+        f"🍷 MÉDOC 26 · SQUAD UPDATE · {today_uk.strftime('%a %d %b')}",
+        f"🏁 {days_until} days to race day",
+        "",
+        f"Last 7 days: {trailing_7d['total_km']} km · {trailing_7d['sessions']} sessions (squad)",
+    ]
+    podium = ["🥇", "🥈", "🥉"]
+    leaders = [r for r in rows if r["connected"] and r["trailing_7d_km"] != "—"]
+    for medal, r in zip(podium, leaders):
+        lines.append(f"{medal} {r['name']} — {r['trailing_7d_km']} km")
+    soif_pool = [r for r in runners if r.has_drinks_log and r.drinks_7d > 0]
+    if soif_pool:
+        thirsty = max(soif_pool, key=lambda r: (r.drinks_7d, r.drink_days_7d))
+        tot = fmt_drink_total(thirsty.drinks_7d, thirsty.drinks_7d_heavy)
+        lines += ["", f"🍷 La Soif: {thirsty.cfg['name']} — {tot} drinks (7d)"]
+    lines += ["", "Full board → https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/"]
+    return "\n".join(lines)
 
 
 # ─── Main render ───────────────────────────────────────────────────────
@@ -2453,6 +2519,7 @@ def main() -> None:
     news_flash   = build_newsflash(runners, group, days_until, this_week, plan_status, today_uk, week_history, display_names)
     weekly_recap = build_weekly_recap(runners, week_history, today_uk, display_names)
     recap_history = build_recap_history(runners, week_history, today_uk, display_names, max_recaps=4)
+    share_text   = build_share_text(runners, rows, trailing_7d, days_until, today_uk)
 
     synced_uk = datetime.now(UK_TZ).strftime("%H:%M %Z")
 
@@ -2484,6 +2551,7 @@ def main() -> None:
         "plan_targets":    PLAN_TARGETS,
         "drinks_window_label": DRINK_WINDOW_LBL,
         "drinks_any":      any(r.has_drinks_log for r in runners),
+        "share_text":      share_text,
     }
 
     env = Environment(

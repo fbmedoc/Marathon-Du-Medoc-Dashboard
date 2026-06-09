@@ -818,6 +818,25 @@
     color: var(--wine-light);
     margin-top: 2px;
   }
+  /* Week-over-week momentum arrow under the Last-7d figure. */
+  .col-stat .l.trend.up{ color: var(--moss); }
+  .col-stat .l.trend.down{ color: var(--rust); }
+  /* Copy-squad-update button: one tap → WhatsApp-ready text on the clipboard. */
+  .share-btn{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wine);
+    background: transparent;
+    border: 1px solid var(--gold);
+    border-radius: 3px;
+    padding: 5px 12px;
+    cursor: pointer;
+    margin-left: auto;
+  }
+  .share-btn:hover{ background: rgba(201,169,97,0.15); }
+  .share-btn.copied{ color: var(--moss); border-color: var(--moss); }
 
   .form-dots{
     display: flex;
@@ -1738,6 +1757,7 @@
       <span class="roman">I.</span>
       <h2>The Standings</h2>
       <span class="tag">Phase {{ current_phase.num }} · {{ current_phase.name }}</span>
+      <button class="share-btn" id="share-btn" type="button">📋 Copy squad update</button>
     </div>
 
     <!-- SQUAD TOTAL -->
@@ -1786,7 +1806,7 @@
             </div>
             <div class="meta">{{ r.meta }}</div>
           </div>
-          <div class="col-stat"><div class="v">{{ r.trailing_7d_km }}{% if r.trailing_7d_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
+          <div class="col-stat"><div class="v">{{ r.trailing_7d_km }}{% if r.trailing_7d_km != "—" %}<span class="unit">km</span>{% endif %}</div>{% if r.trend_label %}<div class="l trend {{ r.trend_dir }}">{{ r.trend_label }}</div>{% endif %}</div>
           <div class="col-stat hide-mob"><div class="v">{{ r.longest_km }}{% if r.longest_km != "—" %}<span class="unit">km</span>{% endif %}</div></div>
           <div class="col-stat">
             <div class="v">{% if r.has_drinks_log %}<i class="drink-pip {{ r.drinks_dot }}"></i>{% endif %}{{ r.drinks_7d }}</div>
@@ -1859,6 +1879,15 @@
           <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v">{{ row.value }}</span></div>
         {% else %}
           <div class="mini-row"><span class="pos">—</span><span class="name">No long runs yet</span><span class="v">—</span></div>
+        {% endfor %}
+      </div>
+
+      <div class="mini-board">
+        <h3>Long Run Watch <span class="meta">Last 14d · plan asks {{ mini_boards.long_target }} km</span></h3>
+        {% for row in mini_boards.long_watch %}
+          <div class="mini-row{% if loop.first %} top{% endif %}"><span class="pos">{{ roman_ranks[loop.index0]|default(loop.index) }}</span><span class="name">{{ row.name }}</span><span class="v {{ row.class|default('') }}">{{ row.value }}</span></div>
+        {% else %}
+          <div class="mini-row"><span class="pos">—</span><span class="name">No runs in the last 14 days</span><span class="v">—</span></div>
         {% endfor %}
       </div>
 
@@ -2079,5 +2108,37 @@
   </footer>
 
 </div>
+
+<script>
+  // Copy-squad-update: the text is baked in at build time (build_share_text).
+  (function(){
+    const btn = document.getElementById('share-btn');
+    if (!btn) return;
+    const text = {{ share_text|tojson }};
+    const idle = btn.textContent;
+    function done(){
+      btn.textContent = 'Copied ✓ paste into WhatsApp';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = idle; btn.classList.remove('copied'); }, 2500);
+    }
+    function fallback(){
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    btn.addEventListener('click', () => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else {
+        fallback();
+      }
+    });
+  })();
+</script>
 </body>
 </html>
