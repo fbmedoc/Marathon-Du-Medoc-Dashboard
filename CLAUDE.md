@@ -251,6 +251,15 @@ Fred adds three GitHub Secrets (`<NAME>_CLIENT_ID`, `_CLIENT_SECRET`,
 - **Hangover Hero**: Sat OR Sun runs, "Highest weekend HR".
 - **Award scope chips**: small gold chip per award showing time window.
 
+**Glanceability upgrades (June 9):**
+- **Momentum arrows in standings**: per-runner ▲/▼ + km delta under the
+  Last-7d figure (from `wow_shift_km`; hidden when |shift| < 1 km).
+- **Long Run Watch mini-board**: `longest_14d_km` vs the current week's
+  plan `long_km` target; ✓ + moss when met. Sits after "Longest Single Run".
+- **Copy squad update button** (`#share-btn`, both dashboards): copies a
+  WhatsApp-ready text built by `build_share_text()` (countdown, squad 7d
+  totals, top-3 by 7d km, La Soif) to the clipboard.
+
 **Activity filter**: `RUN_SPORT_TYPES = {Run, TrailRun, VirtualRun}`,
 checks both `type` and `sport_type` (defensive after Freddy's
 watch↔Strava sync hiccup; not a site bug).
