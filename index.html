@@ -818,6 +818,25 @@
     color: var(--wine-light);
     margin-top: 2px;
   }
+  /* Week-over-week momentum arrow under the Last-7d figure. */
+  .col-stat .l.trend.up{ color: var(--moss); }
+  .col-stat .l.trend.down{ color: var(--rust); }
+  /* Copy-squad-update button: one tap → WhatsApp-ready text on the clipboard. */
+  .share-btn{
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wine);
+    background: transparent;
+    border: 1px solid var(--gold);
+    border-radius: 3px;
+    padding: 5px 12px;
+    cursor: pointer;
+    margin-left: auto;
+  }
+  .share-btn:hover{ background: rgba(201,169,97,0.15); }
+  .share-btn.copied{ color: var(--moss); border-color: var(--moss); }
 
   .form-dots{
     display: flex;
@@ -1890,6 +1909,7 @@
       <span class="roman">I.</span>
       <h2>The Standings</h2>
       <span class="tag">Phase II · Build</span>
+      <button class="share-btn" id="share-btn" type="button">📋 Copy squad update</button>
     </div>
 
     <!-- SQUAD TOTAL -->
@@ -1930,7 +1950,7 @@
             </div>
             <div class="meta">205km total · 2-day streak</div>
           </div>
-          <div class="col-stat"><div class="v">60<span class="unit">km</span></div></div>
+          <div class="col-stat"><div class="v">60<span class="unit">km</span></div><div class="l trend up">▲ +33 km</div></div>
           <div class="col-stat hide-mob"><div class="v">13.0<span class="unit">km</span></div></div>
           <div class="col-stat">
             <div class="v">—</div>
@@ -1946,7 +1966,7 @@
             </div>
             <div class="meta">246km total · 1-day streak</div>
           </div>
-          <div class="col-stat"><div class="v">47<span class="unit">km</span></div></div>
+          <div class="col-stat"><div class="v">47<span class="unit">km</span></div><div class="l trend up">▲ +27 km</div></div>
           <div class="col-stat hide-mob"><div class="v">20.5<span class="unit">km</span></div></div>
           <div class="col-stat">
             <div class="v"><i class="drink-pip b0"></i>0</div>
@@ -1961,7 +1981,7 @@
             </div>
             <div class="meta">185km total · 1-day streak</div>
           </div>
-          <div class="col-stat"><div class="v">37<span class="unit">km</span></div></div>
+          <div class="col-stat"><div class="v">37<span class="unit">km</span></div><div class="l trend down">▼ −11 km</div></div>
           <div class="col-stat hide-mob"><div class="v">16.0<span class="unit">km</span></div></div>
           <div class="col-stat">
             <div class="v">—</div>
@@ -1976,7 +1996,7 @@
             </div>
             <div class="meta">137km total · 1-day streak</div>
           </div>
-          <div class="col-stat"><div class="v">28<span class="unit">km</span></div></div>
+          <div class="col-stat"><div class="v">28<span class="unit">km</span></div><div class="l trend up">▲ +12 km</div></div>
           <div class="col-stat hide-mob"><div class="v">16.5<span class="unit">km</span></div></div>
           <div class="col-stat">
             <div class="v"><i class="drink-pip b1"></i>3</div>
@@ -1991,7 +2011,7 @@
             </div>
             <div class="meta">155km total · 1-day streak</div>
           </div>
-          <div class="col-stat"><div class="v">28<span class="unit">km</span></div></div>
+          <div class="col-stat"><div class="v">28<span class="unit">km</span></div><div class="l trend up">▲ +7 km</div></div>
           <div class="col-stat hide-mob"><div class="v">21.0<span class="unit">km</span></div></div>
           <div class="col-stat">
             <div class="v"><i class="drink-pip b3"></i>8</div>
@@ -2006,7 +2026,7 @@
             </div>
             <div class="meta">74km total</div>
           </div>
-          <div class="col-stat"><div class="v">26<span class="unit">km</span></div></div>
+          <div class="col-stat"><div class="v">26<span class="unit">km</span></div><div class="l trend down">▼ −12 km</div></div>
           <div class="col-stat hide-mob"><div class="v">16.0<span class="unit">km</span></div></div>
           <div class="col-stat">
             <div class="v"><i class="drink-pip b0"></i>0</div>
@@ -2022,7 +2042,7 @@
             </div>
             <div class="meta">180km total · 1-day streak</div>
           </div>
-          <div class="col-stat"><div class="v">21<span class="unit">km</span></div></div>
+          <div class="col-stat"><div class="v">21<span class="unit">km</span></div><div class="l trend up">▲ +11 km</div></div>
           <div class="col-stat hide-mob"><div class="v">24.4<span class="unit">km</span></div></div>
           <div class="col-stat">
             <div class="v"><i class="drink-pip b3"></i>4</div>
@@ -2037,7 +2057,7 @@
             </div>
             <div class="meta">71km total · 2-day streak</div>
           </div>
-          <div class="col-stat"><div class="v">19<span class="unit">km</span></div></div>
+          <div class="col-stat"><div class="v">19<span class="unit">km</span></div><div class="l trend up">▲ +6 km</div></div>
           <div class="col-stat hide-mob"><div class="v">12.2<span class="unit">km</span></div></div>
           <div class="col-stat">
             <div class="v"><i class="drink-pip b5"></i>12</div>
@@ -2052,7 +2072,7 @@
             </div>
             <div class="meta">171km total</div>
           </div>
-          <div class="col-stat"><div class="v">15<span class="unit">km</span></div></div>
+          <div class="col-stat"><div class="v">15<span class="unit">km</span></div><div class="l trend down">▼ −15 km</div></div>
           <div class="col-stat hide-mob"><div class="v">20.0<span class="unit">km</span></div></div>
           <div class="col-stat">
             <div class="v">—</div>
@@ -2067,7 +2087,7 @@
             </div>
             <div class="meta">53km total</div>
           </div>
-          <div class="col-stat"><div class="v">—</div></div>
+          <div class="col-stat"><div class="v">—</div><div class="l trend down">▼ −8 km</div></div>
           <div class="col-stat hide-mob"><div class="v">13.4<span class="unit">km</span></div></div>
           <div class="col-stat">
             <div class="v">—</div>
@@ -2271,6 +2291,20 @@
           <div class="mini-row"><span class="pos">ix</span><span class="name">Jack L.</span><span class="v">13.0 km</span></div>
           <div class="mini-row"><span class="pos">x</span><span class="name">Will H.</span><span class="v">12.2 km</span></div>
           <div class="mini-row"><span class="pos">xi</span><span class="name">Oskar K</span><span class="v">4.2 km</span></div>
+      </div>
+
+      <div class="mini-board">
+        <h3>Long Run Watch <span class="meta">Last 14d · plan asks 22 km</span></h3>
+          <div class="mini-row top"><span class="pos">i</span><span class="name">Matt M.</span><span class="v ">21.0 km</span></div>
+          <div class="mini-row"><span class="pos">ii</span><span class="name">Fred Illig</span><span class="v ">20.3 km</span></div>
+          <div class="mini-row"><span class="pos">iii</span><span class="name">Blaise Bacquet</span><span class="v ">20.0 km</span></div>
+          <div class="mini-row"><span class="pos">iv</span><span class="name">Dan Christie</span><span class="v ">16.0 km</span></div>
+          <div class="mini-row"><span class="pos">v</span><span class="name">Danny Arthur</span><span class="v ">16.0 km</span></div>
+          <div class="mini-row"><span class="pos">vi</span><span class="name">Louis Illig</span><span class="v ">13.2 km</span></div>
+          <div class="mini-row"><span class="pos">vii</span><span class="name">Freddy B.</span><span class="v ">11.2 km</span></div>
+          <div class="mini-row"><span class="pos">viii</span><span class="name">Will H.</span><span class="v ">10.2 km</span></div>
+          <div class="mini-row"><span class="pos">ix</span><span class="name">Jack L.</span><span class="v ">9.1 km</span></div>
+          <div class="mini-row"><span class="pos">x</span><span class="name">Marcus G.</span><span class="v ">7.7 km</span></div>
       </div>
 
       <div class="mini-board form-board">
@@ -2814,11 +2848,43 @@
 
   <!-- FOOTER -->
   <footer class="footer">
-    <div><a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:14px;vertical-align:middle"></a> · Updated 21:50 BST</div>
+    <div><a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:14px;vertical-align:middle"></a> · Updated 21:52 BST</div>
     <div><em>« On y va, doucement. »</em></div>
     <div>Le Domaine · MMXXVI</div>
   </footer>
 
 </div>
+
+<script>
+  // Copy-squad-update: the text is baked in at build time (build_share_text).
+  (function(){
+    const btn = document.getElementById('share-btn');
+    if (!btn) return;
+    const text = "\ud83c\udf77 M\u00c9DOC 26 \u00b7 SQUAD UPDATE \u00b7 Tue 09 Jun\n\ud83c\udfc1 88 days to race day\n\nLast 7 days: 280 km \u00b7 34 sessions (squad)\n\ud83e\udd47 Jack L. \u2014 60 km\n\ud83e\udd48 Fred Illig \u2014 47 km\n\ud83e\udd49 Dan Christie \u2014 37 km\n\n\ud83c\udf77 La Soif: Will H. \u2014 12+ drinks (7d)\n\nFull board \u2192 https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/";
+    const idle = btn.textContent;
+    function done(){
+      btn.textContent = 'Copied ✓ paste into WhatsApp';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = idle; btn.classList.remove('copied'); }, 2500);
+    }
+    function fallback(){
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    btn.addEventListener('click', () => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else {
+        fallback();
+      }
+    });
+  })();
+</script>
 </body>
 </html>
