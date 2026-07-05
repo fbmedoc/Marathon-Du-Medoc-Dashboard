@@ -173,6 +173,16 @@ Secrets needed (reads are open).
 
 ## Gotchas / lessons learned
 
+- **Strava now requires a paid subscription for API app owners (June 2026).**
+  Standard-tier apps whose owner has no Strava subscription are set to
+  status "Inactive" — every API call returns 403 with body
+  `{"errors":[{"resource":"Application","field":"Status","code":"Inactive"}]}`.
+  Token refresh still succeeds, so the runner shows connected but with
+  "no runs since 1 May". Enforcement rolled out 29 June–2 July 2026 and
+  knocked out 6 of 12 runners (freddy, matt, friend9, friend11, friend12,
+  friend13). Fix: the app *owner* subscribes to Strava, then the app
+  reactivates. The build script logs the 403 body since commit `43b7...`.
+
 - **PowerShell 5.1, not Core.** `&&` and `||` don't work — use `;` with `if ($?)`. Ternary, null-coalescing, null-conditional all absent. Default file encoding is UTF-16 LE — pass `-Encoding utf8` for files other tools read.
 - **`wrangler secret put` via PowerShell stdin** appends a trailing newline that Strava rejects (403 on verify). Workaround: write to a temp file with `[System.IO.File]::WriteAllText` (no BOM, no newline) and pipe via `cmd /c "wrangler secret put NAME < file"`.
 - **`git commit -m "..."` in PowerShell mangles embedded double quotes** when passed to native exes. Symptom: git treats the rest of the message as pathspecs and errors `did not match any file(s) known to git`. Fix: write the message to a temp file with `[System.IO.File]::WriteAllText(..., UTF8Encoding($false))` and use `git commit -F <file>`. PowerShell here-strings (`@'...'@`) also work if the closing `'@` is at column 0 with no leading whitespace, but the temp-file route is bulletproof.
