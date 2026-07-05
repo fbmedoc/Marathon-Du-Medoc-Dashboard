@@ -180,7 +180,8 @@ def _exchange_refresh_token(client_id: str, client_secret: str, refresh: str) ->
         r.raise_for_status()
         return r.json()
     except Exception as e:
-        print(f"  token refresh failed: {e}", file=sys.stderr)
+        body = getattr(getattr(e, "response", None), "text", "")
+        print(f"  token refresh failed: {e} · body={body[:300]}", file=sys.stderr)
         return None
 
 
@@ -248,7 +249,8 @@ def fetch_activities_raw(access_token: str, after_ts: int) -> list[dict]:
             r.raise_for_status()
             batch = r.json()
         except Exception as e:
-            print(f"  activity fetch failed (page {page}): {e}", file=sys.stderr)
+            body = getattr(getattr(e, "response", None), "text", "")
+            print(f"  activity fetch failed (page {page}): {e} · body={body[:300]}", file=sys.stderr)
             break
         if not batch:
             break
