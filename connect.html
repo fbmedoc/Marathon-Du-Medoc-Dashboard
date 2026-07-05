@@ -1,25 +1,24 @@
 <!DOCTYPE html>
 <!--
-  Le Marathon Du Médoc 26 — Strava connect page.
+  Le Marathon Du Médoc 26 — Strava connect page (SHARED-APP flow, July 2026).
 
-  Strava's free tier caps a single app at 1 connected athlete, so each runner
-  creates their OWN personal Strava app. This page walks them through it:
+  Strava's June-2026 Developer Program change requires every API app owner to
+  hold a paid Strava subscription, which killed the per-runner personal apps.
+  Everyone now authorises against Fred's single subscribed Standard-tier app
+  (10-athlete cap, extension application pending). New flow:
 
     Step 0 — access code gate (shared friend-group code)
-    Step 1 — open Strava API settings, create a personal app with the exact
-             field values shown
-    Step 2 — paste Client ID + Client Secret here, click Connect with Strava
-             (the page stores both in localStorage, redirects to Strava with
-             the runner's own client_id, scope=activity:read_all)
-    Step 3 — Strava redirects back with ?code=…; the page POSTs the code +
-             the stored client_id/client_secret + the access code to the
-             Cloudflare Worker's /exchange-personal endpoint, which proxies
-             to Strava (token endpoint has no CORS) and returns the
-             refresh_token. The page displays all three credentials and a
-             pre-filled WhatsApp message to Freddy.
+    Step 1 — pick your name from the squad list, tap "Connect with Strava"
+             (redirects to Strava's consent screen for Fred's app; the
+             runner_id rides along in the OAuth `state` param)
+    Step 2 — Strava redirects back with ?code=…; the page POSTs
+             { access_code, runner_id, code } to the Worker's /register
+             endpoint, which exchanges the code using the app's own
+             credentials (Worker secrets) and stores the refresh token in
+             KV. Done — no credentials shown, nothing to WhatsApp.
 
-  The Worker doesn't store the runner's client_secret — it passes it
-  straight through. localStorage is wiped at the end so nothing lingers.
+  The runner never sees or handles any secret. Re-running the flow simply
+  overwrites the stored token (safe self-heal).
 -->
 <html lang="en">
 <head>
@@ -117,7 +116,6 @@
     margin: 0 10px;
     font-size: 18px;
   }
-
   .card{
     background: var(--cream);
     border: 1px solid var(--wine);
@@ -152,14 +150,6 @@
     background: rgba(201,169,97,0.12);
     border-left: 3px solid var(--gold);
   }
-  .hint code{
-    background: var(--paper);
-    padding: 1px 6px;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    border: 1px solid rgba(74,14,31,0.18);
-  }
-
   .step{
     font-family: 'DM Mono', monospace;
     font-size: 9px;
@@ -168,182 +158,6 @@
     color: var(--gold);
     margin-bottom: 4px;
   }
-
-  /* ─── Strava-app field reference table ───────────────────── */
-  .form-table{
-    margin-top: 16px;
-    border-top: 1px solid rgba(74,14,31,0.18);
-  }
-  .ft-row{
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(74,14,31,0.10);
-    font-size: 14px;
-  }
-  .ft-label{
-    flex: 0 0 130px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--wine-light);
-    padding-top: 3px;
-  }
-  .ft-val{
-    flex: 1;
-    background: var(--paper);
-    padding: 6px 10px;
-    border: 1px solid rgba(74,14,31,0.22);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--ink);
-    word-break: break-all;
-    user-select: all;
-    line-height: 1.4;
-    cursor: pointer;
-    position: relative;
-    transition: background 0.15s;
-  }
-  .ft-val:hover{ background: #fff8e2; }
-  .ft-val.copied::after{
-    content: 'copied';
-    position: absolute;
-    top: 50%;
-    right: 8px;
-    transform: translateY(-50%);
-    background: var(--moss);
-    color: var(--cream);
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    padding: 2px 6px;
-  }
-  .ft-row.ft-emphasis .ft-label{ color: var(--rust); }
-  .ft-row.ft-emphasis .ft-val{ border-color: var(--rust); border-width: 1.5px; }
-
-  /* ─── Critical-field callout (Auth Callback Domain) ──────── */
-  .critical-field{
-    margin-top: 22px;
-    padding: 18px 16px 14px;
-    background: var(--cream);
-    border: 2px solid var(--rust);
-    position: relative;
-  }
-  .critical-field::before{
-    content: '⚠ READ THIS';
-    position: absolute;
-    top: -10px;
-    left: 12px;
-    background: var(--rust);
-    color: var(--cream);
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    font-weight: 500;
-    letter-spacing: 0.18em;
-    padding: 2px 8px;
-  }
-  .cf-label{
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--rust);
-    margin-bottom: 10px;
-  }
-  .cf-val{
-    display: block;
-    padding: 12px 14px;
-    background: var(--paper);
-    border: 1.5px solid var(--rust);
-    font-family: 'DM Mono', monospace;
-    font-size: 16px;
-    color: var(--ink);
-    user-select: all;
-    cursor: pointer;
-    text-align: center;
-    margin-bottom: 12px;
-    letter-spacing: 0.02em;
-    transition: background 0.15s;
-  }
-  .cf-val:hover{ background: #fff8e2; }
-  .cf-val.copied{
-    background: rgba(90, 107, 63, 0.12);
-    border-color: var(--moss);
-  }
-  .cf-examples{ margin: 4px 0 10px; }
-  .cf-examples .ex{
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    padding: 3px 0;
-    letter-spacing: 0.01em;
-  }
-  .cf-examples .ex.ok{ color: var(--moss); }
-  .cf-examples .ex.bad{ color: var(--rust); text-decoration: line-through; opacity: 0.85; }
-  .cf-note{
-    font-size: 14px;
-    color: var(--wine-deep);
-    line-height: 1.5;
-    margin-top: 6px;
-  }
-  .cf-note strong{ color: var(--rust); }
-
-  /* ─── Credential input fields ────────────────────────────── */
-  .lbl{
-    display: block;
-    margin-top: 16px;
-    margin-bottom: 6px;
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--wine-light);
-  }
-  .cred-input{
-    width: 100%;
-    padding: 12px 14px;
-    font-family: 'DM Mono', monospace;
-    font-size: 14px;
-    background: var(--paper);
-    color: var(--ink);
-    border: 1px solid var(--wine);
-    border-radius: 0;
-    outline: none;
-  }
-  .cred-input:focus{
-    border-color: var(--gold);
-    box-shadow: inset 0 0 0 1px var(--gold);
-  }
-
-  /* ─── Output credentials block ───────────────────────────── */
-  .creds-out{
-    margin-top: 16px;
-    margin-bottom: 14px;
-  }
-  .cred-row{
-    margin-bottom: 10px;
-  }
-  .cred-label{
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--wine-light);
-    margin-bottom: 4px;
-  }
-  .cred-val{
-    padding: 10px 12px;
-    background: var(--paper);
-    border: 1px dashed var(--wine);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    word-break: break-all;
-    color: var(--ink);
-    user-select: all;
-    line-height: 1.4;
-  }
-
   .btn{
     display: inline-block;
     width: 100%;
@@ -374,35 +188,6 @@
     font-weight: 700;
     letter-spacing: 0.1em;
   }
-
-  .row{
-    display: flex;
-    gap: 10px;
-    margin-top: 14px;
-  }
-  .row .btn{ margin-top: 0; }
-  .btn.copy{
-    background: var(--gold);
-    color: var(--wine-deep);
-    border-color: var(--gold);
-  }
-  .btn.copy:hover{ background: var(--gold-bright); }
-  .btn.whatsapp{
-    background: #25D366;
-    color: white;
-    border-color: #128c7e;
-  }
-  .btn.whatsapp:hover{ background: #1ebe5d; }
-
-  .ok{
-    color: var(--moss);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    margin-top: 10px;
-    display: none;
-  }
   .err{
     color: var(--rust);
     font-family: 'DM Mono', monospace;
@@ -415,7 +200,6 @@
     text-align: left;
     line-height: 1.5;
   }
-
   .footer{
     margin-top: 40px;
     padding-top: 20px;
@@ -436,10 +220,7 @@
     font-size: 14px;
     margin-bottom: 10px;
   }
-
   .hidden{ display: none; }
-
-  /* Step 0 — access code input (preserved from earlier version) */
   .code-input{
     width: 100%;
     padding: 14px 16px;
@@ -460,20 +241,67 @@
     box-shadow: inset 0 0 0 1px var(--gold);
   }
 
-  /* Screenshot placeholders — swap the src for real shots later. */
-  .shot{
-    margin-top: 14px;
-    border: 1px solid rgba(74,14,31,0.22);
+  /* ─── Name picker grid ───────────────────────────────────── */
+  .names{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .name-btn{
+    padding: 13px 10px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--wine);
     background: var(--paper);
-    padding: 60px 20px;
+    border: 1px solid rgba(74,14,31,0.3);
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .name-btn:hover{ border-color: var(--gold); background: #fff8e2; }
+  .name-btn.picked{
+    background: var(--wine);
+    color: var(--cream);
+    border-color: var(--gold);
+  }
+  .name-btn .tag{
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-style: normal;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-top: 2px;
+  }
+
+  /* ─── Success card ───────────────────────────────────────── */
+  .success-mark{
+    font-size: 44px;
+    text-align: center;
+    margin: 8px 0 4px;
+  }
+  .athlete-name{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 800;
+    font-size: 26px;
+    color: var(--wine);
+    text-align: center;
+    margin: 6px 0 14px;
+  }
+  .spin{
     text-align: center;
     font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.2em;
+    font-size: 11px;
+    letter-spacing: 0.25em;
     text-transform: uppercase;
     color: var(--wine-light);
+    padding: 18px 0;
   }
-  .shot img{ max-width: 100%; height: auto; display: block; margin: 0 auto; }
 </style>
 </head>
 <body>
@@ -497,166 +325,52 @@
   <h1>Le Marathon Du Médoc 26</h1>
   <div class="sub">Strava Connection · Médoc MMXXVI</div>
 
-  <p class="prologue">
-    Three short steps to the leaderboard. You'll set up a tiny personal
-    Strava app, copy two values out of it, and send everything to Freddy.
-    Around five minutes — the only fiddly bit is the form, which is
-    spelled out here word-for-word.
-  </p>
+  <p class="prologue">Two taps and your runs flow to the squad dashboard. No app to create, no codes to copy — the vineyard handles the paperwork now.</p>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       STEP 0 — Access code
-       ═══════════════════════════════════════════════════════════ -->
-  <div class="card" id="step-0">
-    <div class="step">Step 0 · Access code</div>
-    <h2>Friends only</h2>
-    <p>
-      This dossier is for invited runners only. Ask Freddy in the group chat
-      if you weren't given the code — short word, all lowercase.
-    </p>
-    <input id="code-input" class="code-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="access code">
+  <!-- STEP 0 — access code -->
+  <div id="step-0" class="card">
+    <div class="step">Step I of II</div>
+    <h2>The password, s'il vous plaît</h2>
+    <p>This page is for the Médoc 26 squad only. Type the group code from the WhatsApp chat.</p>
+    <input id="code-input" class="code-input" type="text" placeholder="access code" autocomplete="off" autocapitalize="none">
+    <div id="code-err" class="err"></div>
     <button id="code-btn" class="btn">Continue</button>
-    <div class="err" id="code-err"></div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       STEP 1 — Create your personal Strava app
-       ═══════════════════════════════════════════════════════════ -->
-  <div class="card hidden" id="step-1">
-    <div class="step">Step 1 of 3</div>
-    <h2>Create your personal Strava app</h2>
-    <p>
-      Strava caps a shared app at one connected athlete, so we sidestep that
-      by each having our own — it's free, takes a minute, and only you ever
-      see the credentials.
-    </p>
-    <p>
-      Tap the button below to open Strava's API settings page in a new tab.
-      Log in with your usual Strava account, then fill in the form using
-      the exact values listed (tap any value here to copy it).
-      <strong>Keep that Strava tab open after you create the app</strong> —
-      Step 2 reads your Client ID and Secret from it.
-    </p>
-    <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener" class="btn">
-      Open Strava API settings ↗
-    </a>
+  <!-- STEP 1 — pick your name, connect -->
+  <div id="step-1" class="card hidden">
+    <div class="step">Step II of II</div>
+    <h2>Who are you?</h2>
+    <p>Tap your name, then connect. You'll bounce to Strava, tap <em>Authorize</em>, and land straight back here — done.</p>
+    <div id="names" class="names"></div>
+    <p class="hint">On Strava's screen keep <strong>both activity boxes ticked</strong> — including "private activities" if you want those counted. First 10 to connect get a slot (Strava caps the app at 10 while our extension request is pending).</p>
+    <div id="auth-err" class="err"></div>
+    <button id="auth-btn" class="btn" disabled>Connect with<span class="strava">STRAVA</span></button>
+  </div>
 
-    <div class="form-table">
-      <div class="ft-row"><span class="ft-label">App name</span>          <code class="ft-val" data-copy>My Médoc 26 Dashboard</code></div>
-      <div class="ft-row"><span class="ft-label">Category</span>          <code class="ft-val" data-copy>Visualizer</code></div>
-      <div class="ft-row"><span class="ft-label">Club</span>              <code class="ft-val">(leave blank)</code></div>
-      <div class="ft-row"><span class="ft-label">Website</span>           <code class="ft-val" data-copy>https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/</code></div>
-      <div class="ft-row"><span class="ft-label">Description</span>       <code class="ft-val" data-copy>Personal tracker for the 2026 Médoc training</code></div>
+  <!-- STEP 2 — registering / result -->
+  <div id="step-2" class="card hidden">
+    <div id="reg-busy">
+      <h2>Sealing the deal…</h2>
+      <div class="spin">Registering with the domaine ⏳</div>
     </div>
-
-    <!-- Pulled out of the form table because everyone gets this one wrong. -->
-    <div class="critical-field">
-      <div class="cf-label">Authorization Callback Domain — last field</div>
-      <code class="cf-val" data-copy>fbmedoc.github.io</code>
-      <div class="cf-examples">
-        <div class="ex ok">✓ fbmedoc.github.io</div>
-        <div class="ex bad">✗ https://fbmedoc.github.io</div>
-        <div class="ex bad">✗ fbmedoc.github.io/</div>
-        <div class="ex bad">✗ fbmedoc.github.io/Marathon-Du-Medoc-Dashboard</div>
-      </div>
-      <div class="cf-note">
-        <strong>Just the domain.</strong> No <code>https://</code>, no slash,
-        no path — Strava adds the rest itself. Different from the Website
-        field above. If you put anything else, Step 2 will fail with a
-        "redirect_uri mismatch" error.
-      </div>
+    <div id="reg-ok" class="hidden">
+      <div class="success-mark">🍷</div>
+      <h2 style="text-align:center">You're in.</h2>
+      <div class="athlete-name" id="athlete-name"></div>
+      <p style="text-align:center">Your runs will appear on the dashboard within the hour. That's it — you can close this page.</p>
+      <a class="btn" href="https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/">View the dashboard</a>
     </div>
-
-    <p class="hint" style="font-size:13px">
-      After you hit <em>Create</em>, Strava asks for an app icon. Any
-      square image works — a screenshot of your phone home screen, your
-      face, a wine bottle — we never see it.
-    </p>
-
-    <button class="btn" id="created-btn">Done — app is created</button>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════════════════
-       STEP 2 — Paste credentials, authorise
-       ═══════════════════════════════════════════════════════════ -->
-  <div class="card hidden" id="step-2">
-    <div class="step">Step 2 of 3</div>
-    <h2>Paste your two credentials</h2>
-    <p>
-      Switch back to the Strava API tab you opened in Step 1. Right at the
-      top of that page, under <strong>"My API Application"</strong>, you'll
-      see your <strong>Client ID</strong> (a 6-digit number) and a hidden
-      <strong>Client Secret</strong>. Click <em>Show</em> next to the secret
-      to reveal the 40-character string, then paste both into the fields
-      below.
-    </p>
-    <p class="hint" style="font-size:13px">
-      Lost the Strava tab?
-      <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener" style="color:var(--wine); text-decoration:underline; font-weight:600">Reopen Strava API settings ↗</a>
-      — your app is still there, you don't need to recreate it.
-    </p>
-
-    <label class="lbl" for="client-id">Client ID</label>
-    <input id="client-id" class="cred-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="e.g. 243802">
-
-    <label class="lbl" for="client-secret">Client Secret</label>
-    <input id="client-secret" class="cred-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="40-character string">
-
-    <button id="auth-btn" class="btn">
-      Connect with <span class="strava">STRAVA</span>
-    </button>
-    <p class="hint" style="font-size:13px">
-      The button sends you to Strava, where you click <em>Authorize</em> to
-      grant read-only access to your runs. Strava then redirects you back to
-      this page — Step 3 happens automatically.
-    </p>
-    <div class="err" id="auth-err"></div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════════════════
-       STEP 3 — Exchange code, display credentials, send to Freddy
-       ═══════════════════════════════════════════════════════════ -->
-  <div class="card hidden" id="step-3">
-    <div class="step">Step 3 of 3</div>
-    <h2 id="exchange-heading">Just a moment…</h2>
-    <p id="exchange-status">Converting Strava's one-time code into a long-lived refresh token.</p>
-    <div class="err" id="exchange-err"></div>
-
-    <div class="hidden" id="exchange-success">
-      <p>
-        Tap <strong>WhatsApp Freddy</strong> below — the message is pre-filled
-        with all three values. Just hit send. Freddy adds them as GitHub
-        Secrets and you appear on the leaderboard within an hour.
-      </p>
-
-      <div class="creds-out">
-        <div class="cred-row">
-          <div class="cred-label">Client ID</div>
-          <div class="cred-val" id="out-cid"></div>
-        </div>
-        <div class="cred-row">
-          <div class="cred-label">Client Secret</div>
-          <div class="cred-val" id="out-cs"></div>
-        </div>
-        <div class="cred-row">
-          <div class="cred-label">Refresh Token</div>
-          <div class="cred-val" id="out-rt"></div>
-        </div>
-      </div>
-
-      <div class="row">
-        <button class="btn copy" id="copy-btn">Copy all three</button>
-        <a class="btn whatsapp" id="whatsapp-btn" target="_blank" rel="noopener">WhatsApp Freddy</a>
-      </div>
-      <div class="ok" id="copy-ok">✓ Copied — now send it on WhatsApp</div>
+    <div id="reg-fail" class="hidden">
+      <h2>That didn't take.</h2>
+      <div id="reg-err" class="err" style="display:block"></div>
+      <button id="retry-btn" class="btn">Try again</button>
     </div>
   </div>
-
-  <div class="err" id="page-err"></div>
 
   <footer class="footer">
-    <em>« On y va, doucement. »</em>
-    <a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:14px;vertical-align:middle"></a>
+    <em>« Le vin est la lumière du soleil, captive dans l'eau. »</em>
+    <a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:12px"></a>
     <div style="margin-top:8px">Le Domaine · MMXXVI</div>
   </footer>
 
@@ -664,70 +378,55 @@
 
 <script>
   // ─── Configuration ────────────────────────────────────────────────
-  const REDIRECT_URI     = "https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/connect.html";
+  // Fred's shared Strava app. The client_id is public by design (it appears
+  // in every authorize URL); the client_secret lives ONLY in the Worker.
+  const CLIENT_ID    = "243802";
+  const REDIRECT_URI = "https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/connect.html";
   // Request BOTH scopes. Strava treats activity:read_all as an opt-in
   // checkbox on the consent screen — if a runner unticks it and we only
   // requested read_all, their token comes back with no activity scope at
-  // all, and /athlete/activities returns 401. Including activity:read
-  // means the token still works for Everyone + Followers visibility runs
-  // (the default for most users) even if read_all is declined.
-  const SCOPE            = "activity:read,activity:read_all";
-  const WORKER_BASE      = "https://medoc-26-webhook.bloem-fred.workers.dev";
-  const EXCHANGE_URL     = WORKER_BASE + "/exchange-personal";
-  const CHECK_CODE_URL   = WORKER_BASE + "/check-code";
+  // all. Including activity:read keeps the token useful either way.
+  const SCOPE        = "activity:read,activity:read_all";
+  const WORKER_BASE  = "https://medoc-26-webhook.bloem-fred.workers.dev";
+  const REGISTER_URL = WORKER_BASE + "/register";
+  const CHECK_CODE_URL = WORKER_BASE + "/check-code";
 
-  const LS_CODE = "medoc26.accessCode";
-  const LS_CID  = "medoc26.runnerClientId";
-  const LS_CS   = "medoc26.runnerClientSecret";
-  const LS_APP  = "medoc26.appCreated";
+  // Squad list — ids must match runners.json.
+  const RUNNERS = [
+    { id: "louis",    name: "Louis Illig",    tag: "★ The Groom" },
+    { id: "brother1", name: "Fred Illig",     tag: "Sibling Rivalry" },
+    { id: "brother2", name: "[Brother 2]",    tag: "Sibling Rivalry" },
+    { id: "matt",     name: "Matt M." },
+    { id: "will",     name: "Will J." },
+    { id: "freddy",   name: "Freddy B." },
+    { id: "friend7",  name: "Dan Christie" },
+    { id: "friend8",  name: "Blaise Bacquet" },
+    { id: "friend9",  name: "Danny Arthur" },
+    { id: "friend10", name: "Jack L." },
+    { id: "friend11", name: "Oskar K" },
+    { id: "friend12", name: "Will H." },
+    { id: "friend13", name: "Timothy L." },
+    { id: "friend14", name: "Marcus G." }
+  ];
+
+  const LS_CODE   = "medoc26.accessCode";
+  const LS_RUNNER = "medoc26.runnerId";
 
   // ─── Helpers ──────────────────────────────────────────────────────
   const $ = (id) => document.getElementById(id);
-
-  function showStep(n) {
-    for (let i = 0; i <= 3; i++) {
-      $("step-" + i).classList.toggle("hidden", i !== n);
-    }
-  }
-
   function lsGet(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
-  function lsDel(k) { try { localStorage.removeItem(k); } catch {} }
-
-  function showError(el, msg) {
-    el.textContent = msg;
-    el.style.display = "block";
+  function showError(el, msg) { el.textContent = msg; el.style.display = "block"; }
+  function hideError(el) { el.style.display = "none"; }
+  function showStep(n) {
+    for (let i = 0; i <= 2; i++) $("step-" + i).classList.toggle("hidden", i !== n);
   }
-  function hideError(el) {
-    el.style.display = "none";
-  }
-
-  // ─── Tap-to-copy on any field-reference element with data-copy ───
-  // (used by both .ft-val rows and the .cf-val critical-field callout)
-  document.querySelectorAll("[data-copy]").forEach((el) => {
-    el.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(el.textContent);
-      } catch {
-        const r = document.createRange();
-        r.selectNodeContents(el);
-        const s = window.getSelection();
-        s.removeAllRanges(); s.addRange(r);
-        document.execCommand("copy");
-      }
-      el.classList.add("copied");
-      setTimeout(() => el.classList.remove("copied"), 1200);
-    });
-  });
 
   // ─── Step 0: access code gate ─────────────────────────────────────
   $("code-btn").addEventListener("click", async () => {
     const code = $("code-input").value.trim().toLowerCase();
     hideError($("code-err"));
-    if (!code) {
-      showError($("code-err"), "Type the code first.");
-      return;
-    }
+    if (!code) { showError($("code-err"), "Type the code first."); return; }
     const btn = $("code-btn");
     btn.disabled = true;
     btn.textContent = "Checking…";
@@ -745,7 +444,7 @@
         return;
       }
       lsSet(LS_CODE, code);
-      enterApp();
+      showStep(1);
     } catch (err) {
       showError($("code-err"), "Couldn't reach the server: " + err.message);
       btn.disabled = false;
@@ -756,162 +455,108 @@
     if (e.key === "Enter") { e.preventDefault(); $("code-btn").click(); }
   });
 
-  // ─── Step 1: mark the app as created, advance to Step 2 ──────────
-  $("created-btn").addEventListener("click", () => {
-    lsSet(LS_APP, "1");
-    showStep(2);
-    setTimeout(() => $("client-id").focus(), 50);
+  // ─── Step 1: name grid + OAuth redirect ───────────────────────────
+  let pickedId = "";
+  const grid = $("names");
+  RUNNERS.forEach((r) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "name-btn";
+    b.innerHTML = r.tag ? `${r.name}<span class="tag">${r.tag}</span>` : r.name;
+    b.addEventListener("click", () => {
+      pickedId = r.id;
+      grid.querySelectorAll(".name-btn").forEach((x) => x.classList.remove("picked"));
+      b.classList.add("picked");
+      $("auth-btn").disabled = false;
+    });
+    grid.appendChild(b);
   });
 
-  // ─── Step 2: save credentials, redirect to Strava ─────────────────
   $("auth-btn").addEventListener("click", () => {
     hideError($("auth-err"));
-    const cid = $("client-id").value.trim();
-    const cs  = $("client-secret").value.trim();
-
-    if (!/^\d+$/.test(cid)) {
-      showError($("auth-err"), "Client ID should be all digits — copy it from Strava again.");
-      return;
-    }
-    if (cs.length < 20) {
-      showError($("auth-err"), "Client Secret looks too short. Click 'Show' on Strava, copy the whole 40-char string.");
-      return;
-    }
-
-    lsSet(LS_CID, cid);
-    lsSet(LS_CS,  cs);
-
+    if (!pickedId) { showError($("auth-err"), "Tap your name first."); return; }
+    lsSet(LS_RUNNER, pickedId);
     const url = new URL("https://www.strava.com/oauth/authorize");
-    url.searchParams.set("client_id",       cid);
+    url.searchParams.set("client_id",       CLIENT_ID);
     url.searchParams.set("redirect_uri",    REDIRECT_URI);
     url.searchParams.set("response_type",   "code");
     url.searchParams.set("approval_prompt", "auto");
     url.searchParams.set("scope",           SCOPE);
+    url.searchParams.set("state",           pickedId);
     window.location.href = url.toString();
   });
 
-  // ─── Step 3: exchange the OAuth code via the Worker ──────────────
-  async function runExchange() {
-    showStep(3);
-    const params = new URLSearchParams(window.location.search);
-    const code   = params.get("code");
-    const cid    = lsGet(LS_CID);
-    const cs     = lsGet(LS_CS);
-    const access = lsGet(LS_CODE);
+  // ─── Step 2: register via the Worker ──────────────────────────────
+  async function runRegister(code, runnerId, grantedScope) {
+    showStep(2);
+    $("reg-busy").classList.remove("hidden");
+    $("reg-ok").classList.add("hidden");
+    $("reg-fail").classList.add("hidden");
 
-    if (!code) {
-      showError($("exchange-err"), "No authorisation code in the URL. Refresh and try Step 2 again.");
+    function fail(msg) {
+      $("reg-busy").classList.add("hidden");
+      $("reg-fail").classList.remove("hidden");
+      $("reg-err").textContent = msg;
+    }
+
+    // Scope sanity: without activity:read the dashboard sees nothing.
+    if (grantedScope && !/activity:read/.test(grantedScope)) {
+      fail("Strava came back without activity access — the box was probably unticked. Tap 'Try again' and keep both activity boxes ticked this time.");
       return;
     }
-    if (!cid || !cs) {
-      showError($("exchange-err"),
-        "We've lost your Client ID / Secret from this browser. Go back to Step 2 and paste them again.");
+
+    const access = lsGet(LS_CODE);
+    if (!access) {
+      fail("Your access code got lost along the way. Refresh the page and start again.");
       return;
     }
 
     try {
-      const res = await fetch(EXCHANGE_URL, {
+      const res = await fetch(REGISTER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code:          code,
-          client_id:     cid,
-          client_secret: cs,
-          access_code:   access,
-        }),
+        body: JSON.stringify({ access_code: access, runner_id: runnerId, code: code })
       });
       const data = await res.json();
-      if (!res.ok || !data.refresh_token) {
-        throw new Error(data.error || "No refresh_token in response — try Step 2 again.");
+      if (!res.ok || !data.ok) {
+        fail(data.error || "Registration failed (HTTP " + res.status + "). Tap 'Try again'.");
+        return;
       }
-
-      // Display all three credentials
-      $("out-cid").textContent = cid;
-      $("out-cs").textContent  = cs;
-      $("out-rt").textContent  = data.refresh_token;
-
-      // WhatsApp prefill — sends everything Freddy needs in one message.
-      const lines = [
-        "Strava credentials for the Médoc dashboard:",
-        "",
-        "Client ID: "     + cid,
-        "Client Secret: " + cs,
-        "Refresh Token: " + data.refresh_token,
-      ];
-      if (data.athlete_name) lines.unshift("(From " + data.athlete_name + ")", "");
-      const msg = lines.join("\n");
-      $("whatsapp-btn").href = "https://wa.me/447511750773?text=" + encodeURIComponent(msg);
-
-      // Swap the loading copy for the success copy.
-      $("exchange-heading").textContent = "Send these to Freddy";
-      $("exchange-status").classList.add("hidden");
-      $("exchange-success").classList.remove("hidden");
-
-      // Clean the URL of the code (don't leave it sitting in the address bar)
-      // so a refresh doesn't try to redeem an already-used code.
-      try {
-        window.history.replaceState({}, document.title, REDIRECT_URI);
-      } catch {}
-
-      // Wipe the client_secret from localStorage now that we have what we
-      // need — keep accessCode + appCreated flag for return visits.
-      lsDel(LS_CID);
-      lsDel(LS_CS);
+      $("reg-busy").classList.add("hidden");
+      $("reg-ok").classList.remove("hidden");
+      $("athlete-name").textContent = data.athlete_name || "Bienvenue";
+      // Clean the one-shot code out of the URL so a refresh doesn't retry it.
+      history.replaceState(null, "", REDIRECT_URI);
     } catch (err) {
-      showError($("exchange-err"),
-        "Exchange failed: " + err.message + "\n\n" +
-        "Most common cause: the code has already been used. " +
-        "Refresh the page, then re-do Step 2.");
+      fail("Couldn't reach the server: " + err.message + ". Tap 'Try again'.");
     }
   }
 
-  // ─── Step 3 copy-all-three ───────────────────────────────────────
-  $("copy-btn").addEventListener("click", async () => {
-    const text =
-      "Client ID: "     + $("out-cid").textContent + "\n" +
-      "Client Secret: " + $("out-cs").textContent  + "\n" +
-      "Refresh Token: " + $("out-rt").textContent;
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {}
-    const ok = $("copy-ok");
-    ok.style.display = "block";
-    setTimeout(() => { ok.style.display = "none"; }, 3000);
+  $("retry-btn").addEventListener("click", () => {
+    history.replaceState(null, "", REDIRECT_URI);
+    showStep(1);
   });
 
-  // ─── Routing on page load ────────────────────────────────────────
-  function enterApp() {
-    const params = new URLSearchParams(window.location.search);
-    const code   = params.get("code");
-    const error  = params.get("error");
-
-    if (error) {
-      // Most likely: user tapped "Cancel" on Strava's authorise screen.
-      showStep(2);
-      showError($("page-err"),
-        "Strava said: " + error + ". Probably tapped 'Cancel'. " +
-        "Refresh and try Step 2 again.");
-      return;
-    }
-    if (code) {
-      // Returning from Strava with an OAuth code — exchange immediately.
-      runExchange();
-      return;
-    }
-    // First visit (or returning later) — pick up where we left off.
-    if (lsGet(LS_APP)) {
-      showStep(2);
-    } else {
+  // ─── Router ───────────────────────────────────────────────────────
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("error")) {
+    // Runner hit "Cancel" on Strava's screen.
+    showStep(1);
+    showError($("auth-err"), "Strava said: " + params.get("error") + ". Tap the button to try again.");
+  } else if (params.get("code")) {
+    const runnerId = params.get("state") || lsGet(LS_RUNNER);
+    if (!runnerId) {
       showStep(1);
+      showError($("auth-err"), "We lost track of who you are — tap your name and connect again.");
+    } else {
+      runRegister(params.get("code"), runnerId, params.get("scope") || "");
     }
-  }
-
-  if (lsGet(LS_CODE)) {
-    enterApp();
+  } else if (lsGet(LS_CODE)) {
+    // Returning visitor who already passed the gate.
+    showStep(1);
   } else {
     showStep(0);
   }
 </script>
-
 </body>
 </html>

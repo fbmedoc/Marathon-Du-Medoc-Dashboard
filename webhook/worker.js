@@ -30,14 +30,34 @@
  * here. The activity-event POST path triggers a GitHub repository_dispatch
  * if invoked, but with per-runner apps no one is subscribed to it by default.
  *
+ * SHARED-APP PIVOT (July 2026): Strava now requires app owners to hold a
+ * paid subscription, which killed most of the per-runner personal apps.
+ * Fred's single subscribed Standard-tier app (10-athlete cap) is now the
+ * one app everyone authorises against. Two jobs moved into this Worker:
+ *
+ *   4. POST /register       — runner authorises Fred's app; the Worker
+ *                             exchanges the OAuth code using the app's own
+ *                             credentials (Worker secrets) and stores the
+ *                             refresh token in KV under `token:<runner_id>`.
+ *                             Onboarding needs zero manual secret handling.
+ *
+ *   5. GET/POST /tokens     — authenticated (TOKENS_API_KEY bearer) read of
+ *                             all stored tokens for the build script, and
+ *                             write-back of rotated refresh tokens.
+ *
  * Required environment bindings:
- *   ACCESS_CODE         — secret, the shared friend-group code (e.g. medoc26)
- *   STRAVA_VERIFY_TOKEN — secret, random string for webhook handshake (unused
- *                         under per-runner-app architecture; safe to leave set)
- *   GITHUB_PAT          — secret, PAT with Actions:write on the dashboard repo
- *                         (used by both the webhook POST path AND the cron)
- *   GITHUB_REPO         — plain var, "owner/repo"
- *   ALLOWED_ORIGIN      — plain var, the dashboard's origin for CORS
+ *   ACCESS_CODE          — secret, the shared friend-group code (e.g. medoc26)
+ *   STRAVA_CLIENT_ID     — secret, Fred's shared Strava app client id
+ *   STRAVA_CLIENT_SECRET — secret, Fred's shared Strava app client secret
+ *   TOKENS_API_KEY       — secret, bearer key the build script uses on /tokens
+ *   STRAVA_VERIFY_TOKEN  — secret, random string for webhook handshake (unused
+ *                          under per-runner-app architecture; safe to leave set)
+ *   GITHUB_PAT           — secret, PAT with Actions:write on the dashboard repo
+ *                          (used by both the webhook POST path AND the cron)
+ *   GITHUB_REPO          — plain var, "owner/repo"
+ *   ALLOWED_ORIGIN       — plain var, the dashboard's origin for CORS
+ *   DRINKS               — KV namespace; holds `drinks:<id>` blobs AND the
+ *                          `token:<id>` refresh-token records
  */
 
 const CORS_BASE = {
@@ -95,6 +115,31 @@ export default {
       }
       if (request.method === "POST") {
         return handlePersonalExchange(request, env);
+      }
+      return new Response("Method not allowed", { status: 405 });
+    }
+
+    // ─── Shared-app OAuth registration (access-code gated) ─────────
+    if (url.pathname === "/register") {
+      if (request.method === "OPTIONS") {
+        return new Response(null, { status: 204, headers: corsHeaders(env) });
+      }
+      if (request.method === "POST") {
+        return handleRegister(request, env);
+      }
+      return new Response("Method not allowed", { status: 405 });
+    }
+
+    // ─── Token store for the build script (bearer-key gated) ───────
+    if (url.pathname === "/tokens") {
+      if (request.method === "OPTIONS") {
+        return new Response(null, { status: 204, headers: corsHeaders(env) });
+      }
+      if (request.method === "GET") {
+        return handleTokensGet(request, env);
+      }
+      if (request.method === "POST") {
+        return handleTokensPost(request, env);
       }
       return new Response("Method not allowed", { status: 405 });
     }
@@ -286,6 +331,193 @@ async function handlePersonalExchange(request, env) {
     console.error(`OAuth exchange error: ${err.message}`);
     return new Response(JSON.stringify({ error: err.message }), { status: 502, headers: jsonHeaders });
   }
+}
+
+/**
+ * Register a runner against Fred's SHARED Strava app.
+ *
+ * The runner has just come back from Strava's consent screen with a one-shot
+ * OAuth `code`. We exchange it here using the app's own credentials (Worker
+ * secrets — never exposed to the browser) and persist the refresh token in
+ * KV under `token:<runner_id>`. Re-registering overwrites — harmless, and it
+ * lets a runner self-heal by just doing the flow again.
+ *
+ * Request body: { access_code, runner_id, code }
+ * Response:     { ok: true, athlete_name, athlete_id }
+ */
+async function handleRegister(request, env) {
+  const cors = corsHeaders(env);
+  const jsonHeaders = { "Content-Type": "application/json", ...cors };
+
+  if (!env.DRINKS) {
+    return new Response(JSON.stringify({ error: "KV namespace not bound" }), { status: 500, headers: jsonHeaders });
+  }
+  if (!env.STRAVA_CLIENT_ID || !env.STRAVA_CLIENT_SECRET) {
+    return new Response(JSON.stringify({ error: "Shared app credentials not configured" }), { status: 500, headers: jsonHeaders });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Malformed JSON body" }), { status: 400, headers: jsonHeaders });
+  }
+
+  // Access code gate.
+  const supplied = (body.access_code || "").toString().trim().toLowerCase();
+  const expected = (env.ACCESS_CODE   || "").toString().trim().toLowerCase();
+  if (!expected || supplied !== expected) {
+    return new Response(JSON.stringify({ error: "Wrong or missing access code" }), { status: 401, headers: jsonHeaders });
+  }
+
+  const runnerId = (body.runner_id || "").toString().trim();
+  if (!/^[a-z0-9_]+$/i.test(runnerId)) {
+    return new Response(JSON.stringify({ error: "Bad or missing runner_id" }), { status: 400, headers: jsonHeaders });
+  }
+  const code = (body.code || "").toString().trim();
+  if (!code) {
+    return new Response(JSON.stringify({ error: "Missing OAuth code" }), { status: 400, headers: jsonHeaders });
+  }
+
+  try {
+    const stravaResp = await fetch("https://www.strava.com/oauth/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id:     env.STRAVA_CLIENT_ID,
+        client_secret: env.STRAVA_CLIENT_SECRET,
+        code:          code,
+        grant_type:    "authorization_code",
+      }).toString(),
+    });
+    const data = await stravaResp.json();
+
+    if (!stravaResp.ok || !data.refresh_token) {
+      console.error(`Shared-app exchange failed: ${stravaResp.status}`, data);
+      return new Response(JSON.stringify({
+        error: data.message || `Strava exchange failed (HTTP ${stravaResp.status}). ` +
+               `The code may have expired or already been used — tap "Connect with Strava" again. ` +
+               `If it keeps failing, the app may have hit its athlete cap.`,
+        details: data,
+      }), { status: stravaResp.status >= 500 ? 502 : 400, headers: jsonHeaders });
+    }
+
+    const athleteName = data.athlete
+      ? `${data.athlete.firstname || ""} ${data.athlete.lastname || ""}`.trim()
+      : null;
+    const athleteId = data.athlete ? data.athlete.id : null;
+
+    await env.DRINKS.put(`token:${runnerId}`, JSON.stringify({
+      refresh_token: data.refresh_token,
+      athlete_id:    athleteId,
+      athlete_name:  athleteName,
+      connected_at:  new Date().toISOString(),
+    }));
+
+    return new Response(JSON.stringify({
+      ok: true,
+      athlete_name: athleteName,
+      athlete_id:   athleteId,
+    }), { status: 200, headers: jsonHeaders });
+  } catch (err) {
+    console.error(`Register error: ${err.message}`);
+    return new Response(JSON.stringify({ error: err.message }), { status: 502, headers: jsonHeaders });
+  }
+}
+
+/** Bearer-key check shared by the /tokens read and write paths. */
+function tokensAuthOk(request, env) {
+  const auth = request.headers.get("Authorization") || "";
+  const key  = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+  return Boolean(env.TOKENS_API_KEY) && key === env.TOKENS_API_KEY;
+}
+
+/**
+ * Return every stored shared-app token record, keyed by runner_id:
+ *   { "louis": { refresh_token, athlete_id, athlete_name, connected_at }, ... }
+ * Auth: `Authorization: Bearer <TOKENS_API_KEY>` — refresh tokens are
+ * credentials, so unlike /drinks-data this is NOT open.
+ */
+async function handleTokensGet(request, env) {
+  const cors = corsHeaders(env);
+  const jsonHeaders = { "Content-Type": "application/json", ...cors };
+
+  if (!tokensAuthOk(request, env)) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: jsonHeaders });
+  }
+  if (!env.DRINKS) {
+    return new Response(JSON.stringify({}), { status: 200, headers: jsonHeaders });
+  }
+
+  const out = {};
+  try {
+    let cursor;
+    do {
+      const listed = await env.DRINKS.list({ prefix: "token:", cursor });
+      for (const k of listed.keys) {
+        const runnerId = k.name.slice("token:".length);
+        const raw = await env.DRINKS.get(k.name);
+        if (raw) {
+          try { out[runnerId] = JSON.parse(raw); } catch { /* skip bad blob */ }
+        }
+      }
+      cursor = listed.list_complete ? undefined : listed.cursor;
+    } while (cursor);
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 502, headers: jsonHeaders });
+  }
+
+  return new Response(JSON.stringify(out), { status: 200, headers: jsonHeaders });
+}
+
+/**
+ * Persist a rotated refresh token from the build script. Strava may rotate
+ * the refresh token on every refresh; whatever it returns last is the only
+ * valid one, so the build writes it straight back here.
+ * Body: { runner_id, refresh_token }
+ */
+async function handleTokensPost(request, env) {
+  const cors = corsHeaders(env);
+  const jsonHeaders = { "Content-Type": "application/json", ...cors };
+
+  if (!tokensAuthOk(request, env)) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: jsonHeaders });
+  }
+  if (!env.DRINKS) {
+    return new Response(JSON.stringify({ error: "KV namespace not bound" }), { status: 500, headers: jsonHeaders });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Malformed JSON body" }), { status: 400, headers: jsonHeaders });
+  }
+
+  const runnerId = (body.runner_id || "").toString().trim();
+  const refresh  = (body.refresh_token || "").toString().trim();
+  if (!/^[a-z0-9_]+$/i.test(runnerId) || !refresh) {
+    return new Response(JSON.stringify({ error: "Need runner_id and refresh_token" }), { status: 400, headers: jsonHeaders });
+  }
+
+  const key = `token:${runnerId}`;
+  let record = {};
+  try {
+    const raw = await env.DRINKS.get(key);
+    if (raw) record = JSON.parse(raw);
+  } catch {
+    record = {};
+  }
+  record.refresh_token = refresh;
+  record.rotated_at    = new Date().toISOString();
+
+  try {
+    await env.DRINKS.put(key, JSON.stringify(record));
+  } catch (err) {
+    return new Response(JSON.stringify({ error: `KV write failed: ${err.message}` }), { status: 502, headers: jsonHeaders });
+  }
+
+  return new Response(JSON.stringify({ ok: true }), { status: 200, headers: jsonHeaders });
 }
 
 /**

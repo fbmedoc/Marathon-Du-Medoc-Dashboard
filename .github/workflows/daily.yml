@@ -54,10 +54,16 @@ jobs:
 
       - name: Build dashboard
         env:
-          # Each runner has their own personal Strava app, so we need 3
-          # secrets per runner: their client_id, client_secret, and
-          # refresh_token. Runners without all 3 secrets set are shown as
-          # "Not connected" on the dashboard — no error, just skipped.
+          # SHARED APP (July-2026 pivot): runners registered via connect.html
+          # have their refresh token in Worker KV; the build pulls them with
+          # TOKENS_API_KEY and refreshes against Fred's subscribed app.
+          STRAVA_CLIENT_ID:       ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET:   ${{ secrets.STRAVA_CLIENT_SECRET }}
+          TOKENS_API_KEY:         ${{ secrets.TOKENS_API_KEY }}
+          # LEGACY per-runner personal apps (3 secrets each) — kept so any
+          # still-working old connection keeps flowing until everyone has
+          # re-connected via the shared app. Runners with neither source are
+          # shown as "Not connected" — no error, just skipped.
           LOUIS_CLIENT_ID:        ${{ secrets.LOUIS_CLIENT_ID }}
           LOUIS_CLIENT_SECRET:    ${{ secrets.LOUIS_CLIENT_SECRET }}
           LOUIS_REFRESH_TOKEN:    ${{ secrets.LOUIS_REFRESH_TOKEN }}

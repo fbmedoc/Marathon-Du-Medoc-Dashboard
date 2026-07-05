@@ -60,6 +60,16 @@ DRINK_WINDOW_START = date(2026, 6, 1)
 DRINK_WINDOW_LBL   = "since 1 June"
 DRINK_HEAVY_VALUE  = 4                       # top band (Bourré) — render as "4+"
 DRINKS_DATA_URL    = "https://medoc-26-webhook.bloem-fred.workers.dev/drinks-data"
+TOKENS_URL         = "https://medoc-26-webhook.bloem-fred.workers.dev/tokens"
+
+# Shared Strava app (July-2026 pivot). Strava's new subscription requirement
+# killed most per-runner personal apps, so runners now authorise against
+# Fred's single subscribed app via connect.html → Worker /register → KV.
+# The build pulls those tokens from the Worker; runners without a KV entry
+# fall back to the legacy per-runner GitHub-secret credentials.
+SHARED_CLIENT_ID     = os.environ.get("STRAVA_CLIENT_ID", "").strip()
+SHARED_CLIENT_SECRET = os.environ.get("STRAVA_CLIENT_SECRET", "").strip()
+TOKENS_API_KEY       = os.environ.get("TOKENS_API_KEY", "").strip()
 UK_TZ              = pytz.timezone("Europe/London")
 SUB_4_SECONDS      = 4 * 3600                # reference time for "to sub-4" deltas
 MEDOC_PENALTY      = 1.10                    # Médoc time = marathon × this (wine stops!)
@@ -186,7 +196,8 @@ def _exchange_refresh_token(client_id: str, client_secret: str, refresh: str) ->
 
 
 def get_access_token(runner_id: str, client_id: str, client_secret: str,
-                     secret_refresh: str, cache: dict) -> str | None:
+                     secret_refresh: str, cache: dict,
+                     on_rotate=None) -> str | None:
     """
     Get a working access token for the runner, using the cache to avoid
     unnecessary refreshes. Strava rotates refresh tokens, so we cache the
@@ -223,6 +234,10 @@ def get_access_token(runner_id: str, client_id: str, client_secret: str,
         "refresh_token": new_tokens["refresh_token"],
         "expires_at":    new_tokens["expires_at"],
     }
+    # Strava rotated the refresh token → persist it at the source (Worker KV
+    # for shared-app runners) or the stored one eventually goes stale.
+    if on_rotate and new_tokens["refresh_token"] != secret_refresh:
+        on_rotate(new_tokens["refresh_token"])
     return new_tokens["access_token"]
 
 
@@ -320,6 +335,52 @@ def fmt_drink_total(total: int, heavy: bool) -> str:
     """Render a drink total for prose. If any day hit the capped top band
     (Bourré), the true count is unknown beyond the cap, so read as "N+"."""
     return f"{total}+" if heavy else str(total)
+
+
+def fetch_shared_tokens() -> dict:
+    """GET the Worker's /tokens → { runner_id: { refresh_token, ... } }.
+
+    Authenticated with TOKENS_API_KEY (refresh tokens are credentials).
+    Degrades gracefully: no key / Worker down / 401 → {} and every runner
+    falls back to their legacy per-runner secrets.
+    """
+    if not TOKENS_API_KEY:
+        return {}
+    try:
+        r = requests.get(
+            TOKENS_URL,
+            headers={"Authorization": f"Bearer {TOKENS_API_KEY}"},
+            timeout=10,
+        )
+        r.raise_for_status()
+        data = r.json()
+        if isinstance(data, dict):
+            print(f"Shared app: loaded tokens for {len(data)} runner(s).")
+            return data
+    except Exception as e:
+        print(f"  shared-token fetch failed (falling back to legacy secrets): {e}", file=sys.stderr)
+    return {}
+
+
+def push_rotated_token(runner_id: str, refresh_token: str) -> None:
+    """Write a rotated refresh token back to the Worker KV. Best-effort —
+    Strava rotates refresh tokens, so whatever it returned last is the only
+    valid one and must outlive this build."""
+    if not TOKENS_API_KEY:
+        return
+    try:
+        requests.post(
+            TOKENS_URL,
+            headers={
+                "Authorization": f"Bearer {TOKENS_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={"runner_id": runner_id, "refresh_token": refresh_token},
+            timeout=10,
+        ).raise_for_status()
+        print(f"  [{runner_id}] rotated refresh token persisted to Worker KV")
+    except Exception as e:
+        print(f"  [{runner_id}] rotated-token write-back failed: {e}", file=sys.stderr)
 
 
 def fetch_drinks() -> dict:
@@ -571,26 +632,41 @@ class RunnerStats:
     drink_dots: list[str] = field(default_factory=list)  # 14 entries aligned with form_dots
 
 
-def compute_runner(cfg: dict, today_uk: date, token_cache: dict) -> RunnerStats:
+def compute_runner(cfg: dict, today_uk: date, token_cache: dict,
+                   shared_tokens: dict | None = None) -> RunnerStats:
     """Compute every stat the dashboard needs for one runner."""
     rs = RunnerStats(cfg=cfg)
 
-    # Each runner has their own Strava app: 3 secrets per runner.
-    # Any one missing → mark as Not connected, skip API calls.
-    client_id     = os.environ.get(cfg["client_id_secret"], "").strip()
-    client_secret = os.environ.get(cfg["client_secret_secret"], "").strip()
-    refresh       = os.environ.get(cfg["refresh_token_secret"], "").strip()
+    # Credential source, in preference order:
+    #   1. SHARED APP — runner registered via connect.html → Worker KV holds
+    #      their refresh token; client credentials are Fred's subscribed app.
+    #   2. LEGACY — the runner's own personal app via 3 GitHub secrets
+    #      (kept alive so still-working per-runner apps keep flowing until
+    #      everyone has migrated).
+    shared = (shared_tokens or {}).get(cfg["id"])
+    on_rotate = None
+    if shared and shared.get("refresh_token") and SHARED_CLIENT_ID and SHARED_CLIENT_SECRET:
+        client_id     = SHARED_CLIENT_ID
+        client_secret = SHARED_CLIENT_SECRET
+        refresh       = shared["refresh_token"]
+        rid = cfg["id"]
+        on_rotate = lambda new_rt, _rid=rid: push_rotated_token(_rid, new_rt)
+        print(f"[{cfg['id']}] using shared app token")
+    else:
+        client_id     = os.environ.get(cfg["client_id_secret"], "").strip()
+        client_secret = os.environ.get(cfg["client_secret_secret"], "").strip()
+        refresh       = os.environ.get(cfg["refresh_token_secret"], "").strip()
 
-    missing = [k for k, v in (
-        ("client_id",     client_id),
-        ("client_secret", client_secret),
-        ("refresh_token", refresh),
-    ) if not v]
-    if missing:
-        print(f"[{cfg['id']}] missing {', '.join(missing)} — marking disconnected")
-        return rs
+        missing = [k for k, v in (
+            ("client_id",     client_id),
+            ("client_secret", client_secret),
+            ("refresh_token", refresh),
+        ) if not v]
+        if missing:
+            print(f"[{cfg['id']}] no shared token, missing {', '.join(missing)} — marking disconnected")
+            return rs
 
-    access = get_access_token(cfg["id"], client_id, client_secret, refresh, token_cache)
+    access = get_access_token(cfg["id"], client_id, client_secret, refresh, token_cache, on_rotate)
     if not access:
         print(f"[{cfg['id']}] token refresh failed — marking disconnected")
         return rs
@@ -2479,10 +2555,12 @@ def main() -> None:
         print(f"Drinks: loaded logs for {len(drinks_map)} runner(s).")
 
     # Crunch per-runner stats
+    shared_tokens = fetch_shared_tokens()
+
     runners: list[RunnerStats] = []
     for cfg in runners_cfg:
         try:
-            rs = compute_runner(cfg, today_uk, token_cache)
+            rs = compute_runner(cfg, today_uk, token_cache, shared_tokens)
         except Exception as e:
             print(f"[{cfg['id']}] unexpected error: {e}", file=sys.stderr)
             rs = RunnerStats(cfg=cfg)
