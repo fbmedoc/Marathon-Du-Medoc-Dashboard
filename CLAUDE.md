@@ -25,11 +25,38 @@ from that date, not rolling windows.
 | Owner | Fred Bloem · bloem.fred@gmail.com · WhatsApp +447511750773 |
 | Access code | `medoc26` (shared friend-group gate, lowercase) |
 
-## Architecture (post-May-2026 pivot)
+## Architecture (post-JULY-2026 pivot: SHARED APP)
 
-**Each runner runs their own personal Strava app.** This sidesteps the
+**Everyone authorises against Fred's single subscribed Strava app**
+(client_id **243802**, Standard tier, callback domain fbmedoc.github.io).
+Strava's June-2026 rule — app owners must hold a paid Strava subscription —
+killed the per-runner personal apps (6 of 12 went "Inactive" between
+29 Jun–2 Jul). Fred subscribed, so his app is the one that works.
+**10-athlete cap** on the app; first 10 to connect get a slot (extension
+application to Strava planned).
+
+New onboarding (2 clicks, no credentials handled by anyone):
+connect.html → access code → tap your name → Strava consent (runner_id in
+OAuth `state`) → page POSTs code to Worker `/register` → Worker exchanges
+with app credentials (Worker secrets) → refresh token stored in KV
+`token:<runner_id>`. Build pulls tokens via `GET /tokens` (bearer
+`TOKENS_API_KEY`) and writes rotated refresh tokens back via POST.
+Re-running connect overwrites the KV entry (safe self-heal).
+
+GitHub secrets for the shared app: `STRAVA_CLIENT_ID`,
+`STRAVA_CLIENT_SECRET`, `TOKENS_API_KEY` (same key as the Worker secret).
+Worker secrets: `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`,
+`TOKENS_API_KEY` (+ existing `ACCESS_CODE`).
+
+Legacy per-runner secrets still work as a fallback (compute_runner tries
+the KV token first, then the runner's 3 GitHub secrets) so any surviving
+old connection keeps flowing until its owner re-connects.
+
+## Legacy architecture (May–June 2026, superseded)
+
+**Each runner ran their own personal Strava app.** This sidestepped the
 1-athlete cap on shared apps — the original architecture had one app with
-13 tokens, which Strava blocked. Now: 13 independent OAuth contexts.
+13 tokens, which Strava blocked. 13 independent OAuth contexts.
 
 ```
 Each runner → their own Strava app → 3 GitHub Secrets per runner
@@ -138,7 +165,10 @@ Each award has a neutral fallback when not enough data.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | POST | `/check-code` | Validate access code |
-| POST | `/exchange-personal` | OAuth proxy: takes `{code, client_id, client_secret, access_code}`, returns `{refresh_token, athlete_name}` |
+| POST | `/register` | **Shared-app onboarding**: `{access_code, runner_id, code}` → exchanges with shared app creds, stores refresh token in KV `token:<runner_id>` |
+| GET | `/tokens` | **Auth: Bearer TOKENS_API_KEY.** All token records `{runner_id: {refresh_token, athlete_id, athlete_name}}` for the build |
+| POST | `/tokens` | Same auth. `{runner_id, refresh_token}` → persist rotated refresh token |
+| POST | `/exchange-personal` | LEGACY OAuth proxy: takes `{code, client_id, client_secret, access_code}`, returns `{refresh_token, athlete_name}` |
 | POST | `/log-drinks` | Drinks logger write (access-code gated). Body `{access_code, runner_id, entries:{date:int}}` → merges into `drinks:<id>` KV blob |
 | GET | `/drinks-data` | **Open** read. Returns `{runner_id: {date: int}}` for the build script + logger prefill |
 | GET | `/` (with `hub.*` params) | Webhook subscription handshake (vestigial) |
@@ -207,19 +237,16 @@ Secrets needed (reads are open).
 | Add runner GitHub secrets | Repo Settings → Secrets and variables → Actions |
 | Rename a runner slot | Edit `runners.json` on GitHub |
 
-## Onboarding a new runner
+## Onboarding a new runner (shared-app flow)
 
 1. Fred sends connect URL + `medoc26` via WhatsApp.
-2. Runner: access code → create their own Strava app at
-   <https://www.strava.com/settings/api> (Auth Callback Domain
-   `fbmedoc.github.io`) → paste Client ID + Secret → authorise → page
-   exchanges and shows all 3 credentials → WhatsApp Freddy.
-3. Fred adds 3 GitHub Secrets (`<NAME>_CLIENT_ID`, `_CLIENT_SECRET`,
-   `_REFRESH_TOKEN`).
-4. Fred edits `runners.json` to replace placeholder name with real one.
-5. Next hourly build (or manual trigger) → runner appears on dashboard.
+2. Runner: access code → tap their name → authorise on Strava → done.
+   (~30 seconds, zero credentials handled, nothing for Fred to do.)
+3. Next build (≤5 min) → runner appears on dashboard.
 
-Per runner: ~5 min runner side + ~2 min Fred side.
+The name grid in connect.html is hardcoded from `runners.json` — adding a
+brand-new squad member means adding them to BOTH files. Runners don't need
+a Strava subscription themselves; only the app owner (Fred) does.
 
 ## Current state (2026-05-25)
 
