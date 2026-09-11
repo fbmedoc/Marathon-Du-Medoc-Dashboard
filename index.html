@@ -1611,7 +1611,7 @@
       <div class="sub">No. I &nbsp;·&nbsp; Honest mileage, mild rivalries, and twenty-three wine stops at the finish &nbsp;·&nbsp; Médoc MMXXVI</div>
     </div>
     <div class="countdown">
-      <div class="num">1</div>
+      <div class="num">0</div>
       <div class="lbl">Days Until Glory</div>
       <div class="date">5 September 2026</div>
     </div>
@@ -1622,15 +1622,21 @@
     <div class="nf-label">News Flash</div>
     <div class="nf-track-wrap">
       <div class="nf-track">
-          <span><b>COUNTDOWN:</b> 1 days · we are now officially in the panic zone · </span>
+          <span><b>RACE DAY:</b> Today is the day · on y va, doucement · </span>
           <span><b>PHASE:</b> Week 19 of 18 — Race Week · RACE DAY 🍷 · 42.2km · château by château. On y va. · </span>
-          <span><b>ROLL CALL:</b> 14 of 13 still ghosting the dashboard · we see you, lads · </span>
+          <span><b>ROLL CALL:</b> 2 of 13 still ghosting the dashboard · we see you, lads · </span>
+          <span><b>LEADERBOARD:</b> Top three this season: Louis > Fred I. > Matt · everyone below has months to do something about it · </span>
+          <span><b>GHOST:</b> Louis hasn't logged a run in 999 days · the dashboard has a long memory · </span>
+          <span><b>TARGET:</b> Squad at 0% of target this week · the wine isn't going anywhere, but neither are you · </span>
           <span><b>DRESS CODE:</b> Costumes are mandatory · this is non-negotiable, yes it'll chafe · </span>
           <span><b>RUMOUR:</b> One château allegedly pours grand cru · find the queue, join it, lose 12 minutes · </span>
           <span><b>PSA:</b> If you can hold a conversation on your long run the pace is right · if you're explaining politics, you're going too easy · </span>
-          <span><b>COUNTDOWN:</b> 1 days · we are now officially in the panic zone · </span>
+          <span><b>RACE DAY:</b> Today is the day · on y va, doucement · </span>
           <span><b>PHASE:</b> Week 19 of 18 — Race Week · RACE DAY 🍷 · 42.2km · château by château. On y va. · </span>
-          <span><b>ROLL CALL:</b> 14 of 13 still ghosting the dashboard · we see you, lads · </span>
+          <span><b>ROLL CALL:</b> 2 of 13 still ghosting the dashboard · we see you, lads · </span>
+          <span><b>LEADERBOARD:</b> Top three this season: Louis > Fred I. > Matt · everyone below has months to do something about it · </span>
+          <span><b>GHOST:</b> Louis hasn't logged a run in 999 days · the dashboard has a long memory · </span>
+          <span><b>TARGET:</b> Squad at 0% of target this week · the wine isn't going anywhere, but neither are you · </span>
           <span><b>DRESS CODE:</b> Costumes are mandatory · this is non-negotiable, yes it'll chafe · </span>
           <span><b>RUMOUR:</b> One château allegedly pours grand cru · find the queue, join it, lose 12 minutes · </span>
           <span><b>PSA:</b> If you can hold a conversation on your long run the pace is right · if you're explaining politics, you're going too easy · </span>
@@ -1650,6 +1656,64 @@
   </div>
 
   <!-- WEEKLY RECAP CARD — collapsed by default, scroll back through earlier weeks -->
+  <details class="recap">
+    <summary class="recap-summary">
+      <span class="recap-label">🍷 Weekly Recap</span>
+      <span class="recap-headline">Médoc Week 19 · 31 Aug – 6 Sep</span>
+      <span class="recap-chevron" aria-hidden="true">▾</span>
+    </summary>
+    <div class="recap-body">
+      <div class="recap-nav">
+        <button type="button" class="recap-nav-btn" id="recap-prev">← Previous week</button>
+        <span class="recap-nav-label" id="recap-nav-label">Médoc Week 19 · 31 Aug – 6 Sep</span>
+        <button type="button" class="recap-nav-btn" id="recap-next" disabled>Next week →</button>
+      </div>
+        <div class="recap-pane active" data-recap-idx="0" data-recap-label="Médoc Week 19 · 31 Aug – 6 Sep">
+          <ul class="recap-insights">
+              <li><span class="recap-tag">👯</span><span><strong>Louis</strong> holds the Illig crown · Fred I. is 0km back. Brother in pursuit.</span></li>
+          </ul>
+          <div class="recap-missing">
+            🚧 Still <strong>2 of 13</strong> not connected. Pass the connect link on — every extra runner is more rivalry, less wooden-spoon risk.
+          </div>
+        </div>
+        <div class="recap-pane" data-recap-idx="1" data-recap-label="Médoc Week 18 · 24 Aug – 30 Aug">
+          <ul class="recap-insights">
+              <li><span class="recap-tag">👯</span><span><strong>Louis</strong> holds the Illig crown · Fred I. is 0km back. Brother in pursuit.</span></li>
+          </ul>
+        </div>
+        <div class="recap-pane" data-recap-idx="2" data-recap-label="Médoc Week 17 · 17 Aug – 23 Aug">
+          <ul class="recap-insights">
+              <li><span class="recap-tag">👯</span><span><strong>Louis</strong> holds the Illig crown · Fred I. is 0km back. Brother in pursuit.</span></li>
+          </ul>
+        </div>
+        <div class="recap-pane" data-recap-idx="3" data-recap-label="Médoc Week 16 · 10 Aug – 16 Aug">
+          <ul class="recap-insights">
+              <li><span class="recap-tag">👯</span><span><strong>Louis</strong> holds the Illig crown · Fred I. is 0km back. Brother in pursuit.</span></li>
+          </ul>
+        </div>
+    </div>
+    <script>
+    (function(){
+      const panes = Array.from(document.querySelectorAll('.recap-pane'));
+      const prev  = document.getElementById('recap-prev');
+      const next  = document.getElementById('recap-next');
+      const label = document.getElementById('recap-nav-label');
+      if (!panes.length || !prev || !next || !label) return;
+      const maxIdx = panes.length - 1;
+      let idx = 0;
+      function update(){
+        panes.forEach(p => p.classList.toggle('active', parseInt(p.dataset.recapIdx, 10) === idx));
+        const active = panes.find(p => parseInt(p.dataset.recapIdx, 10) === idx);
+        if (active) label.textContent = active.dataset.recapLabel;
+        prev.disabled = idx >= maxIdx;
+        next.disabled = idx <= 0;
+      }
+      prev.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); if (idx < maxIdx) { idx++; update(); } });
+      next.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); if (idx > 0)      { idx--; update(); } });
+      update();
+    })();
+    </script>
+  </details>
 
   <!-- HERO STAT STRIP -->
   <div class="hero-strip">
@@ -1725,7 +1789,7 @@
           <div class="info">
             <div class="name">Blaise Bacquet
             </div>
-            <div class="meta">not connected — visit /connect.html</div>
+            <div class="meta">no runs since 1 May</div>
           </div>
           <div class="col-stat"><div class="v">—</div></div>
           <div class="col-stat hide-mob"><div class="v">—</div></div>
@@ -1740,7 +1804,7 @@
           <div class="info">
             <div class="name">Dan Christie
             </div>
-            <div class="meta">not connected — visit /connect.html</div>
+            <div class="meta">no runs since 1 May</div>
           </div>
           <div class="col-stat"><div class="v">—</div></div>
           <div class="col-stat hide-mob"><div class="v">—</div></div>
@@ -1755,7 +1819,7 @@
           <div class="info">
             <div class="name">Danny Arthur
             </div>
-            <div class="meta">not connected — visit /connect.html</div>
+            <div class="meta">no runs since 1 May</div>
           </div>
           <div class="col-stat"><div class="v">—</div></div>
           <div class="col-stat hide-mob"><div class="v">—</div></div>
@@ -1771,7 +1835,7 @@
             <div class="name">Fred Illig
                 <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;color:var(--rust);margin-left:8px;text-transform:uppercase;">Sibling Rivalry</span>
             </div>
-            <div class="meta">not connected — visit /connect.html</div>
+            <div class="meta">no runs since 1 May</div>
           </div>
           <div class="col-stat"><div class="v">—</div></div>
           <div class="col-stat hide-mob"><div class="v">—</div></div>
@@ -1786,7 +1850,7 @@
           <div class="info">
             <div class="name">Freddy B.
             </div>
-            <div class="meta">not connected — visit /connect.html</div>
+            <div class="meta">no runs since 1 May</div>
           </div>
           <div class="col-stat"><div class="v">—</div></div>
           <div class="col-stat hide-mob"><div class="v">—</div></div>
@@ -1801,7 +1865,7 @@
           <div class="info">
             <div class="name">Jack L.
             </div>
-            <div class="meta">not connected — visit /connect.html</div>
+            <div class="meta">no runs since 1 May</div>
           </div>
           <div class="col-stat"><div class="v">—</div></div>
           <div class="col-stat hide-mob"><div class="v">—</div></div>
@@ -1817,7 +1881,7 @@
             <div class="name"><img class="avatar" src="assets/runners/louis.png" alt="">Louis Illig
                 <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;color:var(--gold);margin-left:8px;text-transform:uppercase;">★ The Groom</span>
             </div>
-            <div class="meta">not connected — visit /connect.html</div>
+            <div class="meta">no runs since 1 May</div>
           </div>
           <div class="col-stat"><div class="v">—</div></div>
           <div class="col-stat hide-mob"><div class="v">—</div></div>
@@ -1832,7 +1896,7 @@
           <div class="info">
             <div class="name">Marcus G.
             </div>
-            <div class="meta">not connected — visit /connect.html</div>
+            <div class="meta">no runs since 1 May</div>
           </div>
           <div class="col-stat"><div class="v">—</div></div>
           <div class="col-stat hide-mob"><div class="v">—</div></div>
@@ -1847,7 +1911,7 @@
           <div class="info">
             <div class="name">Matt M.
             </div>
-            <div class="meta">not connected — visit /connect.html</div>
+            <div class="meta">no runs since 1 May</div>
           </div>
           <div class="col-stat"><div class="v">—</div></div>
           <div class="col-stat hide-mob"><div class="v">—</div></div>
@@ -1862,7 +1926,7 @@
           <div class="info">
             <div class="name">Oskar K
             </div>
-            <div class="meta">not connected — visit /connect.html</div>
+            <div class="meta">no runs since 1 May</div>
           </div>
           <div class="col-stat"><div class="v">—</div></div>
           <div class="col-stat hide-mob"><div class="v">—</div></div>
@@ -1877,7 +1941,7 @@
           <div class="info">
             <div class="name">Timothy L.
             </div>
-            <div class="meta">not connected — visit /connect.html</div>
+            <div class="meta">no runs since 1 May</div>
           </div>
           <div class="col-stat"><div class="v">—</div></div>
           <div class="col-stat hide-mob"><div class="v">—</div></div>
@@ -1892,7 +1956,7 @@
           <div class="info">
             <div class="name">Will H.
             </div>
-            <div class="meta">not connected — visit /connect.html</div>
+            <div class="meta">no runs since 1 May</div>
           </div>
           <div class="col-stat"><div class="v">—</div></div>
           <div class="col-stat hide-mob"><div class="v">—</div></div>
@@ -2009,7 +2073,7 @@
             <div class="icon">👻</div>
             <div>
               <div class="title">The Ghost<span class="scope">right now</span></div>
-              <div class="winner">Everyone ran today. Miracle.</div>
+              <div class="winner">Most days since last run — <b>Louis Illig</b>, 999 days. &#x27;Starts Monday.&#x27;</div>
             </div>
           </div>
           <div class="award shame">
@@ -2061,7 +2125,18 @@
           <span class="form-day-labels">
 <span class="lbl">Sa</span><span class="lbl">Su</span><span class="lbl">Mo</span><span class="lbl">Tu</span><span class="lbl">We</span><span class="lbl">Th</span><span class="lbl">Fr</span><span class="lbl">Sa</span><span class="lbl">Su</span><span class="lbl">Mo</span><span class="lbl">Tu</span><span class="lbl">We</span><span class="lbl">Th</span><span class="lbl">Fr</span>          </span>
         </div>
-          <div class="mini-row"><span class="pos">—</span><span class="name">Waiting on runs</span><span class="v">—</span></div>
+          <div class="mini-row top"><span class="pos">i</span><span class="name">Louis Illig</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">ii</span><span class="name">Fred Illig</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">iii</span><span class="name">Matt M.</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">iv</span><span class="name">Freddy B.</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">v</span><span class="name">Dan Christie</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">vi</span><span class="name">Blaise Bacquet</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">vii</span><span class="name">Danny Arthur</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">viii</span><span class="name">Jack L.</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">ix</span><span class="name">Oskar K</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">x</span><span class="name">Will H.</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">xi</span><span class="name">Timothy L.</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
+          <div class="mini-row"><span class="pos">xii</span><span class="name">Marcus G.</span><span class="v"><span class="form-mini"><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="d-slot"><i class="d "></i></span><span class="total">0 runs</span></span></span></div>
       </div>
 
       <div class="mini-board form-legend">
@@ -2118,7 +2193,7 @@
         <div class="week-label" id="week-label">This week</div>
         <button type="button" class="week-nav-btn" id="week-next" disabled>Next week →</button>
       </div>
-        <div class="week-pane active" data-week-offset="0" data-week-label="This week · 31 Aug – 6 Sep">
+        <div class="week-pane active" data-week-offset="0" data-week-label="This week · 7 Sep – 13 Sep">
           <div class="week-grid">
               <div class="day rest">
                 <div class="km">—</div>
@@ -2164,7 +2239,7 @@
             <div class="stat"><div class="v">—</div><div class="l">vs prior week</div></div>
           </div>
         </div>
-        <div class="week-pane" data-week-offset="1" data-week-label="Last week · 24 Aug – 30 Aug">
+        <div class="week-pane" data-week-offset="1" data-week-label="Last week · 31 Aug – 6 Sep">
           <div class="week-grid">
               <div class="day rest">
                 <div class="km">—</div>
@@ -2210,7 +2285,7 @@
             <div class="stat"><div class="v">—</div><div class="l">vs prior week</div></div>
           </div>
         </div>
-        <div class="week-pane" data-week-offset="2" data-week-label="2 weeks ago · 17 Aug – 23 Aug">
+        <div class="week-pane" data-week-offset="2" data-week-label="2 weeks ago · 24 Aug – 30 Aug">
           <div class="week-grid">
               <div class="day rest">
                 <div class="km">—</div>
@@ -2256,7 +2331,7 @@
             <div class="stat"><div class="v">—</div><div class="l">vs prior week</div></div>
           </div>
         </div>
-        <div class="week-pane" data-week-offset="3" data-week-label="3 weeks ago · 10 Aug – 16 Aug">
+        <div class="week-pane" data-week-offset="3" data-week-label="3 weeks ago · 17 Aug – 23 Aug">
           <div class="week-grid">
               <div class="day rest">
                 <div class="km">—</div>
@@ -2302,7 +2377,7 @@
             <div class="stat"><div class="v">—</div><div class="l">vs prior week</div></div>
           </div>
         </div>
-        <div class="week-pane" data-week-offset="4" data-week-label="4 weeks ago · 3 Aug – 9 Aug">
+        <div class="week-pane" data-week-offset="4" data-week-label="4 weeks ago · 10 Aug – 16 Aug">
           <div class="week-grid">
               <div class="day rest">
                 <div class="km">—</div>
@@ -2348,7 +2423,7 @@
             <div class="stat"><div class="v">—</div><div class="l">vs prior week</div></div>
           </div>
         </div>
-        <div class="week-pane" data-week-offset="5" data-week-label="5 weeks ago · 27 Jul – 2 Aug">
+        <div class="week-pane" data-week-offset="5" data-week-label="5 weeks ago · 3 Aug – 9 Aug">
           <div class="week-grid">
               <div class="day rest">
                 <div class="km">—</div>
@@ -2422,7 +2497,7 @@
     <div class="week-detail" style="margin-top:24px;padding:18px 24px">
       <div class="week-detail-head" style="margin-bottom:8px;padding-bottom:0;border-bottom:none">
         <h4>Squad tracking <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--wine-light);text-transform:uppercase;margin-left:8px">no runs yet this week</span></h4>
-        <span class="pick">0 / 0 km · 75% of 0km full-plan target (12km × 0 runners)</span>
+        <span class="pick">0 / 108 km · 75% of 144km full-plan target (12km × 12 runners)</span>
       </div>
       <div style="height:6px;background:rgba(74,14,31,0.1);position:relative;overflow:hidden;margin-top:14px">
         <div style="position:absolute;inset:0 auto 0 0;width:0%;background:linear-gradient(90deg, var(--wine) 0%, var(--bordeaux) 70%, var(--gold) 100%);"></div>
@@ -2554,7 +2629,7 @@
 
   <!-- FOOTER -->
   <footer class="footer">
-    <div><a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:14px;vertical-align:middle"></a> · Updated 10:25 BST</div>
+    <div><a href="https://www.strava.com" target="_blank" rel="noopener" aria-label="Powered by Strava" style="vertical-align:middle"><img src="assets/powered-by-strava-orange.svg" alt="Powered by Strava" style="height:14px;vertical-align:middle"></a> · Updated 19:51 BST</div>
     <div><em>« On y va, doucement. »</em></div>
     <div>Le Domaine · MMXXVI</div>
   </footer>
@@ -2566,7 +2641,7 @@
   (function(){
     const btn = document.getElementById('share-btn');
     if (!btn) return;
-    const text = "\ud83c\udf77 M\u00c9DOC 26 \u00b7 SQUAD UPDATE \u00b7 Fri 04 Sep\n\ud83c\udfc1 1 days to race day\n\nLast 7 days: 0 km \u00b7 0 sessions (squad)\n\nFull board \u2192 https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/";
+    const text = "\ud83c\udf77 M\u00c9DOC 26 \u00b7 SQUAD UPDATE \u00b7 Fri 11 Sep\n\ud83c\udfc1 0 days to race day\n\nLast 7 days: 0 km \u00b7 0 sessions (squad)\n\nFull board \u2192 https://fbmedoc.github.io/Marathon-Du-Medoc-Dashboard/";
     const idle = btn.textContent;
     function done(){
       btn.textContent = 'Copied ✓ paste into WhatsApp';
